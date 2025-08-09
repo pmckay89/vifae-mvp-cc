@@ -96,9 +96,6 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 
 	# Show and animate the QTE UI
 	show_qte_ui(prompt_text, window_ms)
-
-	# Show and animate the QTE UI
-	show_qte_ui(prompt_text, window_ms)
 	print("[QTE] spawn @%s parent=%s z=%d" % [
 		qte_container.get_path(),
 		qte_container.get_parent().get_path(),
@@ -185,6 +182,9 @@ func show_qte_ui(prompt: String, duration_ms: int) -> void:
 		qte_text.text = prompt
 
 	if qte_circle:
+		# Center the QTECircle in screen coordinates
+		var screen_center = get_viewport().get_visible_rect().size / 2
+		qte_circle.position = screen_center
 		qte_circle.scale = Vector2(0.15, 0.15)
 
 func hide_qte_ui() -> void:
