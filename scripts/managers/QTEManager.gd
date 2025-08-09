@@ -9,8 +9,6 @@ signal qte_completed
 
 var qte_active: bool = false
 
-
-
 func _ready() -> void:
 	_ensure_qte_container()
 	if qte_text:
@@ -79,6 +77,10 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 		push_error("[QTE] Cannot start — parent missing.")
 		return "fail"
 	print("✅ qte_container found, continuing...")
+
+	# Check for Lightning Surge QTE first
+	if prompt_text == "Press X rapidly!":
+		return await start_lightning_surge_qte(action_name, prompt_text, target_player)
 
 	qte_active = true
 
@@ -190,3 +192,103 @@ func show_qte_ui(prompt: String, duration_ms: int) -> void:
 func hide_qte_ui() -> void:
 	if qte_container:
 		qte_container.visible = false
+
+func start_lightning_surge_qte(action_name: String, prompt_text: String, target_player = null) -> String:
+	print("⚡ Lightning Surge QTE started - 3 hits needed!")
+	
+	qte_active = true
+	_ensure_qte_container()
+	
+	var hits_needed = 3
+	var hits_count = 0
+	var sfx_player := get_node_or_null("/root/BattleScene/SFXPlayer")
+	
+	# Define the 3 sub-windows: 0.0-0.5s, 0.75-1.25s, 1.5-2.0s
+	var windows = [
+		{"start": 0.0, "end": 0.5},
+		{"start": 0.75, "end": 1.25}, 
+		{"start": 1.5, "end": 2.0}
+	]
+	
+	var start_time = Time.get_ticks_msec()
+	var total_duration = 2000  # 2 seconds total
+	var current_window = 0
+	
+	# Show QTE container
+	if qte_container:
+		qte_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+		qte_container.position = Vector2.ZERO
+		qte_container.size = get_viewport().get_visible_rect().size
+		qte_container.z_index = max(qte_container.z_index, 100)
+		qte_container.visible = true
+		qte_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	if qte_circle:
+		var screen_center = get_viewport().get_visible_rect().size / 2
+		qte_circle.position = screen_center
+		qte_circle.visible = false  # Start hidden
+	
+	while Time.get_ticks_msec() - start_time < total_duration:
+		var elapsed_time = (Time.get_ticks_msec() - start_time) / 1000.0  # Convert to seconds
+		
+		# Check if we're in a valid input window
+		var in_window = false
+		var window_progress = 0.0
+		
+		if current_window < windows.size():
+			var window = windows[current_window]
+			if elapsed_time >= window.start and elapsed_time <= window.end:
+				in_window = true
+				# Calculate progress within this window (1.0 to 0.0)
+				window_progress = 1.0 - ((elapsed_time - window.start) / (window.end - window.start))
+				
+				# Show and scale the circle
+				if qte_circle:
+					qte_circle.visible = true
+					qte_circle.scale = Vector2(0.15 * window_progress, 0.15 * window_progress)
+			else:
+				# Hide circle when not in window
+				if qte_circle:
+					qte_circle.visible = false
+		
+		# Update text feedback
+		if qte_text:
+			if in_window:
+				qte_text.text = prompt_text + " (" + str(hits_count) + "/" + str(hits_needed) + ") - WINDOW " + str(current_window + 1)
+			else:
+				qte_text.text = prompt_text + " (" + str(hits_count) + "/" + str(hits_needed) + ") - WAIT..."
+		
+		# Check for input during valid window
+		if in_window and Input.is_action_just_pressed(action_name):
+			hits_count += 1
+			current_window += 1
+			print("⚡ Lightning hit " + str(hits_count) + "/3!")
+			
+			if sfx_player:
+				sfx_player.stream = preload("res://assets/sfx/parry.wav")
+				sfx_player.play()
+			
+			if target_player != null and target_player.has_method("show_block_animation"):
+				target_player.show_block_animation()
+			
+			# Check if all hits completed
+			if hits_count >= hits_needed:
+				break
+		
+		await get_tree().process_frame
+	
+	qte_active = false
+	hide_qte_ui()
+	
+	# Determine result
+	var result = "fail"
+	if hits_count >= hits_needed:
+		result = "normal"  # Success for Lightning Surge
+		print("⚡ Lightning Surge SUCCESS! All 3 hits landed!")
+	else:
+		print("❌ Lightning Surge FAILED! Only " + str(hits_count) + "/3 hits")
+		if sfx_player:
+			sfx_player.stream = preload("res://assets/sfx/miss.wav")
+			sfx_player.play()
+	
+	return result

@@ -20,6 +20,7 @@ var current_turn_index: int = 0
 var current_actor: Node = null
 var selected_action: String = ""
 var selected_target: Node = null
+var enemy_attack_count: int = 0
 
 # UI References - match your exact paths
 @onready var turn_label := get_node("../UILayer/TurnLabel")
@@ -223,6 +224,7 @@ func show_menu():
 func enemy_think():
 	print("STATE→ ENEMY_THINK")
 	
+	
 	# Hide any player menus
 	if action_menu:
 		action_menu.visible = false
@@ -240,8 +242,10 @@ func enemy_think():
 		return
 		
 	# Determine enemy attack pattern (deterministic rotation)
-	var enemy_turn_count = get_enemy_turn_count()
-	var attack_index = enemy_turn_count % 3
+	var attack_index = enemy_attack_count % 3
+	print("DEBUG→ Enemy attack count: " + str(enemy_attack_count))
+	print("DEBUG→ Attack index: " + str(attack_index))
+	enemy_attack_count += 1  # Increment for next time
 	
 	match attack_index:
 		0:
