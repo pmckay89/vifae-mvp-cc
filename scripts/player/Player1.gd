@@ -1,5 +1,6 @@
 extends Node2D
 
+var hp_max: int = 50
 var hp: int = 50
 var is_defeated: bool = false
 var selected_ability = ""
@@ -59,7 +60,7 @@ func take_damage(amount):
 	hp -= amount
 	print(name, "takes", amount, "damage. HP:", hp)
 
-	CombatUI.update_hp_bar("Player1", hp, 100)
+	CombatUI.update_hp_bar("Player1", hp, hp_max)  # Use hp_max instead of 100
 
 	if hp <= 0:
 		hp = 0

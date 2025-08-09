@@ -115,11 +115,11 @@ grow_vertical = 2
 
 [node name="Player1HP" type="Label" parent="UILayer/HPBars"]
 layout_mode = 2
-text = "SWORD MAN: 100/100"
+text = "SWORD SPIRIT: 50/50"
 
 [node name="Player2HP" type="Label" parent="UILayer/HPBars"]
 layout_mode = 2
-text = "GUN GIRL: 100/100"
+text = "GUN GIRL: 50/50"
 
 [node name="TurnManager" type="Node" parent="."]
 script = ExtResource("5_hrc4b")

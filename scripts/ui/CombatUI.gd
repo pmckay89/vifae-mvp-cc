@@ -7,10 +7,10 @@ func update_hp_bar(actor_name: String, hp: int, max_hp: int):
 	match actor_name:
 		"Player1":
 			path = "/root/BattleScene/UILayer/HPBars/Player1HP"
-			display_name = "GUN GIRL"
+			display_name = "SWORD SPIRIT"
 		"Player2":
 			path = "/root/BattleScene/UILayer/HPBars/Player2HP"
-			display_name = "SWORD SPIRIT"
+			display_name = "GUN GIRL"
 		"Enemy":
 			path = "/root/BattleScene/UILayer/HPBars/EnemyHP"
 			display_name = "TITAN SPARK"

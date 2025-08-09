@@ -81,17 +81,19 @@ func start_turn():
 		await get_tree().create_timer(2.5).timeout
 
 		var enemy := current_actor
-		var tgt: Node = null
+		var alive_players = []
 		for a in turn_order:
 			if is_player(a) and not bool(a.get("is_defeated")):
-				tgt = a
-				break
+				alive_players.append(a)
+
+		var tgt: Node = null
+		if alive_players.size() > 0:
+			tgt = alive_players[randi() % alive_players.size()]  # Random target!
 
 		if enemy and enemy.has_method("attack") and tgt:
 			enemy.attack(tgt)
 
 		end_turn()
-
 
 
 func end_turn():
