@@ -121,6 +121,30 @@ text = "SWORD SPIRIT: 50/50"
 layout_mode = 2
 text = "GUN GIRL: 50/50"
 
+[node name="SkillsMenu" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="TwoCutButton" type="Button" parent="UILayer/SkillsMenu"]
+visible = false
+layout_mode = 0
+offset_left = 214.0
+offset_top = 532.0
+offset_right = 271.0
+offset_bottom = 572.0
+text = "2x Cut"
+
+[node name="BigShotButton" type="Button" parent="UILayer/SkillsMenu"]
+visible = false
+layout_mode = 0
+offset_left = 213.0
+offset_top = 535.0
+offset_right = 280.0
+offset_bottom = 566.0
+text = "BigShot"
+
 [node name="TurnManager" type="Node" parent="."]
 script = ExtResource("5_hrc4b")
 

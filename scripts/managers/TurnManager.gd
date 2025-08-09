@@ -26,10 +26,14 @@ var selected_target: Node = null
 @onready var action_menu := get_node_or_null("/root/BattleScene/UILayer/ActionMenu")
 @onready var attack_button := get_node_or_null("/root/BattleScene/UILayer/ActionMenu/AttackButton")
 @onready var skills_button := get_node_or_null("/root/BattleScene/UILayer/ActionMenu/SkillsButton")
+@onready var skills_menu := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu")
+@onready var twocut_button := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu/TwoCutButton")
+@onready var bigshot_button := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu/BigShotButton")
 @onready var bgm_player := get_node("../BGMPlayer")
 
 # Menu state
 var menu_selection: int = 0
+var in_skills_menu: bool = false
 var music_enabled: bool = true
 
 func _ready():
@@ -67,6 +71,12 @@ func _input(event):
 				print("INPUT→ X pressed during QTE (defense)")
 
 func handle_menu_input(event):
+	if in_skills_menu:
+		handle_skills_menu_input(event)
+	else:
+		handle_action_menu_input(event)
+
+func handle_action_menu_input(event):
 	if event.is_action_pressed("move up"):
 		menu_selection = max(0, menu_selection - 1)
 		update_menu_highlight()
@@ -84,13 +94,62 @@ func handle_menu_input(event):
 			print("MENU→ Attack selected")
 			change_state(State.QTE_ACTIVE)
 		elif menu_selection == 1:
-			selected_action = "skill"
-			selected_target = get_enemy()
-			print("MENU→ Skill selected")
-			change_state(State.QTE_ACTIVE)
+			print("MENU→ Opening Skills submenu")
+			open_skills_menu()
 			
 	elif event.is_action_pressed("cancel dodge"):  # C cancels
 		print("MENU→ Cancel pressed (no effect at top level)")
+
+func handle_skills_menu_input(event):
+	if event.is_action_pressed("confirm attack"):  # Z confirms skill selection
+		if current_actor.name == "Player1":
+			selected_action = "big_shot"
+			print("MENU→ Big Shot selected")
+		elif current_actor.name == "Player2":
+			selected_action = "2x_cut"
+			print("MENU→ 2x Cut selected")
+		
+		selected_target = get_enemy()
+		close_skills_menu()
+		change_state(State.QTE_ACTIVE)
+		
+	elif event.is_action_pressed("cancel dodge"):  # C backs out
+		print("MENU→ Backing out of Skills menu")
+		close_skills_menu()
+
+func open_skills_menu():
+	in_skills_menu = true
+	if action_menu:
+		action_menu.visible = false
+	if skills_menu:
+		skills_menu.visible = true
+	
+	# Show player-specific skill button
+	if current_actor.name == "Player1":
+		if bigshot_button:
+			bigshot_button.visible = true
+			bigshot_button.grab_focus()
+		if twocut_button:
+			twocut_button.visible = false
+	elif current_actor.name == "Player2":
+		if twocut_button:
+			twocut_button.visible = true
+			twocut_button.grab_focus()
+		if bigshot_button:
+			bigshot_button.visible = false
+
+func close_skills_menu():
+	in_skills_menu = false
+	if skills_menu:
+		skills_menu.visible = false
+	# Hide both skill buttons
+	if twocut_button:
+		twocut_button.visible = false
+	if bigshot_button:
+		bigshot_button.visible = false
+	if action_menu:
+		action_menu.visible = true
+	update_menu_highlight()
 
 func update_menu_highlight():
 	# Simple highlighting using button focus
@@ -152,9 +211,12 @@ func actor_ready():
 func show_menu():
 	print("STATE→ SHOW_MENU for " + current_actor.name)
 	menu_selection = 0
+	in_skills_menu = false
 	
 	if action_menu:
 		action_menu.visible = true
+	if skills_menu:
+		skills_menu.visible = false
 		
 	update_menu_highlight()
 
@@ -164,6 +226,8 @@ func enemy_think():
 	# Hide any player menus
 	if action_menu:
 		action_menu.visible = false
+	if skills_menu:
+		skills_menu.visible = false
 		
 	# Brief delay for enemy "thinking"
 	await get_tree().create_timer(1.0).timeout
@@ -204,8 +268,10 @@ func start_qte():
 		# Player offense QTE (Z button)
 		if selected_action == "attack":
 			qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z to attack!", current_actor)
-		elif selected_action == "skill":
-			qte_result = await QTEManager.start_qte("confirm attack", 1000, "Hold Z and release!", current_actor)
+		elif selected_action == "2x_cut":
+			qte_result = await QTEManager.start_qte("confirm attack", 1000, "Press Z for 2x Cut!", current_actor)
+		elif selected_action == "big_shot":
+			qte_result = await QTEManager.start_qte("confirm attack", 1000, "Press Z for Big Shot!", current_actor)
 	else:
 		# Enemy attack QTE (X button for defense)
 		match selected_action:
@@ -235,10 +301,15 @@ func resolve_action():
 				"crit": damage = 10
 				"normal": damage = 6
 				"fail": damage = 0
-		elif selected_action == "skill":
+		elif selected_action == "2x_cut":
 			match qte_result:
-				"crit": damage = 16
-				"normal": damage = 10
+				"crit": damage = 20  # 2x normal crit
+				"normal": damage = 12  # 2x normal hit
+				"fail": damage = 0
+		elif selected_action == "big_shot":
+			match qte_result:
+				"crit": damage = 20  # 2x normal crit
+				"normal": damage = 12  # 2x normal hit
 				"fail": damage = 0
 				
 		print("DMG→ Player deals " + str(damage) + " to " + selected_target.name)
@@ -325,6 +396,8 @@ func victory():
 	# Hide menus
 	if action_menu:
 		action_menu.visible = false
+	if skills_menu:
+		skills_menu.visible = false
 		
 	# Wait for player input or auto-reset
 	await get_tree().create_timer(2.0).timeout
@@ -338,6 +411,8 @@ func game_over():
 	# Hide menus
 	if action_menu:
 		action_menu.visible = false
+	if skills_menu:
+		skills_menu.visible = false
 		
 	# Wait for player input or auto-reset
 	await get_tree().create_timer(2.0).timeout
@@ -362,12 +437,15 @@ func reset_combat():
 	selected_action = ""
 	selected_target = null
 	menu_selection = 0
+	in_skills_menu = false
 	
 	# Reset UI
 	if turn_label:
 		turn_label.text = ""
 	if action_menu:
 		action_menu.visible = false
+	if skills_menu:
+		skills_menu.visible = false
 	
 	print("RESET→ Complete, starting new combat")
 	change_state(State.BEGIN_TURN)
