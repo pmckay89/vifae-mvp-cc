@@ -1,0 +1,136 @@
+[gd_scene load_steps=10 format=3 uid="uid://bywrdjiurayct"]
+
+[ext_resource type="Script" uid="uid://bb1b4n2pur4i0" path="res://scripts/managers/input_listener.gd" id="1_ftvu5"]
+[ext_resource type="PackedScene" uid="uid://ce1cfkpg1oapd" path="res://scenes/Player1.tscn" id="2_0yex5"]
+[ext_resource type="PackedScene" uid="uid://c8rlmnvaxhyuc" path="res://scenes/Player2.tscn" id="3_bsu3s"]
+[ext_resource type="PackedScene" uid="uid://brt8asynsnb14" path="res://scenes/Enemy.tscn" id="4_sdfhe"]
+[ext_resource type="Script" uid="uid://smu7o2wlaelw" path="res://scripts/managers/TurnManager.gd" id="5_hrc4b"]
+[ext_resource type="Texture2D" uid="uid://da8upiien7xs0" path="res://assets/backgrounds/arena.png" id="6_0yex5"]
+[ext_resource type="Texture2D" uid="uid://c0gjtifwjdhty" path="res://assets/ui/QTE.png" id="6_sdfhe"]
+[ext_resource type="AudioStream" uid="uid://6diuvpafafnp" path="res://assets/music/bgm.mp3" id="7_bsu3s"]
+[ext_resource type="Script" uid="uid://di7rn5ua3w270" path="res://scenes/BattleCamera.gd" id="9_hrc4b"]
+
+[node name="BattleScene" type="Node2D"]
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(572, 322)
+scale = Vector2(0.747396, 0.628906)
+texture = ExtResource("6_0yex5")
+
+[node name="InputListener" type="Node" parent="."]
+script = ExtResource("1_ftvu5")
+
+[node name="Player1" parent="." instance=ExtResource("2_0yex5")]
+position = Vector2(134, 233)
+
+[node name="Player2" parent="." instance=ExtResource("3_bsu3s")]
+position = Vector2(136, 392)
+
+[node name="Enemy" parent="." instance=ExtResource("4_sdfhe")]
+position = Vector2(939, 199)
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="FlashLayer" type="ColorRect" parent="UILayer"]
+visible = false
+modulate = Color(1, 1, 1, 0)
+offset_right = 40.0
+offset_bottom = 40.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ActionMenu" type="VBoxContainer" parent="UILayer"]
+offset_left = 66.0
+offset_top = 535.0
+offset_right = 209.0
+offset_bottom = 602.0
+
+[node name="AttackButton" type="Button" parent="UILayer/ActionMenu"]
+layout_mode = 2
+text = "\"Attack\""
+
+[node name="SkillsButton" type="Button" parent="UILayer/ActionMenu"]
+layout_mode = 2
+text = "\"Skills\""
+
+[node name="TurnLabel" type="Label" parent="UILayer"]
+offset_left = 366.0
+offset_top = 546.0
+offset_right = 447.0
+offset_bottom = 569.0
+text = "Turn: --"
+
+[node name="EnemyHUD" type="VBoxContainer" parent="UILayer"]
+offset_left = 884.0
+offset_top = 580.0
+offset_right = 942.0
+offset_bottom = 620.0
+
+[node name="EnemyHPBar" type="ProgressBar" parent="UILayer/EnemyHUD"]
+custom_minimum_size = Vector2(250, 25)
+layout_mode = 2
+fill_mode = 1
+show_percentage = false
+
+[node name="EnemyHPLabel" type="Label" parent="UILayer/EnemyHUD"]
+layout_mode = 2
+text = "BOSS HP: 100"
+horizontal_alignment = 1
+
+[node name="HPBars" type="VBoxContainer" parent="UILayer"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -209.0
+offset_top = 250.0
+offset_right = -128.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Player1HP" type="Label" parent="UILayer/HPBars"]
+layout_mode = 2
+text = "SWORD MAN: 100/100"
+
+[node name="Player2HP" type="Label" parent="UILayer/HPBars"]
+layout_mode = 2
+text = "GUN GIRL: 100/100"
+
+[node name="QTEContainer" type="Control" parent="UILayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_left = 525.0
+offset_top = 241.0
+offset_right = 565.0
+offset_bottom = 281.0
+
+[node name="QTECircle" type="Sprite2D" parent="UILayer/QTEContainer"]
+scale = Vector2(0.156, 0.156)
+texture = ExtResource("6_sdfhe")
+
+[node name="QTEText" type="Label" parent="UILayer/QTEContainer"]
+layout_mode = 0
+offset_left = -79.0
+offset_top = 87.0
+offset_right = 98.0
+offset_bottom = 131.0
+text = "GUSTAVE!! PARRY IT (X)"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TurnManager" type="Node" parent="."]
+script = ExtResource("5_hrc4b")
+
+[node name="BGMPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("7_bsu3s")
+autoplay = true
+parameters/looping = true
+
+[node name="SFXPlayer" type="AudioStreamPlayer" parent="."]
+
+[node name="BattleCamera" type="Camera2D" parent="."]
+position = Vector2(568, 321)
+script = ExtResource("9_hrc4b")
