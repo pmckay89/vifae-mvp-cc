@@ -31,6 +31,7 @@ var enemy_attack_count: int = 0
 @onready var twocut_button := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu/TwoCutButton")
 @onready var bigshot_button := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu/BigShotButton")
 @onready var bgm_player := get_node("../BGMPlayer")
+@onready var result_overlay := get_node_or_null("/root/BattleScene/UILayer/ResultOverlay")
 
 # Menu state
 var menu_selection: int = 0
@@ -54,6 +55,10 @@ func _input(event):
 	if not event is InputEventKey:
 		return
 	if not event.pressed:
+		return
+	
+	# Skip input if overlay is showing
+	if result_overlay and result_overlay.visible:
 		return
 	
 	# Music toggle
@@ -338,10 +343,10 @@ func resolve_action():
 		# Apply parry mitigation
 		var mitigation = 0.0
 		match qte_result:
-			"normal": mitigation = 0.0   # 0% damage (successful parry)
-			"fail": mitigation = 1.0     # 100% damage (failed parry)
+			"normal": mitigation = 1.0   # 0% damage (successful parry)
+			"fail": mitigation = 0.0     # 100% damage (failed parry)
 			
-		damage = int(base_damage * mitigation)
+		damage = int(base_damage * (1.0 - mitigation))
 		print("DMG→ Enemy deals " + str(damage) + " to " + selected_target.name + " (base: " + str(base_damage) + ", mitigated: " + str(int(mitigation * 100)) + "%)")
 		
 		if damage > 0 and selected_target.has_method("take_damage"):
@@ -402,10 +407,9 @@ func victory():
 		action_menu.visible = false
 	if skills_menu:
 		skills_menu.visible = false
-		
-	# Wait for player input or auto-reset
-	await get_tree().create_timer(2.0).timeout
-	change_state(State.RESET_COMBAT)
+	
+	# Show result overlay instead of auto-reset
+	show_result_overlay("victory")
 
 func game_over():
 	print("STATE→ GAME_OVER") 
@@ -417,23 +421,34 @@ func game_over():
 		action_menu.visible = false
 	if skills_menu:
 		skills_menu.visible = false
-		
-	# Wait for player input or auto-reset
-	await get_tree().create_timer(2.0).timeout
-	change_state(State.RESET_COMBAT)
+	
+	# Show result overlay instead of auto-reset
+	show_result_overlay("defeat")
+
+func show_result_overlay(mode: String):
+	print("TURNMGR→ Showing result overlay: " + mode)
+	if result_overlay and result_overlay.has_method("show_result"):
+		result_overlay.show_result(mode)
+	else:
+		print("ERROR→ ResultOverlay not found or missing show_result method")
 
 func reset_combat():
 	print("RESET→ Resetting combat to initial state")
 	
-	# Reset all actors
+	# Reset all actors properly
 	for actor in turn_order:
 		if actor.has_method("reset_for_new_combat"):
 			actor.reset_for_new_combat()
 		else:
-			# Default reset
-			if actor.has_method("set"):
-				actor.hp = actor.hp_max
-				actor.is_defeated = false
+			# Default reset for players
+			actor.hp = actor.hp_max
+			actor.is_defeated = false
+			print("RESET→ " + actor.name + " HP reset to " + str(actor.hp_max))
+	
+	# Force HP bar updates
+	CombatUI.update_hp_bar("Player1", 50, 50)
+	CombatUI.update_hp_bar("Player2", 50, 50) 
+	CombatUI.update_hp_bar("Enemy", 150, 150)
 	
 	# Reset turn state
 	current_turn_index = 0
@@ -442,6 +457,7 @@ func reset_combat():
 	selected_target = null
 	menu_selection = 0
 	in_skills_menu = false
+	enemy_attack_count = 0  # Reset enemy attack pattern
 	
 	# Reset UI
 	if turn_label:

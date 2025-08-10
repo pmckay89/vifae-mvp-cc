@@ -5,6 +5,7 @@ signal qte_completed
 @onready var qte_container: Control = get_node_or_null("/root/BattleScene/UILayer/QTEContainer")
 @onready var qte_circle: Node2D = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTECircle")
 @onready var qte_text: Label = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEText")
+@onready var qte_pressure_bar: ProgressBar = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEPressureBar")
 @export var qte_parent_path: NodePath = ^"/root/BattleScene/UILayer/QTEContainer"
 
 var qte_active: bool = false
@@ -23,6 +24,7 @@ func _ensure_qte_container() -> void:
 	qte_container = get_node_or_null(qte_parent_path) as Control
 	qte_circle = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTECircle") as Node2D
 	qte_text = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEText") as Label
+	qte_pressure_bar = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEPressureBar") as ProgressBar
 
 	if qte_container == null:
 		push_error("[QTE] Missing parent: %s" % str(qte_parent_path))
@@ -81,6 +83,10 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 	# Check for Lightning Surge QTE first
 	if prompt_text == "Press X rapidly!":
 		return await start_lightning_surge_qte(action_name, prompt_text, target_player)
+	
+	# Check for Phase Slam QTE
+	if prompt_text == "Hold X, release on cue!":
+		return await start_phase_slam_qte(action_name, prompt_text, target_player)
 
 	qte_active = true
 
@@ -192,6 +198,12 @@ func show_qte_ui(prompt: String, duration_ms: int) -> void:
 func hide_qte_ui() -> void:
 	if qte_container:
 		qte_container.visible = false
+	# Reset all QTE elements for next use
+	if qte_circle:
+		qte_circle.visible = true  # Make sure circle is available for next QTE
+	if qte_pressure_bar:
+		qte_pressure_bar.visible = false  # Hide pressure bar
+		qte_pressure_bar.modulate = Color.WHITE  # Reset color
 
 func start_lightning_surge_qte(action_name: String, prompt_text: String, target_player = null) -> String:
 	print("⚡ Lightning Surge QTE started - 3 hits needed!")
@@ -287,6 +299,128 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 		print("⚡ Lightning Surge SUCCESS! All 3 hits landed!")
 	else:
 		print("❌ Lightning Surge FAILED! Only " + str(hits_count) + "/3 hits")
+		if sfx_player:
+			sfx_player.stream = preload("res://assets/sfx/miss.wav")
+			sfx_player.play()
+	
+	return result
+
+func start_phase_slam_qte(action_name: String, prompt_text: String, target_player = null) -> String:
+	print("💥 Phase Slam QTE started - hold and release!")
+	
+	qte_active = true
+	_ensure_qte_container()
+	
+	var sfx_player := get_node_or_null("/root/BattleScene/SFXPlayer")
+	
+	# GUSTAVE voiceline spot - add your audio clip here
+	if sfx_player:
+		# sfx_player.stream = preload("res://path/to/gustave_parry_it.wav")
+		# sfx_player.play()
+		print("🎵 GUSTAVE!! PARRY IT!! (voiceline placeholder)")
+	
+	# Dramatic pause for voiceline
+	await get_tree().create_timer(1.0).timeout
+	
+	# Show QTE container
+	if qte_container:
+		qte_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+		qte_container.position = Vector2.ZERO
+		qte_container.size = get_viewport().get_visible_rect().size
+		qte_container.z_index = max(qte_container.z_index, 100)
+		qte_container.visible = true
+		qte_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	# Hide circle, show pressure bar
+	if qte_circle:
+		qte_circle.visible = false
+	
+	if qte_pressure_bar:
+		qte_pressure_bar.visible = true
+		qte_pressure_bar.min_value = 0
+		qte_pressure_bar.max_value = 100
+		qte_pressure_bar.value = 0
+		qte_pressure_bar.fill_mode = ProgressBar.FILL_TOP_TO_BOTTOM
+	
+	var start_time = Time.get_ticks_msec()
+	var fill_duration = 900  # 0.9 seconds to fill
+	var is_holding = false
+	var release_detected = false
+	var release_time = 0
+	
+	# Wait for initial press
+	if qte_text:
+		qte_text.text = prompt_text + " - PRESS AND HOLD X!"
+	
+	while not is_holding:
+		if Input.is_action_just_pressed(action_name):
+			is_holding = true
+			start_time = Time.get_ticks_msec()  # Reset timer when they start holding
+			print("💥 Holding X - pressure building!")
+			break
+		await get_tree().process_frame
+	
+	# Filling phase - bar fills from top to bottom
+	while Time.get_ticks_msec() - start_time < fill_duration:
+		var elapsed = Time.get_ticks_msec() - start_time
+		var progress = float(elapsed) / float(fill_duration)
+		
+		if qte_pressure_bar:
+			qte_pressure_bar.value = progress * 100
+			
+			# Color change in final zone (90-100%)
+			if progress >= 0.9:
+				# Flash red in release zone - you can customize colors
+				qte_pressure_bar.modulate = Color.RED if (Time.get_ticks_msec() % 200) < 100 else Color.WHITE
+				if qte_text:
+					qte_text.text = prompt_text + " - RELEASE NOW!"
+			else:
+				qte_pressure_bar.modulate = Color.WHITE
+				if qte_text:
+					qte_text.text = prompt_text + " - HOLD... (" + str(int(progress * 100)) + "%)"
+		
+		# Check if they released
+		if Input.is_action_just_released(action_name):
+			release_detected = true
+			release_time = Time.get_ticks_msec() - start_time
+			break
+		
+		# Check if they stopped holding
+		if not Input.is_action_pressed(action_name):
+			print("💥 Released X too early!")
+			break
+			
+		await get_tree().process_frame
+	
+	# If they never released, count as release at 100%
+	if not release_detected and Input.is_action_pressed(action_name):
+		release_time = fill_duration
+		release_detected = true
+		print("💥 Time up - forced release!")
+	
+	qte_active = false
+	hide_qte_ui()
+	
+	# Determine result based on release timing
+	var result = "fail"
+	if release_detected:
+		var release_percentage = float(release_time) / float(fill_duration)
+		
+		if release_percentage >= 0.9 and release_percentage <= 1.0:
+			result = "normal"
+			print("💥 PHASE SLAM SUCCESS! Perfect release at " + str(int(release_percentage * 100)) + "%!")
+			if sfx_player:
+				sfx_player.stream = preload("res://assets/sfx/parry.wav")
+				sfx_player.play()
+			if target_player != null and target_player.has_method("show_block_animation"):
+				target_player.show_block_animation()
+		else:
+			print("💥 PHASE SLAM FAILED! Released at " + str(int(release_percentage * 100)) + "% (need 90-100%)")
+			if sfx_player:
+				sfx_player.stream = preload("res://assets/sfx/miss.wav")
+				sfx_player.play()
+	else:
+		print("💥 PHASE SLAM FAILED! Never pressed or held properly!")
 		if sfx_player:
 			sfx_player.stream = preload("res://assets/sfx/miss.wav")
 			sfx_player.play()
