@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://ce1cfkpg1oapd"]
+[gd_scene load_steps=5 format=3 uid="uid://ce1cfkpg1oapd"]
 
 [ext_resource type="Script" uid="uid://dbq0tjhjohpp8" path="res://scripts/player/Player1.gd" id="1_p7jkb"]
 [ext_resource type="Texture2D" uid="uid://2mnnrkd04phy" path="res://assets/characters/p1.png" id="2_1jryi"]
 [ext_resource type="Texture2D" uid="uid://bi43o7pnytl1b" path="res://assets/characters/p1-block.png" id="3_b1h3a"]
+[ext_resource type="Texture2D" uid="uid://pn4ko6yyfgr0" path="res://assets/characters/p1-dead.png" id="4_vt8vw"]
 
 [node name="Player1" type="Node2D"]
 position = Vector2(179, 221)
@@ -17,7 +18,12 @@ flip_h = true
 
 [node name="p1-block" type="Sprite2D" parent="."]
 visible = false
-position = Vector2(101, 3)
-scale = Vector2(0.15, 0.15)
+position = Vector2(46.4, -7.6)
+scale = Vector2(0.176562, 0.174609)
 texture = ExtResource("3_b1h3a")
 flip_h = true
+
+[node name="p1-dead" type="Sprite2D" parent="."]
+visible = false
+scale = Vector2(0.15, 0.15)
+texture = ExtResource("4_vt8vw")

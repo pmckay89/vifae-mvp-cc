@@ -34,6 +34,22 @@ func show_block_animation():
 	block_sprite.visible = false
 	main_sprite.visible = true
 
+func show_death_sprite():
+	# Hide all other sprites
+	$Sprite2D.visible = false
+	$"p1-block".visible = false
+	
+	# Show death sprite
+	$"p1-dead".visible = true
+	print("DEATH→ " + name + " death sprite displayed")
+
+func hide_death_sprite():
+	# Hide death sprite and restore main sprite
+	$"p1-dead".visible = false
+	$Sprite2D.visible = true
+	$"p1-block".visible = false
+	print("REVIVE→ " + name + " restored to life")
+
 func attack(target):
 	if target == null:
 		print(name, "tried to attack a NULL target!")
@@ -66,8 +82,16 @@ func take_damage(amount):
 		hp = 0
 		is_defeated = true
 		print(name, "has been defeated!")
+		show_death_sprite()
 
 	CombatUI.show_damage_popup(self, amount)
+
+func reset_for_new_combat():
+	# Called by TurnManager when combat resets
+	hp = hp_max
+	is_defeated = false
+	hide_death_sprite()
+	print("RESET→ " + name + " fully restored")
 
 func get_ability_list() -> Array:
 	return ["bullet_rain", "jump_shot", "precision_strike"]

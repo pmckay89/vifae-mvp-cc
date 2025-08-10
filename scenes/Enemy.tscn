@@ -27,14 +27,14 @@ texture = ExtResource("2_mpr68")
 [node name="e-block" type="Sprite2D" parent="."]
 visible = false
 z_index = 10
-position = Vector2(-588, -104)
+position = Vector2(-621, -53)
 scale = Vector2(0.75, 0.75)
 texture = ExtResource("2_mpr68")
 
 [node name="e-block2" type="Sprite2D" parent="."]
 visible = false
 z_index = 10
-position = Vector2(-587, 183)
+position = Vector2(-618, 125)
 scale = Vector2(0.75, 0.75)
 texture = ExtResource("2_mpr68")
 

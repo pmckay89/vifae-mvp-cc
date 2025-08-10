@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://c8rlmnvaxhyuc"]
+[gd_scene load_steps=5 format=3 uid="uid://c8rlmnvaxhyuc"]
 
 [ext_resource type="Script" uid="uid://ddlnogaisv00" path="res://scripts/player/Player2.gd" id="1_2adyw"]
 [ext_resource type="Texture2D" uid="uid://cmlogkyxy6j8e" path="res://assets/characters/p2.png" id="2_safxn"]
 [ext_resource type="Texture2D" uid="uid://pqx0ofex00kd" path="res://assets/characters/p2-block.png" id="3_wr50v"]
+[ext_resource type="Texture2D" uid="uid://bneqgr27elwcc" path="res://assets/characters/p2-dead.png" id="4_s8145"]
 
 [node name="Player2" type="Node2D"]
 position = Vector2(186, 489)
@@ -15,6 +16,12 @@ texture = ExtResource("2_safxn")
 
 [node name="p2-block" type="Sprite2D" parent="."]
 visible = false
-position = Vector2(173.6, -4.1)
+position = Vector2(50, -33)
 scale = Vector2(0.201953, 0.189258)
 texture = ExtResource("3_wr50v")
+
+[node name="p2-dead" type="Sprite2D" parent="."]
+visible = false
+position = Vector2(6.4, 47.4)
+scale = Vector2(0.180469, 0.172656)
+texture = ExtResource("4_s8145")
