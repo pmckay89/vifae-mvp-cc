@@ -10,6 +10,7 @@ var selected_ability = ""
 func _ready():
 	rng.randomize()
 	add_to_group("players")
+	ScreenShake.shake(5.0, 0.3)
 
 func start_turn():
 	if is_defeated:
@@ -152,7 +153,7 @@ func on_qte_result(result: String, target):
 						VFXManager.play_hit_effects(target)
 						target.take_damage(damage)
 						await get_tree().create_timer(0.2).timeout
-					sfx_player.stream = preload("res://assets/sfx/attack.wav")
+					sfx_player.stream = preload("res://assets/sfx/gun1.wav")
 					sfx_player.play()
 				"fail":
 					print("💨 " + name + " fumbles the reload! Only one shot fires...")

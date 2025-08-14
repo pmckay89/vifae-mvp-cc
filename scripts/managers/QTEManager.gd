@@ -177,13 +177,18 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 			result = "normal"
 			print("✅ PARRY SUCCESS!")
 		else:
-			if timing_percentage < 0.2:
+			if timing_percentage < 0.4:
 				result = "crit"
 				print("✨ PERFECT TIMING! CRITICAL!")
+				ScreenShake.shake(5.0, 0.4)  # Add screen shake for crits
 				if sfx_player and action_name == "confirm attack":
-					sfx_player.stream = preload("res://assets/sfx/crit.wav")
+					var current_actor = get_node_or_null("/root/BattleScene/TurnManager").current_actor
+					if current_actor and current_actor.name == "Player1":
+						sfx_player.stream = preload("res://assets/sfx/gun1.wav")
+					else:
+						sfx_player.stream = preload("res://assets/sfx/attack.wav")
 					sfx_player.play()
-			elif timing_percentage < 0.6:
+			elif timing_percentage < 0.7:
 				result = "normal"
 				print("✅ GOOD TIMING! SUCCESS!")
 				if sfx_player and action_name == "confirm attack":
