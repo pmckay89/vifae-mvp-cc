@@ -119,11 +119,11 @@ func handle_action_menu_input(event):
 func handle_skills_menu_input(event):
 	if event.is_action_pressed("confirm attack"):  # Z confirms skill selection
 		if current_actor.name == "Player1":
-			selected_action = "big_shot"
-			print("MENU→ Big Shot selected")
-		elif current_actor.name == "Player2":
 			selected_action = "2x_cut"
 			print("MENU→ 2x Cut selected")
+		elif current_actor.name == "Player2":
+			selected_action = "big_shot"
+			print("MENU→ Big Shot selected")
 		
 		selected_target = get_enemy()
 		close_skills_menu()
@@ -142,17 +142,17 @@ func open_skills_menu():
 	
 	# Show player-specific skill button
 	if current_actor.name == "Player1":
-		if bigshot_button:
-			bigshot_button.visible = true
-			bigshot_button.grab_focus()
-		if twocut_button:
-			twocut_button.visible = false
-	elif current_actor.name == "Player2":
 		if twocut_button:
 			twocut_button.visible = true
 			twocut_button.grab_focus()
 		if bigshot_button:
 			bigshot_button.visible = false
+	elif current_actor.name == "Player2":
+		if bigshot_button:
+			bigshot_button.visible = true
+			bigshot_button.grab_focus()
+		if twocut_button:
+			twocut_button.visible = false
 
 func close_skills_menu():
 	in_skills_menu = false

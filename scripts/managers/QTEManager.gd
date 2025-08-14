@@ -188,15 +188,23 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 				if sfx_player and action_name == "confirm attack":
 					var current_actor = get_node_or_null("/root/BattleScene/TurnManager").current_actor
 					if current_actor and current_actor.name == "Player1":
-						sfx_player.stream = preload("res://assets/sfx/gun1.wav")
-					else:
-						sfx_player.stream = preload("res://assets/sfx/attack.wav")
+						# Player1 = Sword Spirit (crit = parry.wav)
+						sfx_player.stream = preload("res://assets/sfx/parry.wav")
+					elif current_actor and current_actor.name == "Player2":
+						# Player2 = Gun Girl (crit = gun2.wav)
+						sfx_player.stream = preload("res://assets/sfx/gun2.wav")
 					sfx_player.play()
 			elif timing_percentage < 0.7:
 				result = "normal"
 				print("✅ GOOD TIMING! SUCCESS!")
 				if sfx_player and action_name == "confirm attack":
-					sfx_player.stream = preload("res://assets/sfx/attack.wav")
+					var current_actor = get_node_or_null("/root/BattleScene/TurnManager").current_actor
+					if current_actor and current_actor.name == "Player1":
+						# Player1 = Sword Spirit (normal = attack.wav)
+						sfx_player.stream = preload("res://assets/sfx/attack.wav")
+					elif current_actor and current_actor.name == "Player2":
+						# Player2 = Gun Girl (normal = gun1.wav)
+						sfx_player.stream = preload("res://assets/sfx/gun1.wav")
 					sfx_player.play()
 			else:
 				result = "fail"
@@ -204,12 +212,6 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 				if sfx_player and action_name == "confirm attack":
 					sfx_player.stream = preload("res://assets/sfx/miss.wav")
 					sfx_player.play()
-	else:
-		result = "fail"
-		print("❌ QTE FAILED! NO INPUT!")
-		if sfx_player and (action_name == "confirm attack" or action_name == "parry"):
-			sfx_player.stream = preload("res://assets/sfx/miss.wav")
-			sfx_player.play()
 
 	qte_active = false
 	print("[QTE] cleanup done")

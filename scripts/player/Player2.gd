@@ -56,8 +56,13 @@ func attack(target):
 		return
 	var damage = rng.randi_range(5, 10)
 	print(name, "attacks", target.name, "for", damage, "damage")
+	
+	# Add gun sound effect for Gun Girl
+	var sfx_player = get_node("/root/BattleScene/SFXPlayer")
+	sfx_player.stream = preload("res://assets/sfx/gun1.wav")
+	sfx_player.play()
+	
 	VFXManager.play_hit_effects(target)
-
 	target.take_damage(damage)
 
 func attack_critical(target):
@@ -212,6 +217,30 @@ func on_qte_result(result: String, target):
 					damage = 10
 					print("  → " + name + " takes " + str(damage) + " self-damage from the backlash!")
 					self.take_damage(damage)
+					sfx_player.stream = preload("res://assets/sfx/miss.wav")
+					sfx_player.play()
+		
+		"big_shot":
+			match result:
+				"crit":
+					damage = 35
+					print("🎯 " + name + " executes a PERFECT Big Shot! Sniper's dream!")
+					print("  → Precision shot devastates for " + str(damage) + " damage!")
+					target.take_damage(damage)
+					sfx_player.stream = preload("res://assets/sfx/gun2.wav")
+					sfx_player.play()
+				"normal":
+					damage = 25
+					print("🔫 " + name + " lands a solid Big Shot!")
+					print("  → Heavy shot hits for " + str(damage) + " damage!")
+					target.take_damage(damage)
+					sfx_player.stream = preload("res://assets/sfx/gun2.wav")
+					sfx_player.play()
+				"fail":
+					damage = 8
+					print("💨 " + name + " rushes the Big Shot...")
+					print("  → Hasty shot grazes for " + str(damage) + " damage.")
+					target.take_damage(damage)
 					sfx_player.stream = preload("res://assets/sfx/miss.wav")
 					sfx_player.play()
 		
