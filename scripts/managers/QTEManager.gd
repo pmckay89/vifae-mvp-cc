@@ -11,15 +11,35 @@ signal qte_completed
 var qte_active: bool = false
 
 func _ready() -> void:
-	_ensure_qte_container()
-	if qte_text:
-		qte_text.text = ""
-	print("[QTE] Ready. parent=%s z=%s" % [
-		qte_container if qte_container == null else qte_container.get_path(),
-		"?" if qte_container == null else str(qte_container.z_index)
-	])
+	# Only try to set up QTE if we're actually in the battle scene
+	var current_scene = get_tree().current_scene
+	if current_scene and current_scene.name == "BattleScene":
+		_ensure_qte_container()
+		
+		# TASK 1: Force hide all QTE UI elements on start
+		if qte_container:
+			qte_container.visible = false
+		if qte_circle:
+			qte_circle.visible = false
+		if qte_pressure_bar:
+			qte_pressure_bar.visible = false
+		if qte_text:
+			qte_text.visible = false
+			qte_text.text = ""
+		
+		print("[QTE] Ready. parent=%s z=%s" % [
+			qte_container if qte_container == null else qte_container.get_path(),
+			"?" if qte_container == null else str(qte_container.z_index)
+		])
+	else:
+		print("[QTE] Waiting for BattleScene to load...")
 
 func _ensure_qte_container() -> void:
+	# Only try to find QTE elements if we're in the battle scene
+	var current_scene = get_tree().current_scene
+	if not current_scene or current_scene.name != "BattleScene":
+		return
+		
 	# Refresh references in case scene order changed
 	qte_container = get_node_or_null(qte_parent_path) as Control
 	qte_circle = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTECircle") as Node2D
@@ -37,6 +57,14 @@ func _ensure_qte_container() -> void:
 	qte_container.z_index = max(qte_container.z_index, 100)
 	qte_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	qte_container.visible = false
+	
+	# Force hide all elements when ensuring container
+	if qte_circle:
+		qte_circle.visible = false
+	if qte_text:
+		qte_text.visible = false
+	if qte_pressure_bar:
+		qte_pressure_bar.visible = false
 
 func start_qte_for_ability(player, ability_name: String, target):
 	# Determine QTE parameters based on ability
@@ -74,6 +102,10 @@ func start_qte_for_ability(player, ability_name: String, target):
 
 func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = "Press Z!", target_player = null) -> String:
 	print("🔧 start_qte called with:", action_name, prompt_text)
+	
+	# Try to refresh QTE container references when actually needed
+	_ensure_qte_container()
+	
 	if qte_container == null:
 		print("❌ qte_container is NULL!")
 		push_error("[QTE] Cannot start — parent missing.")
@@ -102,8 +134,8 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 	else:
 		window_ms = int(window_ms)
 
-	# Show and animate the QTE UI
-	show_qte_ui(prompt_text, window_ms)
+	# TASK 1: Use new selective QTE UI system
+	show_qte("press", prompt_text, window_ms)
 	print("[QTE] spawn @%s parent=%s z=%d" % [
 		qte_container.get_path(),
 		qte_container.get_parent().get_path(),
@@ -172,12 +204,14 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 
 	qte_active = false
 	print("[QTE] cleanup done")
-	hide_qte_ui()
+	hide_qte()
 	return result
 
-func show_qte_ui(prompt: String, duration_ms: int) -> void:
+# TASK 1: New selective QTE UI functions
+func show_qte(qte_type: String, prompt: String, window_ms: int) -> void:
 	_ensure_qte_container()
 	
+	# Show container
 	if qte_container:
 		qte_container.set_anchors_preset(Control.PRESET_FULL_RECT)
 		qte_container.position = Vector2.ZERO
@@ -185,28 +219,51 @@ func show_qte_ui(prompt: String, duration_ms: int) -> void:
 		qte_container.z_index = max(qte_container.z_index, 100)
 		qte_container.visible = true
 		qte_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	if qte_text:
-		qte_text.text = prompt
-
+	
+	# TASK 1 & TASK 3: Show only relevant UI for QTE type
 	if qte_circle:
-		# Center the QTECircle in screen coordinates
-		var screen_center = get_viewport().get_visible_rect().size / 2
-		qte_circle.position = screen_center
-		qte_circle.scale = Vector2(0.15, 0.15)
+		qte_circle.visible = (qte_type == "press")
+		if qte_type == "press":
+			var screen_center = get_viewport().get_visible_rect().size / 2
+			qte_circle.position = screen_center
+			qte_circle.scale = Vector2(0.15, 0.15)
+	
+	if qte_pressure_bar:
+		qte_pressure_bar.visible = (qte_type == "hold_release")
+		if qte_type == "hold_release":
+			# TASK 3: Set z-index and ensure proper layering
+			qte_pressure_bar.z_index = 0
+			qte_pressure_bar.min_value = 0
+			qte_pressure_bar.max_value = 100
+			qte_pressure_bar.value = 0
+			qte_pressure_bar.fill_mode = ProgressBar.FILL_TOP_TO_BOTTOM
+	
+	if qte_text:
+		qte_text.visible = true
+		qte_text.text = prompt
+		# TASK 3: Set z-index to render above pressure bar
+		qte_text.z_index = 5
+		print("Phase Slam UI -> text z:", qte_text.z_index, " bar z:", qte_pressure_bar.z_index if qte_pressure_bar else "N/A")
 
-func hide_qte_ui() -> void:
+func hide_qte() -> void:
 	if qte_container:
 		qte_container.visible = false
-	# Reset all QTE elements for next use
 	if qte_circle:
-		qte_circle.visible = true  # Make sure circle is available for next QTE
+		qte_circle.visible = false
 	if qte_pressure_bar:
-		qte_pressure_bar.visible = false  # Hide pressure bar
+		qte_pressure_bar.visible = false
 		qte_pressure_bar.modulate = Color.WHITE  # Reset color
+	if qte_text:
+		qte_text.visible = false
 
 func start_lightning_surge_qte(action_name: String, prompt_text: String, target_player = null) -> String:
 	print("⚡ Lightning Surge QTE started - 3 hits needed!")
+	
+	# TASK 2: Show enemy attack animation IMMEDIATELY before QTE
+	var enemy = get_node_or_null("/root/BattleScene/Enemy")
+	if enemy and enemy.has_method("attack_animation") and target_player:
+		enemy.attack_animation(target_player)
+		print("⚡ Enemy pose swapped BEFORE QTE sequence")
 	
 	qte_active = true
 	_ensure_qte_container()
@@ -226,19 +283,12 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 	var total_duration = 2000  # 2 seconds total
 	var current_window = 0
 	
-	# Show QTE container
-	if qte_container:
-		qte_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-		qte_container.position = Vector2.ZERO
-		qte_container.size = get_viewport().get_visible_rect().size
-		qte_container.z_index = max(qte_container.z_index, 100)
-		qte_container.visible = true
-		qte_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Show QTE UI using new method
+	show_qte("press", prompt_text, total_duration)
 	
+	# Hide circle initially for lightning surge
 	if qte_circle:
-		var screen_center = get_viewport().get_visible_rect().size / 2
-		qte_circle.position = screen_center
-		qte_circle.visible = false  # Start hidden
+		qte_circle.visible = false
 	
 	while Time.get_ticks_msec() - start_time < total_duration:
 		var elapsed_time = (Time.get_ticks_msec() - start_time) / 1000.0  # Convert to seconds
@@ -290,7 +340,7 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 		await get_tree().process_frame
 	
 	qte_active = false
-	hide_qte_ui()
+	hide_qte()
 	
 	# Determine result
 	var result = "fail"
@@ -308,39 +358,26 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 func start_phase_slam_qte(action_name: String, prompt_text: String, target_player = null) -> String:
 	print("💥 Phase Slam QTE started - hold and release!")
 	
+	# TASK 2: Show enemy attack animation IMMEDIATELY before QTE
+	var enemy = get_node_or_null("/root/BattleScene/Enemy")
+	if enemy and enemy.has_method("attack_animation") and target_player:
+		enemy.attack_animation(target_player)
+		print("💥 Enemy pose swapped BEFORE Phase Slam QTE")
+	
 	qte_active = true
 	_ensure_qte_container()
 	
 	var sfx_player := get_node_or_null("/root/BattleScene/SFXPlayer")
 	
-	# GUSTAVE voiceline spot - add your audio clip here
+	# GUSTAVE voiceline spot
 	if sfx_player:
-		# sfx_player.stream = preload("res://path/to/gustave_parry_it.wav")
-		# sfx_player.play()
 		print("🎵 GUSTAVE!! PARRY IT!! (voiceline placeholder)")
 	
 	# Dramatic pause for voiceline
 	await get_tree().create_timer(1.0).timeout
 	
-	# Show QTE container
-	if qte_container:
-		qte_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-		qte_container.position = Vector2.ZERO
-		qte_container.size = get_viewport().get_visible_rect().size
-		qte_container.z_index = max(qte_container.z_index, 100)
-		qte_container.visible = true
-		qte_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
-	# Hide circle, show pressure bar
-	if qte_circle:
-		qte_circle.visible = false
-	
-	if qte_pressure_bar:
-		qte_pressure_bar.visible = true
-		qte_pressure_bar.min_value = 0
-		qte_pressure_bar.max_value = 100
-		qte_pressure_bar.value = 0
-		qte_pressure_bar.fill_mode = ProgressBar.FILL_TOP_TO_BOTTOM
+	# TASK 1 & TASK 3: Show QTE UI using new selective method
+	show_qte("hold_release", prompt_text, 900)
 	
 	var start_time = Time.get_ticks_msec()
 	var fill_duration = 900  # 0.9 seconds to fill
@@ -370,7 +407,7 @@ func start_phase_slam_qte(action_name: String, prompt_text: String, target_playe
 			
 			# Color change in final zone (90-100%)
 			if progress >= 0.9:
-				# Flash red in release zone - you can customize colors
+				# Flash red in release zone
 				qte_pressure_bar.modulate = Color.RED if (Time.get_ticks_msec() % 200) < 100 else Color.WHITE
 				if qte_text:
 					qte_text.text = prompt_text + " - RELEASE NOW!"
@@ -399,7 +436,7 @@ func start_phase_slam_qte(action_name: String, prompt_text: String, target_playe
 		print("💥 Time up - forced release!")
 	
 	qte_active = false
-	hide_qte_ui()
+	hide_qte()
 	
 	# Determine result based on release timing
 	var result = "fail"

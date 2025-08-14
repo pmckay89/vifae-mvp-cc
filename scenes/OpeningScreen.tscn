@@ -1,0 +1,46 @@
+[gd_scene load_steps=4 format=3 uid="uid://cl783k3gc4ksc"]
+
+[ext_resource type="Script" uid="uid://dqcsnvi28mx2q" path="res://scripts/ui/OpeningScreen.gd" id="1_prse3"]
+[ext_resource type="Texture2D" uid="uid://xgrgd2e4xqpr" path="res://assets/backgrounds/Startmenu.png" id="2_qig4h"]
+[ext_resource type="AudioStream" uid="uid://dygrx1jtl0avq" path="res://assets/music/Opener.wav" id="3_6720d"]
+
+[node name="OpeningScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_prse3")
+
+[node name="TitleImage" type="TextureRect" parent="."]
+clip_contents = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -504.0
+offset_top = -324.0
+offset_right = 1032.0
+offset_bottom = 700.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.65, 0.65)
+texture = ExtResource("2_qig4h")
+stretch_mode = 4
+
+[node name="PromptLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 126.0
+offset_top = 480.0
+offset_right = 1003.0
+offset_bottom = 564.0
+theme_override_font_sizes/font_size = 61
+text = "Press Any Button To Continue"
+
+[node name="OpeningMusic" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_6720d")
+
+[node name="BlinkAnimation" type="AnimationPlayer" parent="."]

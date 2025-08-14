@@ -21,6 +21,7 @@ var current_actor: Node = null
 var selected_action: String = ""
 var selected_target: Node = null
 var enemy_attack_count: int = 0
+const GAME_OVER_THEME = "res://assets/music/closer.wav"
 
 # UI References - match your exact paths
 @onready var turn_label := get_node("../UILayer/TurnLabel")
@@ -32,6 +33,7 @@ var enemy_attack_count: int = 0
 @onready var bigshot_button := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu/BigShotButton")
 @onready var bgm_player := get_node("../BGMPlayer")
 @onready var result_overlay := get_node_or_null("/root/BattleScene/UILayer/ResultOverlay")
+@onready var pause_overlay := get_node_or_null("/root/BattleScene/UILayer/PauseOverlay")
 
 # Menu state
 var menu_selection: int = 0
@@ -39,6 +41,7 @@ var in_skills_menu: bool = false
 var music_enabled: bool = true
 
 func _ready():
+	AudioServer.set_bus_volume_db(0, -6.0)  # Force Master bus loud
 	print("STATE→ INITIALIZING TurnManager")
 	
 	# Set up turn order
@@ -57,8 +60,15 @@ func _input(event):
 	if not event.pressed:
 		return
 	
-	# Skip input if overlay is showing
-	if result_overlay and result_overlay.visible:
+	# Pause toggle (works during any state except result overlay)
+	if event.keycode == KEY_ESCAPE or event.keycode == KEY_P:
+		if result_overlay and result_overlay.visible:
+			return  # Don't allow pause during result overlay
+		toggle_pause()
+		return
+	
+	# Skip input if any overlay is showing
+	if (result_overlay and result_overlay.visible) or (pause_overlay and pause_overlay.visible):
 		return
 	
 	# Music toggle
@@ -329,9 +339,9 @@ func resolve_action():
 		# Enemy action damage (mitigated by parry)
 		var base_damage = 0
 		match selected_action:
-			"arc_slash": base_damage = 10
-			"lightning_surge": base_damage = 12  # 6+6
-			"phase_slam": base_damage = 18
+			"arc_slash": base_damage = 100
+			"lightning_surge": base_damage = 120  # 6+6
+			"phase_slam": base_damage = 180
 			
 		# Show enemy attack animation
 		if current_actor.has_method("attack_animation"):
@@ -422,7 +432,21 @@ func game_over():
 	if skills_menu:
 		skills_menu.visible = false
 	
-	# Show result overlay instead of auto-reset
+	# Fade out current BGM and play game over music
+	if bgm_player and bgm_player.playing:
+		var tween = create_tween()
+		tween.tween_property(bgm_player, "volume_db", -60, 0.6)
+		await tween.finished
+		bgm_player.stop()
+	
+	# Play game over music
+	var game_over_audio = AudioStreamPlayer.new()
+	add_child(game_over_audio)
+	game_over_audio.stream = load(GAME_OVER_THEME)
+	game_over_audio.volume_db = -6
+	game_over_audio.play()
+	
+	# Show result overlay
 	show_result_overlay("defeat")
 
 func show_result_overlay(mode: String):
@@ -507,3 +531,14 @@ func toggle_music():
 	else:
 		bgm_player.stop()
 		print("🔇 Music OFF")
+
+func toggle_pause():
+	if pause_overlay:
+		if pause_overlay.visible:
+			pause_overlay.hide_pause()
+			print("PAUSE→ Game resumed")
+		else:
+			pause_overlay.show_pause()
+			print("PAUSE→ Game paused")
+	else:
+		print("ERROR→ PauseOverlay not found")
