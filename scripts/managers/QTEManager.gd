@@ -120,6 +120,10 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 	if prompt_text == "Hold X, release on cue!":
 		return await start_phase_slam_qte(action_name, prompt_text, target_player)
 
+	# Check for Sniper QTE
+	if prompt_text == "Press Z for Big Shot!":
+		return await start_sniper_qte(action_name, prompt_text, target_player)
+
 	qte_active = true
 
 	var timing_presets := {
@@ -468,3 +472,98 @@ func start_phase_slam_qte(action_name: String, prompt_text: String, target_playe
 			sfx_player.play()
 	
 	return result
+
+func start_sniper_qte(action_name: String, prompt_text: String, target_player = null) -> String:
+	print("🎯 Sniper QTE started - line up the shot!")
+	
+	qte_active = true
+	_ensure_qte_container()
+	
+	var sfx_player := get_node_or_null("/root/BattleScene/SFXPlayer")
+	
+	# Show QTE UI using new method
+	show_qte("press", prompt_text, 3000)  # 3 second window
+	
+	# Hide the default circle - we're using custom elements
+	if qte_circle:
+		qte_circle.visible = false
+	
+	# Create sweet spot (stationary center target)
+	var sweet_spot = ColorRect.new()
+	sweet_spot.size = Vector2(20, 20)
+	sweet_spot.color = Color.RED
+	var screen_center = get_viewport().get_visible_rect().size / 2
+	sweet_spot.position = screen_center - sweet_spot.size / 2
+	qte_container.add_child(sweet_spot)
+	
+	# Create crosshair (moving)
+	var crosshair = ColorRect.new()
+	crosshair.size = Vector2(40, 4)
+	crosshair.color = Color.WHITE
+	crosshair.position = Vector2(50, screen_center.y - 2)  # Start from left side
+	qte_container.add_child(crosshair)
+	
+	# Movement variables
+	var start_time = Time.get_ticks_msec()
+	var duration = 1500  # 3 seconds total
+	var screen_width = get_viewport().get_visible_rect().size.x
+	var movement_distance = screen_width - 90  # Account for crosshair width + margins
+	var movement_speed = movement_distance / (duration / 1000.0)  # pixels per second
+	
+	var input_detected = false
+	var hit_result = "fail"
+	
+	# Movement loop
+	while Time.get_ticks_msec() - start_time < duration:
+		var elapsed = (Time.get_ticks_msec() - start_time) / 1000.0
+		
+		# Move crosshair across screen
+		crosshair.position.x = 50 + (elapsed * movement_speed)
+		
+		# Update text
+		if qte_text:
+			qte_text.text = prompt_text + " - Line up the shot!"
+		
+		# Check for input
+		if Input.is_action_just_pressed(action_name):
+			input_detected = true
+			
+			# Check hit detection
+			var crosshair_center_x = crosshair.position.x + crosshair.size.x / 2
+			var sweet_spot_center_x = sweet_spot.position.x + sweet_spot.size.x / 2
+			var distance = abs(crosshair_center_x - sweet_spot_center_x)
+			
+			if distance <= 5:  # Center zone (±5px)
+				hit_result = "crit"
+				print("🎯 PERFECT SNIPER SHOT! Bullseye!")
+			elif distance <= 15:  # Outer zone (±15px)
+				hit_result = "normal"
+				print("🎯 Good sniper shot! Hit the target!")
+			else:
+				hit_result = "fail"
+				print("💨 Sniper shot missed the target...")
+			
+			break
+		
+		await get_tree().process_frame
+	
+	# Clean up
+	sweet_spot.queue_free()
+	crosshair.queue_free()
+	qte_active = false
+	hide_qte()
+	
+	# Play feedback sound
+	if sfx_player:
+		match hit_result:
+			"crit":
+				sfx_player.stream = preload("res://assets/sfx/gun2.wav")
+				sfx_player.play()
+			"normal":
+				sfx_player.stream = preload("res://assets/sfx/gun2.wav")
+				sfx_player.play()
+			"fail":
+				sfx_player.stream = preload("res://assets/sfx/miss.wav")
+				sfx_player.play()
+	
+	return hit_result
