@@ -7,7 +7,7 @@ class_name Targeting
 static func alive_players(players: Array) -> Array:
 	var alive: Array = []
 	for player in players:
-		if player and not player.get("is_defeated", false):
+		if player and not (player.get("is_defeated") if "is_defeated" in player else false):
 			alive.append(player)
 	return alive
 
@@ -25,10 +25,10 @@ static func lowest_hp_player(players: Array) -> Node:
 		return null
 	
 	var lowest_player = alive[0]
-	var lowest_hp = lowest_player.get("hp", 999999)
+	var lowest_hp = lowest_player.get("hp") if "hp" in lowest_player else 999999
 	
 	for player in alive:
-		var player_hp = player.get("hp", 999999)
+		var player_hp = player.get("hp") if "hp" in player else 999999
 		if player_hp < lowest_hp:
 			lowest_hp = player_hp
 			lowest_player = player
@@ -42,10 +42,10 @@ static func highest_hp_player(players: Array) -> Node:
 		return null
 	
 	var highest_player = alive[0]
-	var highest_hp = highest_player.get("hp", 0)
+	var highest_hp = highest_player.get("hp") if "hp" in highest_player else 0
 	
 	for player in alive:
-		var player_hp = player.get("hp", 0)
+		var player_hp = player.get("hp") if "hp" in player else 0
 		if player_hp > highest_hp:
 			highest_hp = player_hp
 			highest_player = player
@@ -67,9 +67,9 @@ static func get_player_status(players: Array) -> Array:
 		if player:
 			status.append({
 				"name": player.name,
-				"hp": player.get("hp", 0),
-				"max_hp": player.get("hp_max", 100),
-				"is_defeated": player.get("is_defeated", false)
+				"hp": player.get("hp") if "hp" in player else 0,
+				"max_hp": player.get("hp_max") if "hp_max" in player else 100,
+				"is_defeated": player.get("is_defeated") if "is_defeated" in player else false
 			})
 	return status
 
@@ -84,9 +84,9 @@ static func debug_targeting_state(players: Array, context: String = "") -> void:
 	
 	for player in players:
 		if player:
-			var status = "ALIVE" if not player.get("is_defeated", false) else "DEFEATED"
-			var hp = player.get("hp", 0)
-			var max_hp = player.get("hp_max", 100)
+			var status = "ALIVE" if not (player.get("is_defeated") if "is_defeated" in player else false) else "DEFEATED"
+			var hp = player.get("hp") if "hp" in player else 0
+			var max_hp = player.get("hp_max") if "hp_max" in player else 100
 			print("    • ", player.name, ": ", hp, "/", max_hp, " HP (", status, ")")
 	
 	if alive.size() > 0:
@@ -95,7 +95,7 @@ static func debug_targeting_state(players: Array, context: String = "") -> void:
 		var highest = highest_hp_player(players)
 		
 		print("  → Random target: ", random.name if random else "none")
-		print("  → Lowest HP: ", lowest.name if lowest else "none", " (", lowest.get("hp", 0) if lowest else 0, " HP)")
-		print("  → Highest HP: ", highest.name if highest else "none", " (", highest.get("hp", 0) if highest else 0, " HP)")
+		print("  → Lowest HP: ", lowest.name if lowest else "none", " (", (lowest.get("hp") if "hp" in lowest else 0) if lowest else 0, " HP)")
+		print("  → Highest HP: ", highest.name if highest else "none", " (", (highest.get("hp") if "hp" in highest else 0) if highest else 0, " HP)")
 	else:
 		print("  → No valid targets available")
