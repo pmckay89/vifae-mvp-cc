@@ -196,12 +196,10 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 		if action_name == "parry":
 			result = "normal"
 			print("✅ PARRY SUCCESS!")
-			_safe_audio_call("play_qte_success")
 		else:
 			if timing_percentage < 0.4:
 				result = "crit"
 				print("✨ PERFECT TIMING! CRITICAL!")
-				_safe_audio_call("play_qte_success")
 				ScreenShake.shake(5.0, 0.4)  # Add screen shake for crits
 				if sfx_player and action_name == "confirm attack":
 					var current_actor = get_node_or_null("/root/BattleScene/TurnManager").current_actor
@@ -215,7 +213,6 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 			elif timing_percentage < 0.7:
 				result = "normal"
 				print("✅ GOOD TIMING! SUCCESS!")
-				_safe_audio_call("play_qte_success")
 				if sfx_player and action_name == "confirm attack":
 					var current_actor = get_node_or_null("/root/BattleScene/TurnManager").current_actor
 					if current_actor and current_actor.name == "Player1":
@@ -228,13 +225,9 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 			else:
 				result = "fail"
 				print("⚠️ TOO LATE! WEAK HIT!")
-				_safe_audio_call("play_qte_fail")
 				if sfx_player and action_name == "confirm attack":
 					sfx_player.stream = preload("res://assets/sfx/miss.wav")
 					sfx_player.play()
-	else:
-		# No input detected - timeout fail
-		_safe_audio_call("play_qte_fail")
 
 	qte_active = false
 	print("[QTE] cleanup done")
@@ -635,16 +628,3 @@ func start_sniper_box_qte(enemy_position: Vector2) -> String:
 			return "normal"
 	else:
 		return "fail"
-
-# Safe audio helper function - won't crash if AudioManager not available
-func _safe_audio_call(method_name: String) -> void:
-	# Try to find AudioManager as autoload first
-	var audio_manager = get_node_or_null("/root/AudioManager")
-	if not audio_manager:
-		# Try to find it in the scene
-		audio_manager = get_node_or_null("/root/BattleScene/AudioManager")
-	
-	if audio_manager and audio_manager.has_method(method_name):
-		audio_manager.call(method_name)
-	else:
-		print("[QTE] AudioManager." + method_name + "() - stub (AudioManager not found)")

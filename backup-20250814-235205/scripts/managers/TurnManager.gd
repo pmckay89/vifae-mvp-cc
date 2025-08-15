@@ -1,7 +1,5 @@
 extends Node
 
-const TurnOrderProvider = preload("res://scripts/core/TurnOrderProvider.gd")
-
 # MVP State Machine - Strict Input Split
 enum State {
 	BEGIN_TURN,
@@ -43,33 +41,16 @@ var in_skills_menu: bool = false
 var skill_selection: int = 0  # For cycling through skills
 var music_enabled: bool = true
 
-# Turn order provider system
-var turn_order_provider: TurnOrderProvider
-
-# Usage examples for switching providers:
-# set_turn_order_provider(TurnOrderProvider.FixedOrderProvider.new())       # P1→P2→Enemy (default)
-# set_turn_order_provider(TurnOrderProvider.InitiativeOrderProvider.new())  # Speed-based (stub)
-# set_turn_order_provider(TurnOrderProvider.ScriptedOrderProvider.new())    # Event-driven (stub)
-
 func _ready():
 	AudioServer.set_bus_volume_db(0, -6.0)  # Force Master bus loud
 	print("STATE→ INITIALIZING TurnManager")
 	
-	# Initialize turn order provider (default: fixed order)
-	turn_order_provider = TurnOrderProvider.FixedOrderProvider.new()
-	
-	# Set up turn order using provider
-	var all_actors = [
+	# Set up turn order
+	turn_order = [
 		get_node("/root/BattleScene/Player1"),
 		get_node("/root/BattleScene/Player2"), 
 		get_node("/root/BattleScene/Enemy")
 	]
-	turn_order = turn_order_provider.get_round_order(all_actors)
-	
-	var actor_names = []
-	for actor in turn_order:
-		actor_names.append(actor.name)
-	print("STATE→ Turn order established: ", actor_names)
 	
 	# Start the state machine
 	change_state(State.BEGIN_TURN)
@@ -116,17 +97,14 @@ func handle_action_menu_input(event):
 	if event.is_action_pressed("move up"):
 		menu_selection = max(0, menu_selection - 1)
 		update_menu_highlight()
-		_safe_audio_call("play_ui_move")
 		print("MENU→ Selection: " + str(menu_selection))
 		
 	elif event.is_action_pressed("move down"):
 		menu_selection = min(1, menu_selection + 1)  # Attack=0, Skills=1
 		update_menu_highlight()
-		_safe_audio_call("play_ui_move")
 		print("MENU→ Selection: " + str(menu_selection))
 		
 	elif event.is_action_pressed("confirm attack"):  # Z confirms
-		_safe_audio_call("play_ui_confirm")
 		if menu_selection == 0:
 			selected_action = "attack"
 			selected_target = get_enemy()
@@ -148,7 +126,6 @@ func handle_skills_menu_input(event):
 		if abilities.size() > 1:
 			skill_selection = (skill_selection - 1 + abilities.size()) % abilities.size()
 			update_skills_menu_display()
-			_safe_audio_call("play_ui_move")
 			print("MENU→ Skill selection: " + str(skill_selection))
 		
 	elif event.is_action_pressed("move down"):
@@ -156,11 +133,9 @@ func handle_skills_menu_input(event):
 		if abilities.size() > 1:
 			skill_selection = (skill_selection + 1) % abilities.size()
 			update_skills_menu_display()
-			_safe_audio_call("play_ui_move")
 			print("MENU→ Skill selection: " + str(skill_selection))
 		
 	elif event.is_action_pressed("confirm attack"):  # Z confirms skill selection
-		_safe_audio_call("play_ui_confirm")
 		var abilities = current_actor.get_ability_list() if current_actor.has_method("get_ability_list") else []
 		if abilities.size() > skill_selection:
 			selected_action = abilities[skill_selection]
@@ -413,10 +388,7 @@ func resolve_action():
 				"crit": damage = 10
 				"normal": damage = 6
 				"fail": damage = 0
-			var target_name = "null target"
-			if selected_target:
-				target_name = selected_target.name
-			print("DMG→ Player deals " + str(damage) + " to " + target_name)
+			print("DMG→ Player deals " + str(damage) + " to " + (selected_target.name if selected_target else "null target"))
 			if damage > 0 and selected_target and selected_target.has_method("take_damage"):
 				selected_target.take_damage(damage)
 		else:
@@ -638,35 +610,3 @@ func toggle_pause():
 			print("PAUSE→ Game paused")
 	else:
 		print("ERROR→ PauseOverlay not found")
-
-# Turn order provider management
-func set_turn_order_provider(provider: TurnOrderProvider) -> void:
-	turn_order_provider = provider
-	_refresh_turn_order()
-	print("STATE→ Turn order provider changed to: ", provider.get_script().get_global_name())
-
-func _refresh_turn_order() -> void:
-	if turn_order_provider:
-		var all_actors = [
-			get_node("/root/BattleScene/Player1"),
-			get_node("/root/BattleScene/Player2"), 
-			get_node("/root/BattleScene/Enemy")
-		]
-		turn_order = turn_order_provider.get_round_order(all_actors)
-		var actor_names = []
-		for actor in turn_order:
-			actor_names.append(actor.name)
-		print("STATE→ Turn order refreshed: ", actor_names)
-
-# Safe audio helper function - won't crash if AudioManager not available
-func _safe_audio_call(method_name: String) -> void:
-	# Try to find AudioManager as autoload first
-	var audio_manager = get_node_or_null("/root/AudioManager")
-	if not audio_manager:
-		# Try to find it in the scene
-		audio_manager = get_node_or_null("/root/BattleScene/AudioManager")
-	
-	if audio_manager and audio_manager.has_method(method_name):
-		audio_manager.call(method_name)
-	else:
-		print("[TurnManager] AudioManager." + method_name + "() - stub (AudioManager not found)")

@@ -153,7 +153,7 @@ func on_qte_result(result: String, target):
 						VFXManager.play_hit_effects(target)
 						target.take_damage(damage)
 						await get_tree().create_timer(0.2).timeout
-					sfx_player.stream = preload("res://assets/sfx/attack.wav")
+					sfx_player.stream = preload("res://assets/sfx/gun1.wav")
 					sfx_player.play()
 				"fail":
 					print("💫 " + name + " mistimes the 2x Cut! Only one strike lands...")

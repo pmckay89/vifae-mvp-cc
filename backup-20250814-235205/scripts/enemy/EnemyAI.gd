@@ -13,15 +13,12 @@ func take_turn(enemy_node):
 		get_node("/root/BattleScene/Player1"),
 		get_node("/root/BattleScene/Player2")
 	]
-	
-	# Use centralized targeting system
-	if not Targeting.has_alive_players(players):
+	players = players.filter(func(p): return not p.is_defeated)
+
+	if players.size() == 0:
 		print("[EnemyAI] No valid targets.")
 		enemy_node.end_turn()
 		return
-	
-	# Optional: Debug targeting state
-	# Targeting.debug_targeting_state(players, "EnemyAI turn")
 
 	var tm = get_node("/root/BattleScene/TurnManager")
 	if tm.game_over:
@@ -29,17 +26,6 @@ func take_turn(enemy_node):
 		enemy_node.end_turn()
 		return
 
-	# Select target using centralized targeting
-	var target = Targeting.random_player(players)
-	
-	# Alternative targeting strategies:
-	# var target = Targeting.lowest_hp_player(players)   # Focus weakest
-	# var target = Targeting.highest_hp_player(players)  # Focus strongest
-	
-	if not target:
-		print("[EnemyAI] Failed to select valid target.")
-		enemy_node.end_turn()
-		return
-	
+	var target = players[randi() % players.size()]
 	print("[EnemyAI] Target selected:", target.name)
 	enemy_node.attack(target)

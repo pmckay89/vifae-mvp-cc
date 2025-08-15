@@ -2,7 +2,7 @@ extends Node2D
 
 var hp_max: int = 50
 var hp: int = 50
-var is_defeated: bool = false
+var is_defeated = false
 var selected_ability = ""
 
 @onready var rng := RandomNumberGenerator.new()
@@ -10,7 +10,6 @@ var selected_ability = ""
 func _ready():
 	rng.randomize()
 	add_to_group("players")
-	ScreenShake.shake(5.0, 0.3)
 
 func start_turn():
 	if is_defeated:
@@ -22,7 +21,7 @@ func start_turn():
 func show_block_animation():
 	# Get references to both sprites
 	var main_sprite = $Sprite2D
-	var block_sprite = $"p1-block"  # Use quotes for the dash
+	var block_sprite = $"p2-block"  # Use quotes for the dash
 	
 	# Switch to block sprite
 	main_sprite.visible = false
@@ -38,17 +37,17 @@ func show_block_animation():
 func show_death_sprite():
 	# Hide all other sprites
 	$Sprite2D.visible = false
-	$"p1-block".visible = false
+	$"p2-block".visible = false
 	
 	# Show death sprite
-	$"p1-dead".visible = true
+	$"p2-dead".visible = true
 	print("DEATH→ " + name + " death sprite displayed")
 
 func hide_death_sprite():
 	# Hide death sprite and restore main sprite
-	$"p1-dead".visible = false
+	$"p2-dead".visible = false
 	$Sprite2D.visible = true
-	$"p1-block".visible = false
+	$"p2-block".visible = false
 	print("REVIVE→ " + name + " restored to life")
 
 func attack(target):
@@ -57,9 +56,14 @@ func attack(target):
 		return
 	var damage = rng.randi_range(5, 10)
 	print(name, "attacks", target.name, "for", damage, "damage")
+	
+	# Add gun sound effect for Gun Girl
+	var sfx_player = get_node("/root/BattleScene/SFXPlayer")
+	sfx_player.stream = preload("res://assets/sfx/gun1.wav")
+	sfx_player.play()
+	
 	VFXManager.play_hit_effects(target)
 	target.take_damage(damage)
-	
 
 func attack_critical(target):
 	if target == null:
@@ -77,7 +81,7 @@ func take_damage(amount):
 	hp -= amount
 	print(name, "takes", amount, "damage. HP:", hp)
 
-	CombatUI.update_hp_bar("Player1", hp, hp_max)  # Use hp_max instead of 100
+	CombatUI.update_hp_bar("Player2", hp, hp_max)  # Use hp_max instead of 100
 
 	if hp <= 0:
 		hp = 0
@@ -95,22 +99,20 @@ func reset_for_new_combat():
 	print("RESET→ " + name + " fully restored")
 
 func get_ability_list() -> Array:
-	return ["2x_cut", "moonfall_slash", "spirit_wave"]
+	return ["big_shot", "scatter_shot"]
 
 func get_ability_display_name(ability_name: String) -> String:
 	match ability_name:
-		"2x_cut":
-			return "2x Cut"
-		"moonfall_slash":
-			return "Moonfall Slash"
-		"spirit_wave":
-			return "Spirit Wave"
+		"big_shot":
+			return "Big Shot"
+		"scatter_shot":
+			return "Scatter Shot"
 		_:
 			return ability_name
 
 func execute_ability(ability_name: String, target):
 	selected_ability = ability_name
-	print("🎯 " + name + " prepares " + get_ability_display_name(ability_name) + "!")
+	print("🔫 " + name + " prepares " + get_ability_display_name(ability_name) + "!")
 	
 	# Small delay for dramatic effect
 	await get_tree().create_timer(0.5).timeout
@@ -119,7 +121,7 @@ func execute_ability(ability_name: String, target):
 	await QTEManager.start_qte_for_ability(self, ability_name, target)
 
 func on_qte_result(result: String, target):
-	if target == null:
+	if target == null and selected_ability != "spirit_slash":
 		print("❌ Target is null!")
 		return
 	
@@ -131,82 +133,43 @@ func on_qte_result(result: String, target):
 	var sfx_player = get_node("/root/BattleScene/SFXPlayer")
 	
 	match selected_ability:
-		"2x_cut":
+		"big_shot":
 			match result:
 				"crit":
-					print("⚔️ " + name + " executes a PERFECT 2x Cut! Triple echo!")
-					# 3 hits of 10 damage each
-					for i in range(3):
-						damage = 10
-						print("  → Blade echo " + str(i+1) + " slashes for " + str(damage) + " damage!")
-						VFXManager.play_hit_effects(target)
-						target.take_damage(damage)
-						await get_tree().create_timer(0.2).timeout
-					sfx_player.stream = preload("res://assets/sfx/crit.wav")
+					damage = 35
+					print("🎯 " + name + " executes a PERFECT Big Shot! Sniper's dream!")
+					print("  → Precision shot devastates for " + str(damage) + " damage!")
+					target.take_damage(damage)
+					sfx_player.stream = preload("res://assets/sfx/gun2.wav")
 					sfx_player.play()
 				"normal":
-					print("⚔️ " + name + " performs 2x Cut! Double strike!")
-					# 2 hits of 7 damage each
-					for i in range(2):
-						damage = 7
-						print("  → Blade strike " + str(i+1) + " cuts for " + str(damage) + " damage!")
-						VFXManager.play_hit_effects(target)
-						target.take_damage(damage)
-						await get_tree().create_timer(0.2).timeout
-					sfx_player.stream = preload("res://assets/sfx/attack.wav")
-					sfx_player.play()
-				"fail":
-					print("💫 " + name + " mistimes the 2x Cut! Only one strike lands...")
-					damage = 5
-					print("  → Single blade grazes for " + str(damage) + " damage.")
-					VFXManager.play_hit_effects(target)
-					target.take_damage(damage)
-					sfx_player.stream = preload("res://assets/sfx/miss.wav")
-					sfx_player.play()
-		
-		"moonfall_slash":
-			match result:
-				"crit":
 					damage = 25
-					print("🌙 " + name + " channels a PERFECT Moonfall Slash! Celestial resonance!")
-					print("  → Moonlit blade devastates for " + str(damage) + " damage!")
+					print("🔫 " + name + " lands a solid Big Shot!")
+					print("  → Heavy shot hits for " + str(damage) + " damage!")
 					target.take_damage(damage)
-					sfx_player.stream = preload("res://assets/sfx/crit.wav")
-					sfx_player.play()
-				"normal":
-					damage = 15
-					print("🌙 " + name + " executes Moonfall Slash!")
-					print("  → Lunar strike cuts for " + str(damage) + " damage!")
-					target.take_damage(damage)
-					sfx_player.stream = preload("res://assets/sfx/attack.wav")
+					sfx_player.stream = preload("res://assets/sfx/gun2.wav")
 					sfx_player.play()
 				"fail":
-					damage = 0
-					print("💫 " + name + " loses lunar connection! Complete miss!")
-					print("  → Blade misses the echo... No damage!")
+					damage = 8
+					print("💨 " + name + " rushes the Big Shot...")
+					print("  → Hasty shot grazes for " + str(damage) + " damage.")
+					target.take_damage(damage)
 					sfx_player.stream = preload("res://assets/sfx/miss.wav")
 					sfx_player.play()
 		
-		"spirit_wave":
+		"scatter_shot":
 			match result:
-				"crit":
-					damage = 30
-					print("👻 " + name + " unleashes a PERFECT Spirit Wave! Spectral resonance!")
-					print("  → Ethereal echo devastates for " + str(damage) + " damage!")
+				"crit", "normal":
+					damage = 35
+					print("💥 " + name + " completes the Scatter Shot sequence! All targets hit!")
+					print("  → Devastating spread attack deals " + str(damage) + " damage!")
 					target.take_damage(damage)
-					sfx_player.stream = preload("res://assets/sfx/crit.wav")
-					sfx_player.play()
-				"normal":
-					damage = 20
-					print("👻 " + name + " channels Spirit Wave!")
-					print("  → Spectral energy strikes for " + str(damage) + " damage!")
-					target.take_damage(damage)
-					sfx_player.stream = preload("res://assets/sfx/attack.wav")
+					sfx_player.stream = preload("res://assets/sfx/gun1.wav")
 					sfx_player.play()
 				"fail":
-					damage = 10
-					print("💫 " + name + " loses focus on Spirit Wave...")
-					print("  → Weak echo deals only " + str(damage) + " damage.")
+					damage = 6
+					print("💨 " + name + " fails to complete the Scatter Shot sequence...")
+					print("  → Incomplete spread reduces damage to " + str(damage) + ".")
 					target.take_damage(damage)
 					sfx_player.stream = preload("res://assets/sfx/miss.wav")
 					sfx_player.play()
