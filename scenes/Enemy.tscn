@@ -20,7 +20,7 @@ show_percentage = false
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 z_index = 10
-position = Vector2(1, 71)
+position = Vector2(-29, 136)
 scale = Vector2(0.75, 0.75)
 texture = ExtResource("2_mpr68")
 

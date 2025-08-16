@@ -354,6 +354,12 @@ func enemy_think():
 func start_qte():
 	print("STATE→ QTE_ACTIVE")
 	
+	# Hide all menus during QTE to prevent confusion
+	if action_menu:
+		action_menu.visible = false
+	if skills_menu:
+		skills_menu.visible = false
+	
 	var qte_result: String
 	
 	if is_player(current_actor):
@@ -438,9 +444,9 @@ func resolve_action():
 			"lightning_surge": base_damage = 120  # 6+6
 			"phase_slam": base_damage = 180
 			
-		# Show enemy attack animation
+		# Show enemy attack animation (sound handled by QTE Manager)
 		if current_actor.has_method("attack_animation"):
-			current_actor.attack_animation(selected_target)
+			current_actor.attack_animation(selected_target, selected_action, false)
 			
 		# ADD THIS LINE - delay to see the animation
 		await get_tree().create_timer(0.8).timeout

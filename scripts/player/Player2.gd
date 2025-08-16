@@ -31,7 +31,7 @@ func start_turn():
 		return
 	print(name, "is ready to act.")
 
-func show_block_animation():
+func show_block_animation(duration: float = 1.0):
 	# Pause breathing during block animation
 	var was_breathing = breathing_enabled
 	stop_breathing_animation()
@@ -44,8 +44,8 @@ func show_block_animation():
 	main_sprite.visible = false
 	block_sprite.visible = true
 	
-	# Hold for 1 second
-	await get_tree().create_timer(1.0).timeout
+	# Hold for specified duration
+	await get_tree().create_timer(duration).timeout
 	
 	# Switch back to main sprite
 	block_sprite.visible = false

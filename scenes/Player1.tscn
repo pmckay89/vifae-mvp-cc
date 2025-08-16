@@ -31,10 +31,10 @@ position = Vector2(179, 221)
 script = ExtResource("1_p7jkb")
 
 [node name="idle" type="AnimatedSprite2D" parent="."]
+position = Vector2(140, 140)
 scale = Vector2(0.15, 0.15)
 sprite_frames = SubResource("SpriteFrames_der4s")
 animation = &"idle"
-frame_progress = 0.800278
 script = ExtResource("5_obn67")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]

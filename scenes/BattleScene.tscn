@@ -1,11 +1,11 @@
 [gd_scene load_steps=17 format=3 uid="uid://bywrdjiurayct"]
 
 [ext_resource type="Script" uid="uid://bb1b4n2pur4i0" path="res://scripts/managers/input_listener.gd" id="1_ftvu5"]
+[ext_resource type="Texture2D" uid="uid://cjc248508locs" path="res://assets/backgrounds/arena2.png" id="1_irk3j"]
 [ext_resource type="PackedScene" uid="uid://ce1cfkpg1oapd" path="res://scenes/Player1.tscn" id="2_0yex5"]
 [ext_resource type="PackedScene" uid="uid://c8rlmnvaxhyuc" path="res://scenes/Player2.tscn" id="3_bsu3s"]
 [ext_resource type="PackedScene" uid="uid://brt8asynsnb14" path="res://scenes/Enemy.tscn" id="4_sdfhe"]
 [ext_resource type="Script" uid="uid://smu7o2wlaelw" path="res://scripts/managers/TurnManager.gd" id="5_hrc4b"]
-[ext_resource type="Texture2D" uid="uid://da8upiien7xs0" path="res://assets/backgrounds/arena.png" id="6_0yex5"]
 [ext_resource type="PackedScene" uid="uid://ch4juq0gsqhm0" path="res://scenes/ui/ResultOverlay.tscn" id="6_a4ns4"]
 [ext_resource type="PackedScene" uid="uid://ct511gfryly8b" path="res://scenes/ui/PauseOverlay.tscn" id="6_irk3j"]
 [ext_resource type="Texture2D" uid="uid://c0gjtifwjdhty" path="res://assets/ui/QTE.png" id="6_sdfhe"]
@@ -28,7 +28,7 @@ bg_color = Color(0.8, 0, 0, 1)
 [node name="Background" type="Sprite2D" parent="."]
 position = Vector2(572, 319)
 scale = Vector2(0.747396, 0.628906)
-texture = ExtResource("6_0yex5")
+texture = ExtResource("1_irk3j")
 
 [node name="InputListener" type="Node" parent="."]
 script = ExtResource("1_ftvu5")
@@ -166,10 +166,10 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_sgm0l")
 fill_mode = 2
 
 [node name="ActionMenu" type="VBoxContainer" parent="UILayer"]
-offset_left = 66.0
-offset_top = 535.0
-offset_right = 209.0
-offset_bottom = 602.0
+offset_left = 474.0
+offset_top = 495.0
+offset_right = 643.0
+offset_bottom = 561.0
 
 [node name="AttackButton" type="Button" parent="UILayer/ActionMenu"]
 layout_mode = 2
@@ -209,10 +209,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -209.0
-offset_top = 250.0
-offset_right = -128.0
-offset_bottom = 300.0
+offset_left = -482.5
+offset_top = 245.0
+offset_right = -320.5
+offset_bottom = 295.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -227,25 +227,24 @@ text = "GUN GIRL: 50/50"
 [node name="SkillsMenu" type="Control" parent="UILayer"]
 layout_mode = 3
 anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_left = 650.0
+offset_top = 495.0
+offset_right = 815.0
+offset_bottom = 561.0
 
 [node name="TwoCutButton" type="Button" parent="UILayer/SkillsMenu"]
 visible = false
 layout_mode = 0
-offset_left = 214.0
-offset_top = 532.0
-offset_right = 271.0
-offset_bottom = 572.0
+offset_right = 165.0
+offset_bottom = 40.0
 text = "2x Cut"
 
 [node name="BigShotButton" type="Button" parent="UILayer/SkillsMenu"]
 visible = false
 layout_mode = 0
-offset_left = 213.0
-offset_top = 535.0
-offset_right = 280.0
-offset_bottom = 566.0
+offset_top = 20.0
+offset_right = 165.0
+offset_bottom = 60.0
 text = "BigShot"
 
 [node name="TurnManager" type="Node" parent="."]

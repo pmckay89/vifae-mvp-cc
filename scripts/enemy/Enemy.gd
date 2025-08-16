@@ -10,8 +10,8 @@ func _ready():
 	rng.randomize()
 
 # This is called by the new TurnManager system for enemy attack animations
-func attack_animation(target: Node) -> void:
-	print("🔥 ENEMY ATTACK ANIMATION - target:", target.name)
+func attack_animation(target: Node, attack_type: String = "", play_sound: bool = true) -> void:
+	print("🔥 ENEMY ATTACK ANIMATION - target:", target.name, "attack:", attack_type)
 	if is_defeated:
 		return
 
@@ -37,11 +37,17 @@ func attack_animation(target: Node) -> void:
 	else:
 		print("❌ No attack sprite found for target:", target.name)
 
-	# Play enemy attack sound
-	var sfx_player := get_node_or_null("/root/BattleScene/SFXPlayer")
-	if sfx_player:
-		sfx_player.stream = preload("res://assets/sfx/miss.wav")
-		sfx_player.play()
+	# Play attack-specific sound only if requested
+	if play_sound:
+		var sfx_player := get_node_or_null("/root/BattleScene/SFXPlayer")
+		if sfx_player:
+			match attack_type:
+				"phase_slam":
+					sfx_player.stream = preload("res://assets/sfx/phaseslam.wav")
+					print("🎵 Playing Phase Slam sound effect")
+				_:
+					sfx_player.stream = preload("res://assets/sfx/miss.wav")
+			sfx_player.play()
 
 # This hides the attack sprites and shows the idle sprite again
 func end_attack_animation() -> void:

@@ -303,7 +303,7 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 	# TASK 2: Show enemy attack animation IMMEDIATELY before QTE
 	var enemy = get_node_or_null("/root/BattleScene/Enemy")
 	if enemy and enemy.has_method("attack_animation") and target_player:
-		enemy.attack_animation(target_player)
+		enemy.attack_animation(target_player, "lightning_surge")
 		print("⚡ Enemy pose swapped BEFORE QTE sequence")
 	
 	qte_active = true
@@ -373,7 +373,7 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 				sfx_player.play()
 			
 			if target_player != null and target_player.has_method("show_block_animation"):
-				target_player.show_block_animation()
+				target_player.show_block_animation(0.2)  # Short block for rapid lightning hits
 			
 			# Check if all hits completed
 			if hits_count >= hits_needed:
@@ -417,20 +417,13 @@ func start_phase_slam_qte(action_name: String, prompt_text: String, target_playe
 	# TASK 2: Show enemy attack animation IMMEDIATELY before QTE
 	var enemy = get_node_or_null("/root/BattleScene/Enemy")
 	if enemy and enemy.has_method("attack_animation") and target_player:
-		enemy.attack_animation(target_player)
+		enemy.attack_animation(target_player, "phase_slam")
 		print("💥 Enemy pose swapped BEFORE Phase Slam QTE")
 	
 	qte_active = true
 	_ensure_qte_container()
 	
 	var sfx_player := get_node_or_null("/root/BattleScene/SFXPlayer")
-	
-	# GUSTAVE voiceline spot
-	if sfx_player:
-		print("🎵 GUSTAVE!! PARRY IT!! (voiceline placeholder)")
-	
-	# Dramatic pause for voiceline
-	await get_tree().create_timer(1.0).timeout
 	
 	# TASK 1 & TASK 3: Show QTE UI using new selective method
 	show_qte("hold_release", prompt_text, 900)
@@ -461,14 +454,23 @@ func start_phase_slam_qte(action_name: String, prompt_text: String, target_playe
 		if qte_pressure_bar:
 			qte_pressure_bar.value = progress * 100
 			
-			# Color change in final zone (90-100%)
-			if progress >= 0.9:
-				# Flash red in release zone
-				qte_pressure_bar.modulate = Color.RED if (Time.get_ticks_msec() % 200) < 100 else Color.WHITE
+			# Visual urgency: color changes as bar fills
+			if progress >= 0.8:
+				# Flash red in release zone (80-100%)
+				if (Time.get_ticks_msec() % 200) < 100:
+					qte_pressure_bar.modulate = Color.RED
+				else:
+					qte_pressure_bar.modulate = Color.WHITE
 				if qte_text:
 					qte_text.text = prompt_text + " - RELEASE NOW!"
+			elif progress >= 0.6:
+				# Yellow warning zone (60-80%)
+				qte_pressure_bar.modulate = Color.YELLOW
+				if qte_text:
+					qte_text.text = prompt_text + " - GET READY... (" + str(int(progress * 100)) + "%)"
 			else:
-				qte_pressure_bar.modulate = Color.WHITE
+				# Green safe zone (0-60%) - ensure it's visible
+				qte_pressure_bar.modulate = Color.LIME_GREEN
 				if qte_text:
 					qte_text.text = prompt_text + " - HOLD... (" + str(int(progress * 100)) + "%)"
 		
@@ -499,7 +501,7 @@ func start_phase_slam_qte(action_name: String, prompt_text: String, target_playe
 	if release_detected:
 		var release_percentage = float(release_time) / float(fill_duration)
 		
-		if release_percentage >= 0.9 and release_percentage <= 1.0:
+		if release_percentage >= 0.8 and release_percentage <= 1.0:
 			result = "normal"
 			print("💥 PHASE SLAM SUCCESS! Perfect release at " + str(int(release_percentage * 100)) + "%!")
 			if sfx_player:
@@ -508,7 +510,7 @@ func start_phase_slam_qte(action_name: String, prompt_text: String, target_playe
 			if target_player != null and target_player.has_method("show_block_animation"):
 				target_player.show_block_animation()
 		else:
-			print("💥 PHASE SLAM FAILED! Released at " + str(int(release_percentage * 100)) + "% (need 90-100%)")
+			print("💥 PHASE SLAM FAILED! Released at " + str(int(release_percentage * 100)) + "% (need 80-100%)")
 			if sfx_player:
 				sfx_player.stream = preload("res://assets/sfx/miss.wav")
 				sfx_player.play()

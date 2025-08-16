@@ -23,7 +23,7 @@ func start_turn():
 		return
 	print(name, "is ready to act.")
 
-func show_block_animation():
+func show_block_animation(duration: float = 1.0):
 	# Stop breathing animation during block
 	var idle_animation = get_node_or_null("idle")
 	if idle_animation and idle_animation.has_method("stop"):
@@ -39,8 +39,8 @@ func show_block_animation():
 		idle_animation.visible = false
 	block_sprite.visible = true
 	
-	# Hold for 1 second
-	await get_tree().create_timer(1.0).timeout
+	# Hold for specified duration
+	await get_tree().create_timer(duration).timeout
 	
 	# Switch back to breathing animation (not main sprite)
 	block_sprite.visible = false
