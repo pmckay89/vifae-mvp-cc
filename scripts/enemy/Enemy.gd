@@ -43,11 +43,11 @@ func attack_animation(target: Node, attack_type: String = "", play_sound: bool =
 		if sfx_player:
 			match attack_type:
 				"phase_slam":
-					sfx_player.stream = preload("res://assets/sfx/phaseslam.wav")
-					print("🎵 Playing Phase Slam sound effect")
+					# Phase slam sound is played earlier in TurnManager, don't duplicate
+					print("🎵 Phase Slam sound already playing from TurnManager")
 				_:
 					sfx_player.stream = preload("res://assets/sfx/miss.wav")
-			sfx_player.play()
+					sfx_player.play()
 
 # This hides the attack sprites and shows the idle sprite again
 func end_attack_animation() -> void:

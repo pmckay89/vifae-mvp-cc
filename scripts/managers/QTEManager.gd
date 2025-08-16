@@ -6,6 +6,7 @@ signal qte_completed
 @onready var qte_circle: Node2D = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTECircle")
 @onready var qte_text: Label = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEText")
 @onready var qte_pressure_bar: ProgressBar = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEPressureBar")
+@onready var qte_widget: QTEWidget = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEWidget")
 @export var qte_parent_path: NodePath = ^"/root/BattleScene/UILayer/QTEContainer"
 
 var qte_active: bool = false
@@ -45,6 +46,23 @@ func _ensure_qte_container() -> void:
 	qte_circle = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTECircle") as Node2D
 	qte_text = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEText") as Label
 	qte_pressure_bar = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEPressureBar") as ProgressBar
+	qte_widget = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEWidget") as QTEWidget
+	
+	# Create QTEWidget dynamically if it doesn't exist (only once)
+	if qte_widget == null and qte_container != null:
+		# Check if it already exists as a child first
+		for child in qte_container.get_children():
+			if child.name == "QTEWidget":
+				qte_widget = child as QTEWidget
+				print("[QTE] Found existing QTEWidget")
+				break
+		
+		# If still not found, create it
+		if qte_widget == null:
+			qte_widget = preload("res://scripts/ui/QTEWidget.gd").new()
+			qte_widget.name = "QTEWidget"
+			qte_container.add_child(qte_widget)
+			print("[QTE] Created QTEWidget dynamically")
 
 	if qte_container == null:
 		push_error("[QTE] Missing parent: %s" % str(qte_parent_path))
@@ -126,6 +144,10 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 		push_error("[QTE] Cannot start — parent missing.")
 		return "fail"
 	print("✅ qte_container found, continuing...")
+
+	# Check for basic attack QTE - temporarily disabled, use old system
+	# if prompt_text == "Press Z to attack!":
+	#	return await start_basic_attack_qte(action_name, window_ms, target_player)
 
 	# Check for Lightning Surge QTE first
 	if prompt_text == "Press X rapidly!":
@@ -349,17 +371,23 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 				if qte_circle:
 					qte_circle.visible = true
 					qte_circle.scale = Vector2(0.15 * window_progress, 0.15 * window_progress)
+				
+				# Play incoming.wav at the very start of each window
+				if window_progress > 0.95:  # Just entered the window
+					if not get_meta("window_" + str(current_window) + "_sound_played", false):
+						if sfx_player:
+							sfx_player.stream = preload("res://assets/sfx/incoming.wav")
+							sfx_player.play()
+							print("🚨 Playing incoming.wav for lightning window " + str(current_window + 1))
+						set_meta("window_" + str(current_window) + "_sound_played", true)
 			else:
 				# Hide circle when not in window
 				if qte_circle:
 					qte_circle.visible = false
 		
-		# Update text feedback
+		# Update text feedback - keep it simple
 		if qte_text:
-			if in_window:
-				qte_text.text = prompt_text + " (" + str(hits_count) + "/" + str(hits_needed) + ") - WINDOW " + str(current_window + 1)
-			else:
-				qte_text.text = prompt_text + " (" + str(hits_count) + "/" + str(hits_needed) + ") - WAIT..."
+			qte_text.text = "PARRY THE LIGHTNING STRIKES! (X)"
 		
 		# Check for input during valid window
 		if in_window and Input.is_action_just_pressed(action_name):
@@ -456,21 +484,27 @@ func start_phase_slam_qte(action_name: String, prompt_text: String, target_playe
 			
 			# Visual urgency: color changes as bar fills
 			if progress >= 0.8:
-				# Flash red in release zone (80-100%)
+				# Flash green in release zone (80-100%) - GOOD timing
+				var style_box = StyleBoxFlat.new()
 				if (Time.get_ticks_msec() % 200) < 100:
-					qte_pressure_bar.modulate = Color.RED
+					style_box.bg_color = Color.LIME_GREEN
 				else:
-					qte_pressure_bar.modulate = Color.WHITE
+					style_box.bg_color = Color.WHITE
+				qte_pressure_bar.add_theme_stylebox_override("fill", style_box)
 				if qte_text:
 					qte_text.text = prompt_text + " - RELEASE NOW!"
 			elif progress >= 0.6:
-				# Yellow warning zone (60-80%)
-				qte_pressure_bar.modulate = Color.YELLOW
+				# Yellow warning zone (60-80%) - getting close
+				var style_box = StyleBoxFlat.new()
+				style_box.bg_color = Color.YELLOW
+				qte_pressure_bar.add_theme_stylebox_override("fill", style_box)
 				if qte_text:
 					qte_text.text = prompt_text + " - GET READY... (" + str(int(progress * 100)) + "%)"
 			else:
-				# Green safe zone (0-60%) - ensure it's visible
-				qte_pressure_bar.modulate = Color.LIME_GREEN
+				# Red early zone (0-60%) - BAD timing, don't release
+				var style_box = StyleBoxFlat.new()
+				style_box.bg_color = Color.RED
+				qte_pressure_bar.add_theme_stylebox_override("fill", style_box)
 				if qte_text:
 					qte_text.text = prompt_text + " - HOLD... (" + str(int(progress * 100)) + "%)"
 		
@@ -699,6 +733,114 @@ func start_rapid_press_qte(prompt_text: String) -> int:
 	
 	print("🌙 Rapid Press QTE complete! Final hits: " + str(hit_count) + "/" + str(max_hits))
 	return hit_count
+
+func start_basic_attack_qte(action_name: String, window_ms: int, target_player = null) -> String:
+	print("⚔️ Basic Attack QTE started - using new widget system!")
+	print("⚔️ QTE Widget reference: ", qte_widget)
+	print("⚔️ QTE Container reference: ", qte_container)
+	
+	qte_active = true
+	_ensure_qte_container()
+	
+	if qte_widget == null:
+		print("❌ QTEWidget not found! Falling back to old system")
+		return await start_legacy_basic_qte(action_name, window_ms, target_player)
+	
+	# Start the widget QTE
+	qte_widget.start_qte("basic", "Z")
+	
+	var start_time := Time.get_ticks_msec()
+	var end_time := start_time + window_ms
+	var input_detected := false
+	var input_time := 0
+	
+	print("⚔️ QTE Window: " + str(window_ms) + "ms (from " + str(start_time) + " to " + str(end_time) + ")")
+	
+	var sfx_player := get_node_or_null("/root/BattleScene/SFXPlayer")
+	
+	while Time.get_ticks_msec() < end_time:
+		var current_time := Time.get_ticks_msec()
+		if current_time == 0 or end_time == 0:
+			print("❌ Invalid time values: current=", current_time, " end=", end_time)
+			break
+		var time_left := int(end_time) - int(current_time)
+		var progress := 0.0
+		if window_ms > 0:
+			progress = 1.0 - (float(time_left) / float(window_ms))
+		progress = clamp(progress, 0.0, 1.0)
+		
+		# Update widget progress (with null check)
+		if qte_widget != null and qte_widget.is_inside_tree():
+			qte_widget.update_progress(progress)
+		
+		# Debug timing every 100ms
+		if (current_time - start_time) % 100 < 16:  # Roughly every 100ms
+			print("⚔️ QTE Progress: ", progress, " Time left: ", time_left, "ms")
+		
+		if Input.is_action_just_pressed(action_name):
+			input_detected = true
+			input_time = Time.get_ticks_msec() - start_time
+			print("⚔️ Input detected at: ", input_time, "ms")
+			break
+		
+		await get_tree().process_frame
+	
+	print("⚔️ QTE Loop ended. Input detected: ", input_detected)
+	
+	# Determine result
+	var result := "fail"
+	if input_detected:
+		var timing_percentage := float(input_time) / float(window_ms)
+		if timing_percentage < 0.4:
+			result = "crit"
+			print("✨ PERFECT TIMING! CRITICAL!")
+			qte_widget.show_success()
+			_safe_audio_call("play_qte_success")
+			ScreenShake.shake(5.0, 0.4)
+			if sfx_player and action_name == "confirm attack":
+				var current_actor = get_node_or_null("/root/BattleScene/TurnManager").current_actor
+				if current_actor and current_actor.name == "Player1":
+					sfx_player.stream = preload("res://assets/sfx/parry.wav")
+				elif current_actor and current_actor.name == "Player2":
+					sfx_player.stream = preload("res://assets/sfx/gun2.wav")
+				sfx_player.play()
+		elif timing_percentage < 0.7:
+			result = "normal"
+			print("✅ GOOD TIMING! SUCCESS!")
+			qte_widget.show_success()
+			_safe_audio_call("play_qte_success")
+			if sfx_player and action_name == "confirm attack":
+				var current_actor = get_node_or_null("/root/BattleScene/TurnManager").current_actor
+				if current_actor and current_actor.name == "Player1":
+					sfx_player.stream = preload("res://assets/sfx/attack.wav")
+				elif current_actor and current_actor.name == "Player2":
+					sfx_player.stream = preload("res://assets/sfx/gun1.wav")
+				sfx_player.play()
+		else:
+			result = "fail"
+			print("⚠️ TOO LATE! WEAK HIT!")
+			qte_widget.show_failure()
+			_safe_audio_call("play_qte_fail")
+			if sfx_player and action_name == "confirm attack":
+				sfx_player.stream = preload("res://assets/sfx/miss.wav")
+				sfx_player.play()
+	else:
+		# No input detected - timeout fail
+		qte_widget.show_failure()
+		_safe_audio_call("play_qte_fail")
+	
+	# Wait for widget animation to complete
+	await get_tree().create_timer(0.5).timeout
+	
+	qte_active = false
+	print("[QTE] Basic attack QTE completed with result: " + result)
+	return result
+
+func start_legacy_basic_qte(action_name: String, window_ms: int, target_player) -> String:
+	# Fallback to old system if widget not available
+	print("⚔️ Using legacy QTE system for basic attack")
+	# ... old QTE logic would go here if needed
+	return "normal"
 
 # Safe audio helper function - won't crash if AudioManager not available
 func _safe_audio_call(method_name: String) -> void:

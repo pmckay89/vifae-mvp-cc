@@ -348,6 +348,12 @@ func enemy_think():
 		2:
 			selected_action = "phase_slam"
 			print("ENEMY→ Phase Slam (hold QTE)")
+			# Play Phase Slam wind-up sound early
+			var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+			if sfx_player:
+				sfx_player.stream = preload("res://assets/sfx/phaseslam1.wav")
+				sfx_player.play()
+				print("🎵 Playing Phase Slam wind-up sound (phaseslam1.wav)")
 	
 	change_state(State.QTE_ACTIVE)
 
@@ -385,12 +391,15 @@ func start_qte():
 			print("🎥 Subtle camera shift toward defender: " + selected_target.name)
 			battle_camera.zoom_to_target(selected_target, 1.02, 0.3)
 		
-		# Play incoming attack warning sound
-		var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
-		if sfx_player:
-			sfx_player.stream = preload("res://assets/sfx/incoming.wav")
-			sfx_player.play()
-			print("🚨 Playing incoming attack warning")
+		# Play incoming attack warning sound (skip for Phase Slam - it has its own sound)
+		if selected_action != "phase_slam":
+			var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+			if sfx_player:
+				sfx_player.stream = preload("res://assets/sfx/incoming.wav")
+				sfx_player.play()
+				print("🚨 Playing incoming attack warning")
+		else:
+			print("🚨 Skipping incoming.wav - Phase Slam has its own sound")
 		
 		# Wait 1 second (zoom completes + dramatic pause)
 		await get_tree().create_timer(1.0).timeout
@@ -459,6 +468,14 @@ func resolve_action():
 			
 		damage = int(base_damage * (1.0 - mitigation))
 		print("DMG→ Enemy deals " + str(damage) + " to " + selected_target.name + " (base: " + str(base_damage) + ", mitigated: " + str(int(mitigation * 100)) + "%)")
+		
+		# Play Phase Slam impact sound after QTE resolves
+		if selected_action == "phase_slam":
+			var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+			if sfx_player:
+				sfx_player.stream = preload("res://assets/sfx/phaseslam2.wav")
+				sfx_player.play()
+				print("🎵 Playing Phase Slam impact sound (phaseslam2.wav)")
 		
 		if damage > 0 and selected_target.has_method("take_damage"):
 			selected_target.take_damage(damage)
