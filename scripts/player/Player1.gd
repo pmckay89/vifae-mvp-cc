@@ -115,8 +115,57 @@ func execute_ability(ability_name: String, target):
 	# Small delay for dramatic effect
 	await get_tree().create_timer(0.5).timeout
 	
-	# Call QTEManager to start the QTE for this ability
-	await QTEManager.start_qte_for_ability(self, ability_name, target)
+	# Handle special dual QTE for 2x Cut
+	if ability_name == "2x_cut":
+		await execute_2x_cut_dual_qte(target)
+	else:
+		# Call QTEManager to start the QTE for this ability
+		await QTEManager.start_qte_for_ability(self, ability_name, target)
+
+func execute_2x_cut_dual_qte(target):
+	print("⚔️ " + name + " begins 2x Cut sequence!")
+	
+	# First QTE
+	print("⚔️ First strike incoming...")
+	var result1 = await QTEManager.start_qte("confirm attack", 500, "Press Z for 1st Cut!")
+	process_2x_cut_result(result1, target, 1)
+	
+	# Brief pause between strikes
+	await get_tree().create_timer(0.2).timeout
+	
+	# Second QTE  
+	print("⚔️ Second strike incoming...")
+	var result2 = await QTEManager.start_qte("confirm attack", 500, "Press Z for 2nd Cut!")
+	process_2x_cut_result(result2, target, 2)
+	
+	print("⚔️ 2x Cut sequence complete!")
+
+func process_2x_cut_result(result: String, target, strike_number: int):
+	var damage = 0
+	var sfx_player = get_node("/root/BattleScene/SFXPlayer")
+	
+	match result:
+		"crit":
+			damage = 10
+			print("✨ Strike " + str(strike_number) + " - PERFECT! " + str(damage) + " damage!")
+			VFXManager.play_hit_effects(target)
+			target.take_damage(damage)
+			sfx_player.stream = preload("res://assets/sfx/crit.wav")
+			sfx_player.play()
+		"normal":
+			damage = 7
+			print("⚔️ Strike " + str(strike_number) + " - Good hit! " + str(damage) + " damage!")
+			VFXManager.play_hit_effects(target)
+			target.take_damage(damage)
+			sfx_player.stream = preload("res://assets/sfx/attack.wav")
+			sfx_player.play()
+		"fail":
+			damage = 5
+			print("💫 Strike " + str(strike_number) + " - Weak hit... " + str(damage) + " damage.")
+			VFXManager.play_hit_effects(target)
+			target.take_damage(damage)
+			sfx_player.stream = preload("res://assets/sfx/miss.wav")
+			sfx_player.play()
 
 func on_qte_result(result: String, target):
 	if target == null:
@@ -131,61 +180,19 @@ func on_qte_result(result: String, target):
 	var sfx_player = get_node("/root/BattleScene/SFXPlayer")
 	
 	match selected_ability:
-		"2x_cut":
-			match result:
-				"crit":
-					print("⚔️ " + name + " executes a PERFECT 2x Cut! Triple echo!")
-					# 3 hits of 10 damage each
-					for i in range(3):
-						damage = 10
-						print("  → Blade echo " + str(i+1) + " slashes for " + str(damage) + " damage!")
-						VFXManager.play_hit_effects(target)
-						target.take_damage(damage)
-						await get_tree().create_timer(0.2).timeout
-					sfx_player.stream = preload("res://assets/sfx/crit.wav")
-					sfx_player.play()
-				"normal":
-					print("⚔️ " + name + " performs 2x Cut! Double strike!")
-					# 2 hits of 7 damage each
-					for i in range(2):
-						damage = 7
-						print("  → Blade strike " + str(i+1) + " cuts for " + str(damage) + " damage!")
-						VFXManager.play_hit_effects(target)
-						target.take_damage(damage)
-						await get_tree().create_timer(0.2).timeout
-					sfx_player.stream = preload("res://assets/sfx/attack.wav")
-					sfx_player.play()
-				"fail":
-					print("💫 " + name + " mistimes the 2x Cut! Only one strike lands...")
-					damage = 5
-					print("  → Single blade grazes for " + str(damage) + " damage.")
-					VFXManager.play_hit_effects(target)
-					target.take_damage(damage)
-					sfx_player.stream = preload("res://assets/sfx/miss.wav")
-					sfx_player.play()
-		
 		"moonfall_slash":
-			match result:
-				"crit":
-					damage = 25
-					print("🌙 " + name + " channels a PERFECT Moonfall Slash! Celestial resonance!")
-					print("  → Moonlit blade devastates for " + str(damage) + " damage!")
-					target.take_damage(damage)
-					sfx_player.stream = preload("res://assets/sfx/crit.wav")
-					sfx_player.play()
-				"normal":
-					damage = 15
-					print("🌙 " + name + " executes Moonfall Slash!")
-					print("  → Lunar strike cuts for " + str(damage) + " damage!")
-					target.take_damage(damage)
-					sfx_player.stream = preload("res://assets/sfx/attack.wav")
-					sfx_player.play()
-				"fail":
-					damage = 0
-					print("💫 " + name + " loses lunar connection! Complete miss!")
-					print("  → Blade misses the echo... No damage!")
-					sfx_player.stream = preload("res://assets/sfx/miss.wav")
-					sfx_player.play()
+			# This is handled by rapid-press QTE now - result contains hit count
+			var hit_count = int(result)
+			var total_damage = hit_count * 5
+			print("🌙 " + name + " unleashes Moonfall Slash barrage!")
+			print("  → " + str(hit_count) + " rapid strikes for " + str(total_damage) + " total damage!")
+			
+			if hit_count > 0:
+				# Apply damage all at once for now, could add animation later
+				VFXManager.play_hit_effects(target)
+				target.take_damage(total_damage)
+			else:
+				print("  → No strikes connected...")
 		
 		"spirit_wave":
 			match result:

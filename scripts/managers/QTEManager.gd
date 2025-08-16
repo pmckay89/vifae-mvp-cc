@@ -73,6 +73,13 @@ func start_qte_for_ability(player, ability_name: String, target):
 	var prompt := "Press Z!"
 
 	match ability_name:
+		"moonfall_slash":
+			# Special rapid-press QTE
+			var hit_count = await start_rapid_press_qte("Press Z as fast as possible!")
+			if player and player.has_method("on_qte_result"):
+				player.on_qte_result(str(hit_count), target)
+			qte_completed.emit()
+			return
 		"big_shot":
 			qte_type = "confirm attack"
 			window_ms = 400
@@ -635,6 +642,46 @@ func start_sniper_box_qte(enemy_position: Vector2) -> String:
 			return "normal"
 	else:
 		return "fail"
+
+func start_rapid_press_qte(prompt_text: String) -> int:
+	print("🌙 Rapid Press QTE started - mash Z for 1 second!")
+	
+	qte_active = true
+	_ensure_qte_container()
+	
+	var hit_count = 0
+	var max_hits = 10
+	var duration = 1000  # 1 second in milliseconds
+	var start_time = Time.get_ticks_msec()
+	
+	# Show QTE UI
+	show_qte("press", prompt_text, duration)
+	
+	# Hide circle for rapid press
+	if qte_circle:
+		qte_circle.visible = false
+	
+	while Time.get_ticks_msec() - start_time < duration and hit_count < max_hits:
+		var elapsed_time = Time.get_ticks_msec() - start_time
+		var time_left = duration - elapsed_time
+		
+		# Update text with hit count and time remaining
+		if qte_text:
+			var time_left_float = float(time_left) / 1000.0
+			qte_text.text = prompt_text + "\nHits: " + str(hit_count) + "/" + str(max_hits) + " | Time: " + str("%.1f" % time_left_float) + "s"
+		
+		# Check for Z press - no cooldown, spam encouraged!
+		if Input.is_action_just_pressed("confirm attack"):
+			hit_count += 1
+			print("🌙 Hit " + str(hit_count) + "/" + str(max_hits) + "!")
+		
+		await get_tree().process_frame
+	
+	qte_active = false
+	hide_qte()
+	
+	print("🌙 Rapid Press QTE complete! Final hits: " + str(hit_count) + "/" + str(max_hits))
+	return hit_count
 
 # Safe audio helper function - won't crash if AudioManager not available
 func _safe_audio_call(method_name: String) -> void:

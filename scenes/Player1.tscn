@@ -1,15 +1,44 @@
-[gd_scene load_steps=5 format=3 uid="uid://ce1cfkpg1oapd"]
+[gd_scene load_steps=10 format=3 uid="uid://ce1cfkpg1oapd"]
 
 [ext_resource type="Script" uid="uid://dbq0tjhjohpp8" path="res://scripts/player/Player1.gd" id="1_p7jkb"]
 [ext_resource type="Texture2D" uid="uid://2mnnrkd04phy" path="res://assets/characters/p1.png" id="2_1jryi"]
 [ext_resource type="Texture2D" uid="uid://bi43o7pnytl1b" path="res://assets/characters/p1-block.png" id="3_b1h3a"]
 [ext_resource type="Texture2D" uid="uid://pn4ko6yyfgr0" path="res://assets/characters/p1-dead.png" id="4_vt8vw"]
+[ext_resource type="Texture2D" uid="uid://qe12xnadqy1s" path="res://assets/characters/p_1_1.png" id="5_51rl0"]
+[ext_resource type="Script" uid="uid://r8lg7yslkud5" path="res://scenes/breathe/idle.gd" id="5_obn67"]
+[ext_resource type="Texture2D" uid="uid://bix0rau85f0jf" path="res://assets/characters/p_1_2.png" id="6_obn67"]
+[ext_resource type="Texture2D" uid="uid://i023fm80h0sd" path="res://assets/characters/p_1_3.png" id="7_akex3"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_der4s"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_51rl0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_obn67")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_akex3")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 3.0
+}]
 
 [node name="Player1" type="Node2D"]
 position = Vector2(179, 221)
 script = ExtResource("1_p7jkb")
 
+[node name="idle" type="AnimatedSprite2D" parent="."]
+scale = Vector2(0.15, 0.15)
+sprite_frames = SubResource("SpriteFrames_der4s")
+animation = &"idle"
+frame_progress = 0.5897
+script = ExtResource("5_obn67")
+
 [node name="Sprite2D" type="Sprite2D" parent="."]
+visible = false
 z_index = 10
 position = Vector2(6, 4)
 scale = Vector2(0.3, 0.3)
