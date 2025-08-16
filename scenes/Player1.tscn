@@ -34,7 +34,7 @@ script = ExtResource("1_p7jkb")
 scale = Vector2(0.15, 0.15)
 sprite_frames = SubResource("SpriteFrames_der4s")
 animation = &"idle"
-frame_progress = 0.81437
+frame_progress = 0.800278
 script = ExtResource("5_obn67")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]

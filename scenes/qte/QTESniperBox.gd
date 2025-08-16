@@ -119,7 +119,7 @@ func start_qte(zones: Array[Rect2], enemy_position: Vector2 = Vector2.ZERO) -> v
 	# Trigger redraw to show target zones
 	queue_redraw()
 	
-	print("🎯 Scatter Shot QTE started - Hit all 3 boxes! Move with WASD, fire with Z!")
+	print("🎯 Scatter Shot QTE started - Guide reticle through all 3 boxes!")
 
 func _process(delta: float) -> void:
 	if not qte_active:
@@ -170,16 +170,16 @@ func _process(delta: float) -> void:
 	crosshair_position.y = clamp(crosshair_position.y, 10, viewport_size.y - 10)
 	
 	_update_crosshair_position()
+	
+	# Automatic hit detection - check if crosshair is passing through any zone
+	_check_automatic_hits()
 
 func _input(event: InputEvent) -> void:
-	if not qte_active:
-		return
-		
-	if event.is_action_pressed("confirm attack"):
-		_handle_fire()
+	# Input no longer needed for automatic targeting
+	pass
 
-func _handle_fire() -> void:
-	# Check if crosshair is inside any target zone
+func _check_automatic_hits() -> void:
+	# Check if crosshair is inside any target zone (automatic detection)
 	for i in range(target_zones.size()):
 		if hits_completed[i]:
 			continue  # Skip already completed zones
@@ -189,6 +189,15 @@ func _handle_fire() -> void:
 			# Mark this zone as completed
 			hits_completed[i] = true
 			print("🎯 HIT! Target " + str(i + 1) + " completed!")
+			
+			# Play gun sound effect
+			var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+			if sfx_player:
+				sfx_player.stream = preload("res://assets/sfx/gun1.wav")
+				sfx_player.play()
+			
+			# Trigger subtle screen shake for this hit
+			ScreenShake.shake(2.0, 0.2)
 			
 			# Check if all zones are completed
 			var all_completed = true
@@ -204,10 +213,6 @@ func _handle_fire() -> void:
 				# Continue QTE, update visual
 				queue_redraw()
 			return
-	
-	# No valid hit detected
-	print("💨 MISS! Shot fired outside target zones")
-	# Don't end QTE on miss, just continue
 
 func _update_crosshair_position() -> void:
 	if crosshair:

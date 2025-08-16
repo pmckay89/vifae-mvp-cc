@@ -87,7 +87,7 @@ func start_qte_for_ability(player, ability_name: String, target):
 		"scatter_shot":
 			qte_type = "confirm attack"
 			window_ms = 600
-			prompt = "Press Z for Scatter Shot!"
+			prompt = "Guide reticle through all targets!"
 		"blade_rush", "sniper_shot":
 			qte_type = "confirm attack"
 			window_ms = 400
@@ -140,7 +140,7 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 		return await start_sniper_qte(action_name, prompt_text, target_player)
 	
 	# Check for Scatter Shot QTE (uses new sniper box system)
-	if prompt_text == "Press Z for Scatter Shot!":
+	if prompt_text == "Guide reticle through all targets!":
 		var enemy = get_node_or_null("/root/BattleScene/Enemy")
 		if enemy:
 			return await start_sniper_box_qte(enemy.global_position)
