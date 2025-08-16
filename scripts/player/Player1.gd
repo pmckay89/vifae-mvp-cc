@@ -10,6 +10,10 @@ var selected_ability = ""
 func _ready():
 	rng.randomize()
 	add_to_group("players")
+	
+	# Hide main sprite - only use idle animation for breathing
+	$Sprite2D.visible = false
+	
 	ScreenShake.shake(5.0, 0.3)
 
 func start_turn():
@@ -20,35 +24,63 @@ func start_turn():
 	print(name, "is ready to act.")
 
 func show_block_animation():
+	# Stop breathing animation during block
+	var idle_animation = get_node_or_null("idle")
+	if idle_animation and idle_animation.has_method("stop"):
+		idle_animation.stop()
+	
 	# Get references to both sprites
 	var main_sprite = $Sprite2D
 	var block_sprite = $"p1-block"  # Use quotes for the dash
 	
 	# Switch to block sprite
 	main_sprite.visible = false
+	if idle_animation:
+		idle_animation.visible = false
 	block_sprite.visible = true
 	
 	# Hold for 1 second
 	await get_tree().create_timer(1.0).timeout
 	
-	# Switch back to main sprite
+	# Switch back to breathing animation (not main sprite)
 	block_sprite.visible = false
-	main_sprite.visible = true
+	main_sprite.visible = false  # Keep main sprite hidden
+	
+	# Restart breathing animation
+	if idle_animation:
+		idle_animation.visible = true
+		if idle_animation.has_method("play"):
+			idle_animation.play("idle")
 
 func show_death_sprite():
+	# Stop breathing animation
+	var idle_animation = get_node_or_null("idle")
+	if idle_animation and idle_animation.has_method("stop"):
+		idle_animation.stop()
+	
 	# Hide all other sprites
 	$Sprite2D.visible = false
 	$"p1-block".visible = false
+	if idle_animation:
+		idle_animation.visible = false
 	
 	# Show death sprite
 	$"p1-dead".visible = true
 	print("DEATH→ " + name + " death sprite displayed")
 
 func hide_death_sprite():
-	# Hide death sprite and restore main sprite
+	# Hide death sprite and restore breathing animation
 	$"p1-dead".visible = false
-	$Sprite2D.visible = true
+	$Sprite2D.visible = false  # Keep main sprite hidden
 	$"p1-block".visible = false
+	
+	# Restart breathing animation
+	var idle_animation = get_node_or_null("idle")
+	if idle_animation:
+		idle_animation.visible = true
+		if idle_animation.has_method("play"):
+			idle_animation.play("idle")
+	
 	print("REVIVE→ " + name + " restored to life")
 
 func attack(target):

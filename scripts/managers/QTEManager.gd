@@ -367,6 +367,7 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 			current_window += 1
 			print("⚡ Lightning hit " + str(hits_count) + "/3!")
 			
+			# Successful parry sound and animation
 			if sfx_player:
 				sfx_player.stream = preload("res://assets/sfx/parry.wav")
 				sfx_player.play()
@@ -377,6 +378,20 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 			# Check if all hits completed
 			if hits_count >= hits_needed:
 				break
+		
+		# Check if window ended without successful input (failed parry)
+		elif current_window < windows.size():
+			var window = windows[current_window]
+			if elapsed_time > window.end and current_window == hits_count:
+				# Player failed this window
+				print("❌ Lightning window " + str(current_window + 1) + " failed!")
+				
+				# Play miss sound for failed window
+				if sfx_player:
+					sfx_player.stream = preload("res://assets/sfx/miss.wav")
+					sfx_player.play()
+				
+				current_window += 1
 		
 		await get_tree().process_frame
 	

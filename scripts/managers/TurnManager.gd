@@ -188,6 +188,7 @@ func handle_skills_menu_input(event):
 		close_skills_menu()
 
 func open_skills_menu():
+	_safe_audio_call("play_ui_confirm")  # Play sound when opening skills menu
 	in_skills_menu = true
 	skill_selection = 0  # Reset to first skill
 	if action_menu:
@@ -202,41 +203,32 @@ func update_skills_menu_display():
 	var abilities = current_actor.get_ability_list() if current_actor.has_method("get_ability_list") else []
 	
 	if abilities.size() == 0:
-		# Fallback to old system
-		if current_actor.name == "Player1":
-			if twocut_button:
-				twocut_button.visible = true
-				twocut_button.grab_focus()
-			if bigshot_button:
-				bigshot_button.visible = false
-		elif current_actor.name == "Player2":
-			if bigshot_button:
-				bigshot_button.visible = true
-				bigshot_button.grab_focus()
-			if twocut_button:
-				twocut_button.visible = false
-		return
-	
-	# Update button display based on selected skill
-	var selected_ability = abilities[skill_selection] if skill_selection < abilities.size() else abilities[0]
-	var display_name = current_actor.get_ability_display_name(selected_ability) if current_actor.has_method("get_ability_display_name") else selected_ability
-	
-	# Show appropriate button and update text
-	if selected_ability == "big_shot" or selected_ability == "scatter_shot":
-		if bigshot_button:
-			bigshot_button.visible = true
-			bigshot_button.text = display_name
-			bigshot_button.grab_focus()
+		# Fallback - hide both buttons
 		if twocut_button:
 			twocut_button.visible = false
-	else:
-		# Default to twocut button for sword abilities
-		if twocut_button:
-			twocut_button.visible = true
-			twocut_button.text = display_name
-			twocut_button.grab_focus()
 		if bigshot_button:
 			bigshot_button.visible = false
+		return
+	
+	# Clear existing text and setup for list display
+	var skills_text = ""
+	for i in range(abilities.size()):
+		var ability = abilities[i]
+		var display_name = current_actor.get_ability_display_name(ability) if current_actor.has_method("get_ability_display_name") else ability
+		
+		# Add selection indicator for current skill
+		if i == skill_selection:
+			skills_text += "→ " + display_name + " ←\n"
+		else:
+			skills_text += "  " + display_name + "\n"
+	
+	# Display all skills in the first button, hide the second
+	if twocut_button:
+		twocut_button.visible = true
+		twocut_button.text = skills_text.strip_edges()
+		twocut_button.grab_focus()
+	if bigshot_button:
+		bigshot_button.visible = false
 
 func close_skills_menu():
 	in_skills_menu = false
@@ -362,12 +354,12 @@ func enemy_think():
 func start_qte():
 	print("STATE→ QTE_ACTIVE")
 	
-	# Small delay to prevent menu input carryover
-	await get_tree().create_timer(1.0).timeout
-	
 	var qte_result: String
 	
 	if is_player(current_actor):
+		# Small delay to prevent menu input carryover
+		await get_tree().create_timer(1.0).timeout
+		
 		# Player offense - let player handle their own abilities
 		if selected_action == "attack":
 			# Basic attack uses simple QTE
@@ -381,6 +373,22 @@ func start_qte():
 				# Fallback
 				qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!", current_actor)
 	else:
+		# Enemy attack - subtle shift toward defender 1 second before attack
+		var battle_camera = get_node_or_null("/root/BattleScene/BattleCamera")
+		if battle_camera and battle_camera.has_method("zoom_to_target") and selected_target:
+			print("🎥 Subtle camera shift toward defender: " + selected_target.name)
+			battle_camera.zoom_to_target(selected_target, 1.02, 0.3)
+		
+		# Play incoming attack warning sound
+		var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+		if sfx_player:
+			sfx_player.stream = preload("res://assets/sfx/incoming.wav")
+			sfx_player.play()
+			print("🚨 Playing incoming attack warning")
+		
+		# Wait 1 second (zoom completes + dramatic pause)
+		await get_tree().create_timer(1.0).timeout
+		
 		# Enemy attack QTE (X button for defense)
 		match selected_action:
 			"arc_slash":
@@ -452,6 +460,12 @@ func resolve_action():
 		# Hide enemy attack animation after damage
 		if current_actor.has_method("end_attack_animation"):
 			current_actor.end_attack_animation()
+		
+		# Zoom out after attack/VFX ends (only for enemy attacks)
+		var battle_camera = get_node_or_null("/root/BattleScene/BattleCamera")
+		if battle_camera and battle_camera.has_method("zoom_to_original"):
+			print("🎥 Zooming out after enemy attack")
+			battle_camera.zoom_to_original(0.3)
 	
 	# Add feedback here (screen shake, hitstop, etc.)
 	trigger_feedback(qte_result, damage)
@@ -660,13 +674,16 @@ func _refresh_turn_order() -> void:
 
 # Safe audio helper function - won't crash if AudioManager not available
 func _safe_audio_call(method_name: String) -> void:
-	# Try to find AudioManager as autoload first
-	var audio_manager = get_node_or_null("/root/AudioManager")
-	if not audio_manager:
-		# Try to find it in the scene
-		audio_manager = get_node_or_null("/root/BattleScene/AudioManager")
-	
-	if audio_manager and audio_manager.has_method(method_name):
-		audio_manager.call(method_name)
+	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+	if sfx_player:
+		match method_name:
+			"play_ui_move":
+				sfx_player.stream = preload("res://assets/sfx/menu.wav")
+				sfx_player.play()
+			"play_ui_confirm":
+				sfx_player.stream = preload("res://assets/sfx/menu.wav")
+				sfx_player.play()
+			_:
+				print("[TurnManager] Unknown audio method: " + method_name)
 	else:
-		print("[TurnManager] AudioManager." + method_name + "() - stub (AudioManager not found)")
+		print("[TurnManager] SFXPlayer not found")
