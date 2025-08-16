@@ -460,25 +460,47 @@ func resolve_action():
 		# ADD THIS LINE - delay to see the animation
 		await get_tree().create_timer(0.8).timeout
 			
-		# Apply parry mitigation
+		# Apply parry mitigation with graduated timing for Lightning Surge
 		var mitigation = 0.0
-		match qte_result:
-			"normal": mitigation = 1.0   # 0% damage (successful parry)
-			"fail": mitigation = 0.0     # 100% damage (failed parry)
+		if selected_action == "lightning_surge":
+			# Per-strike damage calculation for Lightning Surge
+			var failed_strikes = int(qte_result)  # QTE returns number of failed strikes as string
+			damage = failed_strikes * 10  # 10 damage per failed strike
+			print("DMG→ Lightning Surge: " + str(failed_strikes) + " strikes hit for " + str(damage) + " damage to " + selected_target.name)
 			
-		damage = int(base_damage * (1.0 - mitigation))
-		print("DMG→ Enemy deals " + str(damage) + " to " + selected_target.name + " (base: " + str(base_damage) + ", mitigated: " + str(int(mitigation * 100)) + "%)")
-		
-		# Play Phase Slam impact sound after QTE resolves
-		if selected_action == "phase_slam":
-			var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
-			if sfx_player:
-				sfx_player.stream = preload("res://assets/sfx/phaseslam2.wav")
-				sfx_player.play()
-				print("🎵 Playing Phase Slam impact sound (phaseslam2.wav)")
-		
-		if damage > 0 and selected_target.has_method("take_damage"):
-			selected_target.take_damage(damage)
+			# Apply lightning surge damage directly
+			if damage > 0:
+				print("DEBUG→ Applying " + str(damage) + " lightning damage to target: " + str(selected_target))
+				if selected_target == null:
+					print("ERROR→ selected_target is NULL!")
+				elif not selected_target.has_method("take_damage"):
+					print("ERROR→ selected_target missing take_damage method!")
+				else:
+					print("DEBUG→ Calling take_damage(" + str(damage) + ") on " + selected_target.name)
+					selected_target.take_damage(damage)
+			else:
+				print("DEBUG→ No lightning damage to apply (damage = " + str(damage) + ")")
+			
+			# Lightning surge damage handled directly above, skip normal damage calculation
+		else:
+			# Standard binary mitigation for other attacks
+			match qte_result:
+				"normal": mitigation = 1.0   # 0% damage (successful parry)
+				"fail": mitigation = 0.0     # 100% damage (failed parry)
+			
+			damage = int(base_damage * (1.0 - mitigation))
+			print("DMG→ Enemy deals " + str(damage) + " to " + selected_target.name + " (base: " + str(base_damage) + ", " + qte_result + " parry = " + str(int(mitigation * 100)) + "% mitigated)")
+			
+			# Play Phase Slam impact sound after QTE resolves
+			if selected_action == "phase_slam":
+				var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+				if sfx_player:
+					sfx_player.stream = preload("res://assets/sfx/phaseslam2.wav")
+					sfx_player.play()
+					print("🎵 Playing Phase Slam impact sound (phaseslam2.wav)")
+			
+			if damage > 0 and selected_target.has_method("take_damage"):
+				selected_target.take_damage(damage)
 			
 		# Hide enemy attack animation after damage
 		if current_actor.has_method("end_attack_animation"):

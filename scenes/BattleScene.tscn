@@ -140,6 +140,13 @@ position = Vector2(555, 306)
 scale = Vector2(0.156, 0.156)
 texture = ExtResource("6_sdfhe")
 
+[node name="QTEFillRing" type="Sprite2D" parent="UILayer/QTEContainer"]
+visible = false
+modulate = Color(0, 1, 0, 0.7)
+position = Vector2(555, 306)
+scale = Vector2(0.05, 0.05)
+texture = ExtResource("6_sdfhe")
+
 [node name="QTEText" type="Label" parent="UILayer/QTEContainer"]
 visible = false
 layout_mode = 0

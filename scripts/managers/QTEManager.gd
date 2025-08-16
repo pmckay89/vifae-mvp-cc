@@ -4,6 +4,7 @@ signal qte_completed
 
 @onready var qte_container: Control = get_node_or_null("/root/BattleScene/UILayer/QTEContainer")
 @onready var qte_circle: Node2D = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTECircle")
+@onready var qte_fill_ring: Node2D = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEFillRing")
 @onready var qte_text: Label = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEText")
 @onready var qte_pressure_bar: ProgressBar = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEPressureBar")
 @onready var qte_widget: QTEWidget = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEWidget")
@@ -44,6 +45,7 @@ func _ensure_qte_container() -> void:
 	# Refresh references in case scene order changed
 	qte_container = get_node_or_null(qte_parent_path) as Control
 	qte_circle = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTECircle") as Node2D
+	qte_fill_ring = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEFillRing") as Node2D
 	qte_text = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEText") as Label
 	qte_pressure_bar = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEPressureBar") as ProgressBar
 	qte_widget = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/QTEWidget") as QTEWidget
@@ -145,9 +147,10 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 		return "fail"
 	print("✅ qte_container found, continuing...")
 
-	# Check for basic attack QTE - temporarily disabled, use old system
-	# if prompt_text == "Press Z to attack!":
-	#	return await start_basic_attack_qte(action_name, window_ms, target_player)
+	# Check for attack QTEs - now use enhanced ring system with precision timing
+	if prompt_text in ["Press Z to attack!", "Press Z for precision!", "Press Z at the perfect moment!", "Press Z to unleash!"]:
+		print("⚔️ Attack QTE - using enhanced ring system with precision timing!")
+		# Use the enhanced ring system but fall through to existing QTE logic
 
 	# Check for Lightning Surge QTE first
 	if prompt_text == "Press X rapidly!":
@@ -202,8 +205,16 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 	while Time.get_ticks_msec() < end_time:
 		var time_left := end_time - Time.get_ticks_msec()
 		var progress := float(time_left) / float(window_ms)
+		var fill_progress := 1.0 - progress  # Fill ring grows as time progresses (0.0 to 1.0)
+		
+		# EMPTY ring stays static (target boundary)
 		if qte_circle:
-			qte_circle.scale = Vector2(0.15 * progress, 0.15 * progress)
+			qte_circle.scale = Vector2(0.15, 0.15)  # Always static size
+		
+		# FILL ring grows from tiny to beyond EMPTY ring size (gives timing leeway)
+		if qte_fill_ring:
+			var fill_scale = 0.02 + (fill_progress * 0.18)  # Grows from 0.02 to 0.20 (beyond empty ring at 0.15)
+			qte_fill_ring.scale = Vector2(fill_scale, fill_scale)
 
 		if Input.is_action_just_pressed(action_name):
 			input_detected = true
@@ -227,9 +238,11 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 			print("✅ PARRY SUCCESS!")
 			_safe_audio_call("play_qte_success")
 		else:
-			if timing_percentage < 0.4:
+			# NEW PRECISION-BASED TIMING for attacks (aligns with ring visual)
+			# Perfect timing: when fill ring is close to empty ring size (75-85% of window)
+			if timing_percentage >= 0.75 and timing_percentage <= 0.85:
 				result = "crit"
-				print("✨ PERFECT TIMING! CRITICAL!")
+				print("✨ PERFECT RING TIMING! CRITICAL!")
 				_safe_audio_call("play_qte_success")
 				ScreenShake.shake(5.0, 0.4)  # Add screen shake for crits
 				if sfx_player and action_name == "confirm attack":
@@ -241,9 +254,10 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 						# Player2 = Gun Girl (crit = gun2.wav)
 						sfx_player.stream = preload("res://assets/sfx/gun2.wav")
 					sfx_player.play()
-			elif timing_percentage < 0.7:
+			# Good timing: close to perfect or slightly after (65-75% and 85-95%)
+			elif (timing_percentage >= 0.65 and timing_percentage < 0.75) or (timing_percentage > 0.85 and timing_percentage <= 0.95):
 				result = "normal"
-				print("✅ GOOD TIMING! SUCCESS!")
+				print("✅ GOOD RING TIMING! SUCCESS!")
 				_safe_audio_call("play_qte_success")
 				if sfx_player and action_name == "confirm attack":
 					var current_actor = get_node_or_null("/root/BattleScene/TurnManager").current_actor
@@ -254,9 +268,10 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 						# Player2 = Gun Girl (normal = gun1.wav)
 						sfx_player.stream = preload("res://assets/sfx/gun1.wav")
 					sfx_player.play()
+			# Poor timing: too early or too late (0-65% or 95-100%)
 			else:
 				result = "fail"
-				print("⚠️ TOO LATE! WEAK HIT!")
+				print("⚠️ POOR RING TIMING! WEAK HIT!")
 				_safe_audio_call("play_qte_fail")
 				if sfx_player and action_name == "confirm attack":
 					sfx_player.stream = preload("res://assets/sfx/miss.wav")
@@ -289,7 +304,30 @@ func show_qte(qte_type: String, prompt: String, _window_ms: int) -> void:
 		if qte_type == "press":
 			var screen_center = get_viewport().get_visible_rect().size / 2
 			qte_circle.position = screen_center
-			qte_circle.scale = Vector2(0.15, 0.15)
+			qte_circle.scale = Vector2(0.15, 0.15)  # STATIC size - target boundary
+			
+			# Load custom ring texture if available, fallback to existing
+			var ring_empty_texture = load("res://assets/ui/qte_ring_empty.png")
+			if ring_empty_texture != null:
+				qte_circle.texture = ring_empty_texture
+				print("[QTE] Using custom ring empty texture")
+	
+	# Show fill ring for press QTEs
+	if qte_fill_ring:
+		qte_fill_ring.visible = (qte_type == "press")
+		if qte_type == "press":
+			var screen_center = get_viewport().get_visible_rect().size / 2
+			qte_fill_ring.position = screen_center
+			qte_fill_ring.scale = Vector2(0.02, 0.02)  # Start very small (nearly invisible)
+			
+			# Load custom fill texture if available, fallback to existing with green tint
+			var ring_fill_texture = load("res://assets/ui/qte_ring_fill.png")
+			if ring_fill_texture != null:
+				qte_fill_ring.texture = ring_fill_texture
+				qte_fill_ring.modulate = Color.WHITE  # Remove tint if custom texture
+				print("[QTE] Using custom ring fill texture")
+			else:
+				qte_fill_ring.modulate = Color(0, 1, 0, 0.7)  # Green tint for existing texture
 	
 	if qte_pressure_bar:
 		qte_pressure_bar.visible = (qte_type == "hold_release")
@@ -313,6 +351,8 @@ func hide_qte() -> void:
 		qte_container.visible = false
 	if qte_circle:
 		qte_circle.visible = false
+	if qte_fill_ring:
+		qte_fill_ring.visible = false
 	if qte_pressure_bar:
 		qte_pressure_bar.visible = false
 		qte_pressure_bar.modulate = Color.WHITE  # Reset color
@@ -335,23 +375,34 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 	var hits_count = 0
 	var sfx_player := get_node_or_null("/root/BattleScene/SFXPlayer")
 	
-	# Define the 3 sub-windows: 0.0-0.5s, 0.75-1.25s, 1.5-2.0s
+	# Define the 3 sub-windows: More generous timing windows
 	var windows = [
-		{"start": 0.0, "end": 0.5},
-		{"start": 0.75, "end": 1.25}, 
-		{"start": 1.5, "end": 2.0}
+		{"start": 0.0, "end": 0.7},      # Window 1: 0.7s duration (was 0.5s)
+		{"start": 0.9, "end": 1.6},     # Window 2: 0.7s duration (was 0.5s)
+		{"start": 1.8, "end": 2.5}      # Window 3: 0.7s duration (was 0.5s)
 	]
 	
 	var start_time = Time.get_ticks_msec()
-	var total_duration = 2000  # 2 seconds total
+	var total_duration = 2700  # 2.7 seconds total (was 2.0s)
 	var current_window = 0
+	var window_results = []  # Track timing quality for each window
 	
-	# Show QTE UI using new method
+	# Show QTE UI using new ring method
 	show_qte("press", prompt_text, total_duration)
 	
-	# Hide circle initially for lightning surge
+	# Set up static empty ring for lightning surge
 	if qte_circle:
-		qte_circle.visible = false
+		var screen_center = get_viewport().get_visible_rect().size / 2
+		qte_circle.position = screen_center
+		qte_circle.scale = Vector2(0.15, 0.15)  # Static target size
+		qte_circle.visible = false  # Hide initially, show per window
+	
+	# Set up fill ring for lightning surge  
+	if qte_fill_ring:
+		var screen_center = get_viewport().get_visible_rect().size / 2
+		qte_fill_ring.position = screen_center
+		qte_fill_ring.scale = Vector2(0.02, 0.02)  # Start small
+		qte_fill_ring.visible = false  # Hide initially, show per window
 	
 	while Time.get_ticks_msec() - start_time < total_duration:
 		var elapsed_time = (Time.get_ticks_msec() - start_time) / 1000.0  # Convert to seconds
@@ -364,16 +415,22 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 			var window = windows[current_window]
 			if elapsed_time >= window.start and elapsed_time <= window.end:
 				in_window = true
-				# Calculate progress within this window (1.0 to 0.0)
-				window_progress = 1.0 - ((elapsed_time - window.start) / (window.end - window.start))
+				# Calculate progress within this window (0.0 to 1.0)
+				window_progress = (elapsed_time - window.start) / (window.end - window.start)
 				
-				# Show and scale the circle
+				# Show rings and animate fill ring growth
 				if qte_circle:
 					qte_circle.visible = true
-					qte_circle.scale = Vector2(0.15 * window_progress, 0.15 * window_progress)
+					qte_circle.scale = Vector2(0.15, 0.15)  # Static empty ring
+				
+				if qte_fill_ring:
+					qte_fill_ring.visible = true
+					# Fill ring grows from 0.02 to 0.20 over window duration
+					var fill_scale = 0.02 + (window_progress * 0.18)
+					qte_fill_ring.scale = Vector2(fill_scale, fill_scale)
 				
 				# Play incoming.wav at the very start of each window
-				if window_progress > 0.95:  # Just entered the window
+				if window_progress < 0.05:  # Just entered the window
 					if not get_meta("window_" + str(current_window) + "_sound_played", false):
 						if sfx_player:
 							sfx_player.stream = preload("res://assets/sfx/incoming.wav")
@@ -381,9 +438,11 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 							print("🚨 Playing incoming.wav for lightning window " + str(current_window + 1))
 						set_meta("window_" + str(current_window) + "_sound_played", true)
 			else:
-				# Hide circle when not in window
+				# Hide rings when not in window
 				if qte_circle:
 					qte_circle.visible = false
+				if qte_fill_ring:
+					qte_fill_ring.visible = false
 		
 		# Update text feedback - keep it simple
 		if qte_text:
@@ -392,8 +451,21 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 		# Check for input during valid window
 		if in_window and Input.is_action_just_pressed(action_name):
 			hits_count += 1
+			
+			# Late-timing parry system: 30-100% = successful parry
+			var window_timing_result = "fail"
+			if window_progress >= 0.7 and window_progress <= 1.0:
+				window_timing_result = "perfect"  # 70-100% = perfect (late timing)
+				print("⚡ PERFECT Lightning parry " + str(hits_count) + "/3! (0 damage)")
+			elif window_progress >= 0.3 and window_progress < 0.7:
+				window_timing_result = "normal"   # 30-70% = normal (middle timing)
+				print("⚡ NORMAL Lightning parry " + str(hits_count) + "/3! (0 damage)")
+			else:
+				window_timing_result = "fail"     # 0-30% = fail (too early)
+				print("⚡ FAILED Lightning parry " + str(hits_count) + "/3! (10 damage)")
+			
+			window_results.append(window_timing_result)
 			current_window += 1
-			print("⚡ Lightning hit " + str(hits_count) + "/3!")
 			
 			# Successful parry sound and animation
 			if sfx_player:
@@ -413,6 +485,7 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 			if elapsed_time > window.end and current_window == hits_count:
 				# Player failed this window
 				print("❌ Lightning window " + str(current_window + 1) + " failed!")
+				window_results.append("missed")  # Track missed windows
 				
 				# Play miss sound for failed window
 				if sfx_player:
@@ -426,14 +499,28 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 	qte_active = false
 	hide_qte()
 	
-	# Determine result
-	var result = "fail"
-	if hits_count >= hits_needed:
-		result = "normal"  # Success for Lightning Surge
-		print("⚡ Lightning Surge SUCCESS! All 3 hits landed!")
+	# Calculate damage based on individual strike results
+	var successful_parries = 0
+	var failed_strikes = 0
+	
+	for window_result in window_results:
+		match window_result:
+			"perfect", "normal": successful_parries += 1  # Both count as successful
+			"fail": failed_strikes += 1                   # Failed timing = damage
+			"missed": failed_strikes += 1                 # Missed window = damage
+	
+	# Add any completely missed windows (didn't press at all)
+	var total_missed_windows = 3 - window_results.size()
+	failed_strikes += total_missed_windows
+	
+	# Return result with damage count
+	var result = str(failed_strikes)  # Return number of strikes that hit (0, 1, 2, or 3)
+	
+	if failed_strikes == 0:
+		print("⚡ Lightning Surge SUCCESS! All strikes parried! (0 damage)")
 	else:
-		print("❌ Lightning Surge FAILED! Only " + str(hits_count) + "/3 hits")
-		if sfx_player:
+		print("⚡ Lightning Surge: " + str(failed_strikes) + "/3 strikes hit for " + str(failed_strikes * 10) + " damage")
+		if sfx_player and failed_strikes > 0:
 			sfx_player.stream = preload("res://assets/sfx/miss.wav")
 			sfx_player.play()
 	
