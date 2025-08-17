@@ -151,6 +151,23 @@ func take_damage(amount: int) -> void:
 		bar.value = hp
 	else:
 		push_warning("Enemy HP bar not found at /root/BattleScene/UILayer/EnemyHUD/EnemyHPBar")
+	
+	# Update enemy HP label
+	var label: Label = get_node_or_null("/root/BattleScene/UILayer/EnemyHUD/EnemyHPLabel")
+	if label:
+		label.text = "BOSS HP: " + str(hp) + "/" + str(hp_max)
+	else:
+		push_warning("Enemy HP label not found at /root/BattleScene/UILayer/EnemyHUD/EnemyHPLabel")
+	
+	# Update health bar above enemy head
+	var head_bar: ProgressBar = get_node_or_null("HealthBar")
+	if head_bar:
+		if head_bar.max_value != hp_max:
+			head_bar.min_value = 0
+			head_bar.max_value = hp_max
+		head_bar.value = hp
+	else:
+		push_warning("Enemy head HealthBar not found")
 
 	# Show damage popup
 	CombatUI.show_damage_popup(self, amount)
@@ -163,6 +180,24 @@ func take_damage(amount: int) -> void:
 func reset_for_new_combat():
 	hp = hp_max
 	is_defeated = false
+	
+	# Update HP displays to full health
+	var bar: ProgressBar = get_node_or_null("/root/BattleScene/UILayer/EnemyHUD/EnemyHPBar")
+	if bar:
+		bar.min_value = 0
+		bar.max_value = hp_max
+		bar.value = hp
+	
+	var label: Label = get_node_or_null("/root/BattleScene/UILayer/EnemyHUD/EnemyHPLabel")
+	if label:
+		label.text = "BOSS HP: " + str(hp) + "/" + str(hp_max)
+	
+	# Reset head health bar
+	var head_bar: ProgressBar = get_node_or_null("HealthBar")
+	if head_bar:
+		head_bar.min_value = 0
+		head_bar.max_value = hp_max
+		head_bar.value = hp
 	
 	# Make sure idle sprite is visible
 	var enemy_idle_sprite = get_node_or_null("Sprite2D")

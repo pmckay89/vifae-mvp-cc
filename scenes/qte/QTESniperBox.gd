@@ -3,7 +3,7 @@ extends Node2D
 signal qte_result(hit: bool, target_index: int, precision: float)
 
 # Tweakable exported variables
-@export var crosshair_speed: float = 300.0
+@export var crosshair_speed: float = 350.0
 @export var resistance_strength: float = 0.8
 @export var input_inertia: float = 0.15
 @export var dead_zone_radius: float = 0.1
@@ -16,34 +16,17 @@ var crosshair_position: Vector2
 var velocity: Vector2 = Vector2.ZERO
 var qte_active: bool = false
 var start_time: float
-var crosshair: ColorRect
+var crosshair: Sprite2D
 var hits_completed: Array[bool] = []  # Track which boxes have been hit
 var countdown_label: Label
+var hitbox_sprites: Array[Sprite2D] = []  # Visual hitbox sprites
 
 func _ready():
-	# Create crosshair visual
-	crosshair = ColorRect.new()
-	crosshair.size = Vector2(20, 20)
-	crosshair.color = Color.WHITE
-	crosshair.anchor_left = 0.5
-	crosshair.anchor_top = 0.5
-	crosshair.anchor_right = 0.5
-	crosshair.anchor_bottom = 0.5
-	crosshair.pivot_offset = crosshair.size / 2
+	# Create crosshair visual using new PNG
+	crosshair = Sprite2D.new()
+	crosshair.texture = preload("res://assets/ui/crosshair_base.png")
+	crosshair.scale = Vector2(0.05, 0.05)
 	add_child(crosshair)
-	
-	# Create crosshair cross pattern
-	var h_line = ColorRect.new()
-	h_line.size = Vector2(20, 2)
-	h_line.color = Color.BLACK
-	h_line.position = Vector2(0, 9)
-	crosshair.add_child(h_line)
-	
-	var v_line = ColorRect.new()
-	v_line.size = Vector2(2, 20)
-	v_line.color = Color.BLACK
-	v_line.position = Vector2(9, 0)
-	crosshair.add_child(v_line)
 	
 	# Create countdown timer label
 	countdown_label = Label.new()
@@ -63,28 +46,32 @@ func _ready():
 	crosshair_position = viewport_size / 2
 	_update_crosshair_position()
 
-func _draw():
-	if qte_active:
-		# Draw target zones with outlines only
-		for i in range(target_zones.size()):
-			var zone = target_zones[i]
-			var border_width = 3
-			var zone_color = Color.GREEN if hits_completed[i] else Color.RED
-			
-			# Draw zone outline
-			draw_rect(Rect2(zone.position, Vector2(zone.size.x, border_width)), zone_color)  # Top
-			draw_rect(Rect2(zone.position, Vector2(border_width, zone.size.y)), zone_color)  # Left
-			draw_rect(Rect2(zone.position + Vector2(0, zone.size.y - border_width), Vector2(zone.size.x, border_width)), zone_color)  # Bottom
-			draw_rect(Rect2(zone.position + Vector2(zone.size.x - border_width, 0), Vector2(border_width, zone.size.y)), zone_color)  # Right
-			
-			# Draw zone number and status
-			var font = ThemeDB.fallback_font
-			var font_size = 24
-			var text = str(i + 1) + ("✓" if hits_completed[i] else "")
-			var text_size = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
-			var text_pos = zone.get_center() - text_size / 2
-			var text_color = Color.WHITE if hits_completed[i] else Color.WHITE
-			draw_string(font, text_pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, text_color)
+func _create_hitbox_sprites():
+	# Clear existing sprites
+	for sprite in hitbox_sprites:
+		if sprite:
+			sprite.queue_free()
+	hitbox_sprites.clear()
+	
+	# Create new hitbox sprites for each zone
+	for i in range(target_zones.size()):
+		var zone = target_zones[i]
+		var hitbox_sprite = Sprite2D.new()
+		hitbox_sprite.texture = preload("res://assets/ui/hitbox.png")
+		hitbox_sprite.position = zone.get_center()
+		# Scale down to 0.1 for reasonable size
+		hitbox_sprite.scale = Vector2(0.1, 0.1)
+		hitbox_sprite.modulate = Color.WHITE  # Default color
+		add_child(hitbox_sprite)
+		hitbox_sprites.append(hitbox_sprite)
+
+func _update_hitbox_colors():
+	for i in range(hitbox_sprites.size()):
+		if i < hits_completed.size() and hitbox_sprites[i]:
+			if hits_completed[i]:
+				hitbox_sprites[i].modulate = Color.GREEN
+			else:
+				hitbox_sprites[i].modulate = Color.WHITE
 
 func start_qte(zones: Array[Rect2], enemy_position: Vector2 = Vector2.ZERO) -> void:
 	target_zones = zones.duplicate()
@@ -112,12 +99,12 @@ func start_qte(zones: Array[Rect2], enemy_position: Vector2 = Vector2.ZERO) -> v
 	visible = true
 	z_index = 1000
 	
+	# Create hitbox sprites
+	_create_hitbox_sprites()
+	
 	# Show countdown timer
 	if countdown_label:
 		countdown_label.visible = true
-	
-	# Trigger redraw to show target zones
-	queue_redraw()
 	
 	print("🎯 Scatter Shot QTE started - Guide reticle through all 3 boxes!")
 
@@ -210,13 +197,13 @@ func _check_automatic_hits() -> void:
 				print("✅ ALL TARGETS HIT! Success!")
 				_end_qte(true, -1, 1.0)  # Success with all targets
 			else:
-				# Continue QTE, update visual
-				queue_redraw()
+				# Continue QTE, update hitbox colors
+				_update_hitbox_colors()
 			return
 
 func _update_crosshair_position() -> void:
 	if crosshair:
-		crosshair.global_position = crosshair_position - crosshair.size / 2
+		crosshair.global_position = crosshair_position
 
 func _end_qte(hit: bool, target_index: int, precision: float) -> void:
 	qte_active = false
@@ -228,7 +215,7 @@ func _end_qte(hit: bool, target_index: int, precision: float) -> void:
 	queue_free()
 
 # Helper function to create random target zones around a position without overlap
-static func create_random_zones(center_pos: Vector2, zone_size: Vector2 = Vector2(80, 80), min_distance: float = 120.0, max_distance: float = 200.0) -> Array[Rect2]:
+static func create_random_zones(center_pos: Vector2, zone_size: Vector2 = Vector2(80, 80), min_distance: float = 80.0, max_distance: float = 180.0) -> Array[Rect2]:
 	var zones: Array[Rect2] = []
 	var safety_margin = 20.0  # Extra space between zones
 	var max_attempts = 50  # Prevent infinite loops

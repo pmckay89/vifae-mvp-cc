@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://bywrdjiurayct"]
+[gd_scene load_steps=18 format=3 uid="uid://bywrdjiurayct"]
 
 [ext_resource type="Script" uid="uid://bb1b4n2pur4i0" path="res://scripts/managers/input_listener.gd" id="1_ftvu5"]
 [ext_resource type="Texture2D" uid="uid://cjc248508locs" path="res://assets/backgrounds/arena2.png" id="1_irk3j"]
@@ -19,6 +19,22 @@ bg_color = Color(0, 0, 0, 0.47451)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sgm0l"]
 bg_color = Color(0.8, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_enemy_bg"]
+bg_color = Color(0.2, 0.2, 0.2, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_enemy_fill"]
+bg_color = Color(0.8, 0.2, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.4, 0.4, 1)
 
 [node name="BattleScene" type="Node2D"]
 
@@ -206,11 +222,20 @@ offset_bottom = 620.0
 [node name="EnemyHPBar" type="ProgressBar" parent="UILayer/EnemyHUD"]
 custom_minimum_size = Vector2(250, 25)
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_enemy_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_enemy_fill")
 fill_mode = 1
 show_percentage = false
 
 [node name="EnemyHPLabel" type="Label" parent="UILayer/EnemyHUD"]
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 14
 text = "BOSS HP: 100"
 horizontal_alignment = 1
 

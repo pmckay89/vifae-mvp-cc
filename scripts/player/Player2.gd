@@ -18,10 +18,15 @@ var breathing_enabled: bool = true
 var muzzle_flash: ColorRect
 var muzzle_flash_tween: Tween
 
+# Focus buff variables
+var focus_stacks: int = 0
+
+
 func _ready():
 	rng.randomize()
 	add_to_group("players")
 	_setup_muzzle_flash()
+	_ensure_buff_animation_hidden()
 	_start_breathing_animation()
 
 func start_turn():
@@ -136,7 +141,7 @@ func reset_for_new_combat():
 	print("RESET→ " + name + " fully restored")
 
 func get_ability_list() -> Array:
-	return ["big_shot", "scatter_shot"]
+	return ["big_shot", "scatter_shot", "focus"]
 
 func get_ability_display_name(ability_name: String) -> String:
 	match ability_name:
@@ -144,12 +149,20 @@ func get_ability_display_name(ability_name: String) -> String:
 			return "Big Shot"
 		"scatter_shot":
 			return "Scatter Shot"
+		"focus":
+			return "Focus"
 		_:
 			return ability_name
 
 func execute_ability(ability_name: String, target):
 	selected_ability = ability_name
 	print("🔫 " + name + " prepares " + get_ability_display_name(ability_name) + "!")
+	
+	# Handle focus ability without QTE
+	if ability_name == "focus":
+		await get_tree().create_timer(0.5).timeout
+		activate_focus()
+		return
 	
 	# Small delay for dramatic effect
 	await get_tree().create_timer(0.5).timeout
@@ -174,6 +187,9 @@ func on_qte_result(result: String, target):
 			match result:
 				"crit":
 					damage = 35
+					# Apply focus buff multiplier
+					var multiplier = consume_focus_buff()
+					damage = int(damage * multiplier)
 					print("🎯 " + name + " executes a PERFECT Big Shot! Sniper's dream!")
 					print("  → Precision shot devastates for " + str(damage) + " damage!")
 					trigger_muzzle_flash("crit")
@@ -182,6 +198,9 @@ func on_qte_result(result: String, target):
 					sfx_player.play()
 				"normal":
 					damage = 25
+					# Apply focus buff multiplier
+					var multiplier = consume_focus_buff()
+					damage = int(damage * multiplier)
 					print("🔫 " + name + " lands a solid Big Shot!")
 					print("  → Heavy shot hits for " + str(damage) + " damage!")
 					trigger_muzzle_flash("normal")
@@ -190,6 +209,9 @@ func on_qte_result(result: String, target):
 					sfx_player.play()
 				"fail":
 					damage = 8
+					# Apply focus buff multiplier
+					var multiplier = consume_focus_buff()
+					damage = int(damage * multiplier)
 					print("💨 " + name + " rushes the Big Shot...")
 					print("  → Hasty shot grazes for " + str(damage) + " damage.")
 					target.take_damage(damage)
@@ -200,6 +222,9 @@ func on_qte_result(result: String, target):
 			match result:
 				"crit", "normal":
 					damage = 35
+					# Apply focus buff multiplier
+					var multiplier = consume_focus_buff()
+					damage = int(damage * multiplier)
 					print("💥 " + name + " completes the Scatter Shot sequence! All targets hit!")
 					print("  → Devastating spread attack deals " + str(damage) + " damage!")
 					trigger_muzzle_flash("normal")  # Use normal for both crit and normal scatter shot
@@ -208,6 +233,9 @@ func on_qte_result(result: String, target):
 					sfx_player.play()
 				"fail":
 					damage = 6
+					# Apply focus buff multiplier
+					var multiplier = consume_focus_buff()
+					damage = int(damage * multiplier)
 					print("💨 " + name + " fails to complete the Scatter Shot sequence...")
 					print("  → Incomplete spread reduces damage to " + str(damage) + ".")
 					target.take_damage(damage)
@@ -310,6 +338,85 @@ func _setup_muzzle_flash() -> void:
 	
 	add_child(muzzle_flash)
 	print("[Player2] Muzzle flash setup complete")
+
+func _ensure_buff_animation_hidden():
+	# Make sure buff animation is stopped and hidden on startup
+	var animation_player = get_node_or_null("AnimationPlayer")
+	if animation_player:
+		print("[Player2] Found AnimationPlayer, stopping it")
+		animation_player.stop()
+		print("[Player2] AnimationPlayer stopped, current animation: ", animation_player.current_animation)
+		
+		# Debug: Check all children and their visibility
+		print("[Player2] Checking all children for visibility:")
+		for child in get_children():
+			print("  - ", child.name, " (", child.get_class(), ") visible: ", child.get("visible"))
+			if child is AnimatedSprite2D:
+				child.visible = false
+				print("    → Set AnimatedSprite2D to hidden")
+			elif child is Sprite2D:
+				print("    → Found Sprite2D, visible: ", child.visible)
+				# Check if this sprite might be the buff sprite
+				if child.name.to_lower().contains("buff") or child.name.to_lower().contains("aura"):
+					child.visible = false
+					print("    → Hiding potential buff sprite: ", child.name)
+		
+		print("[Player2] Buff animation cleanup complete")
+	else:
+		print("[Player2] No AnimationPlayer found during startup")
+
+
+func activate_focus():
+	# Add focus stack
+	focus_stacks += 1
+	var damage_multiplier = focus_stacks * 2.0  # Each stack = 2x multiplier (stacks: 2x, 4x, 6x, etc.)
+	
+	print("🌟 " + name + " activates Focus! Stack #" + str(focus_stacks) + " (next attack: " + str(damage_multiplier) + "x damage)")
+	
+	# Start/continue the buff animation
+	var animation_player = get_node_or_null("AnimationPlayer")
+	if animation_player and animation_player.has_animation("buff"):
+		if not animation_player.is_playing():
+			animation_player.play("buff")
+			print("🌟 Buff animation started")
+		else:
+			print("🌟 Buff animation already playing (stacking)")
+	else:
+		print("⚠️ Buff animation not available")
+
+func get_focus_multiplier() -> float:
+	# Return the current damage multiplier based on stacks
+	if focus_stacks > 0:
+		return focus_stacks * 2.0  # 1 stack = 2x, 2 stacks = 4x, etc.
+	return 1.0  # No buff = normal damage
+
+func consume_focus_buff():
+	# Consume all focus stacks and hide animation
+	if focus_stacks > 0:
+		var multiplier = get_focus_multiplier()
+		focus_stacks = 0
+		print("🌟 Focus buff consumed! Applied " + str(multiplier) + "x damage multiplier")
+		
+		# Stop buff animation
+		var animation_player = get_node_or_null("AnimationPlayer")
+		if animation_player and animation_player.is_playing():
+			animation_player.stop()
+			print("🌟 Buff animation stopped")
+		
+		# Hide all buff sprites
+		var buff1 = get_node_or_null("buff1")
+		var buff2 = get_node_or_null("buff2")
+		var buff3 = get_node_or_null("buff3")
+		if buff1:
+			buff1.visible = false
+		if buff2:
+			buff2.visible = false
+		if buff3:
+			buff3.visible = false
+		print("🌟 All buff sprites hidden")
+		
+		return multiplier
+	return 1.0
 
 func trigger_muzzle_flash(attack_type: String = "normal") -> void:
 	print("[Player2] trigger_muzzle_flash called with attack_type: " + attack_type + ", selected_ability: " + str(selected_ability))

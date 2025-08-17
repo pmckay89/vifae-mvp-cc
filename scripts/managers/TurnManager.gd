@@ -377,8 +377,12 @@ func start_qte():
 			# Basic attack uses simple QTE
 			qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z to attack!", current_actor)
 		else:
-			# All abilities use the player's ability system
-			if current_actor.has_method("execute_ability") and selected_target:
+			# Handle self-buff abilities that don't need a target
+			if selected_action == "focus":
+				await current_actor.execute_ability(selected_action, null)
+				qte_result = "handled"  # Flag that player handled it
+			# All other abilities use the player's ability system
+			elif current_actor.has_method("execute_ability") and selected_target:
 				await current_actor.execute_ability(selected_action, selected_target)
 				qte_result = "handled"  # Flag that player handled it
 			else:
