@@ -171,6 +171,10 @@ func take_damage(amount: int) -> void:
 
 	# Show damage popup
 	CombatUI.show_damage_popup(self, amount)
+	
+	# Show flinch animation when taking damage
+	if amount > 0:
+		show_flinch_animation()
 
 	if hp == 0:
 		is_defeated = true
@@ -213,3 +217,45 @@ func reset_for_new_combat():
 		e_block2.visible = false
 		
 	print("RESET→ Enemy reset to initial state")
+
+# Flinch animation when taking damage
+func show_flinch_animation() -> void:
+	print("FLINCH→ Enemy flinch animation started")
+	
+	# Get sprite references
+	var main_sprite = get_node_or_null("Sprite2D")
+	var flinch_sprite = get_node_or_null("flinch")
+	var flinch2_sprite = get_node_or_null("flinch2")
+	
+	if not main_sprite:
+		print("FLINCH→ Warning: Main sprite not found")
+		return
+	
+	if not flinch_sprite or not flinch2_sprite:
+		print("FLINCH→ Warning: Flinch sprites not found")
+		return
+	
+	# Save original visibility states
+	var main_was_visible = main_sprite.visible
+	
+	# Start flinch sequence: normal → flinch → flinch2 → normal
+	# Phase 1: Show flinch sprite
+	main_sprite.visible = false
+	flinch_sprite.visible = true
+	flinch2_sprite.visible = false
+	
+	await get_tree().create_timer(0.1).timeout  # First flinch frame
+	
+	# Phase 2: Show flinch2 sprite  
+	flinch_sprite.visible = false
+	flinch2_sprite.visible = true
+	
+	await get_tree().create_timer(0.1).timeout  # Second flinch frame
+	
+	# Phase 3: Return to normal
+	flinch2_sprite.visible = false
+	main_sprite.visible = main_was_visible
+	
+	await get_tree().create_timer(0.1).timeout  # Brief hold on normal
+	
+	print("FLINCH→ Enemy flinch animation complete")

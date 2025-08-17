@@ -1,8 +1,10 @@
-[gd_scene load_steps=6 format=3 uid="uid://brt8asynsnb14"]
+[gd_scene load_steps=8 format=3 uid="uid://brt8asynsnb14"]
 
 [ext_resource type="Script" uid="uid://bmke3c4xaykpx" path="res://scripts/enemy/Enemy.gd" id="1_8mwfh"]
 [ext_resource type="Texture2D" uid="uid://c18ya62t5fg16" path="res://assets/characters/ENemy1.png" id="2_mpr68"]
+[ext_resource type="Texture2D" uid="uid://cfxqolxqitd0v" path="res://assets/characters/enemy_flinch2.png" id="3_5wwv6"]
 [ext_resource type="Script" uid="uid://cqooqbawtijgf" path="res://scripts/enemy/EnemyAI.gd" id="3_xy2ub"]
+[ext_resource type="Texture2D" uid="uid://doebce22ltyh3" path="res://assets/characters/enemy_flinch1.png" id="4_1vja8"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_bg"]
 bg_color = Color(0.1, 0.1, 0.1, 0.8)
@@ -56,6 +58,19 @@ z_index = 10
 position = Vector2(-618, 125)
 scale = Vector2(0.75, 0.75)
 texture = ExtResource("2_mpr68")
+
+[node name="flinch2" type="Sprite2D" parent="."]
+visible = false
+position = Vector2(-18, 135)
+scale = Vector2(0.35, 0.35)
+texture = ExtResource("3_5wwv6")
+
+[node name="flinch" type="Sprite2D" parent="."]
+visible = false
+position = Vector2(-12, 117)
+rotation = 0.261799
+scale = Vector2(0.4, 0.4)
+texture = ExtResource("4_1vja8")
 
 [node name="AI" type="Node" parent="."]
 script = ExtResource("3_xy2ub")

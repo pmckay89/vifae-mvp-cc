@@ -5,7 +5,8 @@
       "Bash(robocopy:*)",
       "Bash(xcopy:*)",
       "Bash(powershell:*)",
-      "Bash(del \"nul\")"
+      "Bash(del \"nul\")",
+      "Bash(godot:*)"
     ],
     "deny": [],
     "ask": [],

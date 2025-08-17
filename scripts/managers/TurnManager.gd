@@ -43,6 +43,9 @@ var in_skills_menu: bool = false
 var skill_selection: int = 0  # For cycling through skills
 var music_enabled: bool = true
 
+# Input blocking to prevent QTE carryover
+var input_blocked: bool = false
+
 # Turn order provider system
 var turn_order_provider: TurnOrderProvider
 
@@ -89,6 +92,11 @@ func _input(event):
 	
 	# Skip input if any overlay is showing
 	if (result_overlay and result_overlay.visible) or (pause_overlay and pause_overlay.visible):
+		return
+	
+	# Block input during transition periods to prevent QTE carryover
+	if input_blocked:
+		print("INPUT→ Blocked during transition")
 		return
 	
 	# Music toggle
@@ -519,6 +527,15 @@ func resolve_action():
 	# Add feedback here (screen shake, hitstop, etc.)
 	trigger_feedback(qte_result, damage)
 	
+	# Block input and add delay to prevent QTE button mashing carryover
+	input_blocked = true
+	print("TURNMGR→ Blocking input for 1 second to prevent carryover")
+	_clear_pending_inputs()
+	await get_tree().create_timer(1.0).timeout
+	_clear_pending_inputs()  # Clear again after delay
+	input_blocked = false
+	print("TURNMGR→ Input unblocked")
+	
 	change_state(State.CHECK_END)
 
 func trigger_feedback(qte_result: String, damage: int):
@@ -636,6 +653,7 @@ func reset_combat():
 	in_skills_menu = false
 	skill_selection = 0  # Reset skill menu selection
 	enemy_attack_count = 0  # Reset enemy attack pattern
+	input_blocked = false  # Ensure input is not blocked on reset
 	
 	# Reset UI
 	if turn_label:
@@ -720,6 +738,11 @@ func _refresh_turn_order() -> void:
 		for actor in turn_order:
 			actor_names.append(actor.name)
 		print("STATE→ Turn order refreshed: ", actor_names)
+
+# Clear any pending input events to prevent carryover
+func _clear_pending_inputs() -> void:
+	Input.flush_buffered_events()
+	print("TURNMGR→ Cleared pending input events")
 
 # Safe audio helper function - won't crash if AudioManager not available
 func _safe_audio_call(method_name: String) -> void:

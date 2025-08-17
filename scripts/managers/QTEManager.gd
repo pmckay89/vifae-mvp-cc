@@ -12,11 +12,22 @@ signal qte_completed
 
 var qte_active: bool = false
 
+# QTE result flash overlay
+var result_flash_overlay: Sprite2D
+
+# X prompt for parry QTEs
+var x_prompt_sprite: Sprite2D
+
 func _ready() -> void:
+	print("QTE→ DEBUG: QTEManager _ready() called")
 	# Only try to set up QTE if we're actually in the battle scene
 	var current_scene = get_tree().current_scene
+	print("QTE→ DEBUG: Current scene: ", current_scene.name if current_scene else "null")
 	if current_scene and current_scene.name == "BattleScene":
+		print("QTE→ DEBUG: Setting up QTE for BattleScene")
 		_ensure_qte_container()
+		_setup_result_flash_overlay()
+		_setup_x_prompt()
 		
 		# TASK 1: Force hide all QTE UI elements on start
 		if qte_container:
@@ -34,6 +45,8 @@ func _ready() -> void:
 			"?" if qte_container == null else str(qte_container.z_index)
 		])
 	else:
+		# Try to set up later when we detect we're in battle
+		print("QTE→ DEBUG: Not in BattleScene, will setup later")
 		print("[QTE] Waiting for BattleScene to load...")
 
 func _ensure_qte_container() -> void:
@@ -188,6 +201,19 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 
 	# TASK 1: Use new selective QTE UI system
 	show_qte("press", prompt_text, window_ms)
+	
+	# Show X prompt for parry QTEs
+	if action_name == "parry":
+		_show_x_prompt()
+	else:
+		_hide_x_prompt()
+	
+	# Show Player2 windup pose for basic attacks
+	if prompt_text == "Press Z to attack!" and target_player and target_player.name == "Player2":
+		if target_player.has_method("show_attack_windup"):
+			target_player.show_attack_windup()
+			print("QTE→ Showing Player2 attack windup pose")
+	
 	print("[QTE] spawn @%s parent=%s z=%d" % [
 		qte_container.get_path(),
 		qte_container.get_parent().get_path(),
@@ -215,6 +241,11 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 		if qte_fill_ring:
 			var fill_scale = 0.02 + (fill_progress * 0.18)  # Grows from 0.02 to 0.20 (beyond empty ring at 0.15)
 			qte_fill_ring.scale = Vector2(fill_scale, fill_scale)
+			
+			# Scale X prompt with the ring for parry QTEs
+			if x_prompt_sprite and x_prompt_sprite.visible:
+				var x_scale = 0.02 + (fill_progress * 0.18)  # Same scaling as ring
+				x_prompt_sprite.scale = Vector2(x_scale, x_scale)
 
 		if Input.is_action_just_pressed(action_name):
 			input_detected = true
@@ -283,6 +314,17 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 	qte_active = false
 	print("[QTE] cleanup done")
 	hide_qte()
+	
+	# Hide Player2 windup pose for basic attacks
+	if prompt_text == "Press Z to attack!" and target_player and target_player.name == "Player2":
+		if target_player.has_method("hide_attack_windup"):
+			target_player.hide_attack_windup()
+			print("QTE→ Hiding Player2 attack windup pose")
+	
+	# Show result flash for attack QTEs
+	if action_name == "confirm attack":
+		show_result_flash(result)
+	
 	return result
 
 # TASK 1: New selective QTE UI functions
@@ -358,6 +400,9 @@ func hide_qte() -> void:
 		qte_pressure_bar.modulate = Color.WHITE  # Reset color
 	if qte_text:
 		qte_text.visible = false
+	
+	# Hide X prompt when QTE ends
+	_hide_x_prompt()
 
 func start_lightning_surge_qte(action_name: String, prompt_text: String, target_player = null) -> String:
 	print("⚡ Lightning Surge QTE started - 3 hits needed!")
@@ -736,6 +781,9 @@ func start_sniper_qte(action_name: String, prompt_text: String, _target_player =
 				sfx_player.stream = preload("res://assets/sfx/miss.wav")
 				sfx_player.play()
 	
+	# Show result flash for sniper QTE
+	show_result_flash(hit_result)
+	
 	return hit_result
 
 func start_sniper_box_qte(enemy_position: Vector2) -> String:
@@ -928,6 +976,114 @@ func start_legacy_basic_qte(action_name: String, window_ms: int, target_player) 
 	print("⚔️ Using legacy QTE system for basic attack")
 	# ... old QTE logic would go here if needed
 	return "normal"
+
+# Setup QTE result flash overlay
+func _setup_result_flash_overlay() -> void:
+	result_flash_overlay = Sprite2D.new()
+	result_flash_overlay.visible = false
+	result_flash_overlay.z_index = 2000  # Above everything else
+	
+	# Get screen size and center the overlay
+	var viewport_size = get_viewport().get_visible_rect().size
+	result_flash_overlay.position = viewport_size / 2
+	result_flash_overlay.scale = Vector2(0.2, 0.2)  # 20% size
+	
+	print("QTE→ DEBUG: Setting up flash overlay at position: ", result_flash_overlay.position)
+	print("QTE→ DEBUG: Viewport size: ", viewport_size)
+	
+	# Add to the UI layer
+	var ui_layer = get_node_or_null("/root/BattleScene/UILayer")
+	if ui_layer:
+		ui_layer.add_child(result_flash_overlay)
+		print("QTE→ Result flash overlay setup complete - added to UILayer")
+		print("QTE→ DEBUG: Flash overlay node path: ", result_flash_overlay.get_path())
+	else:
+		print("QTE→ ERROR: Could not find UILayer for flash overlay")
+
+# Show QTE result flash (success or fail)
+func show_result_flash(result: String) -> void:
+	print("QTE→ DEBUG: show_result_flash called with result: ", result)
+	
+	if not result_flash_overlay:
+		print("QTE→ DEBUG: Flash overlay missing, attempting to create now...")
+		_setup_result_flash_overlay()
+		if not result_flash_overlay:
+			print("QTE→ ERROR: Could not create result flash overlay!")
+			return
+	
+	print("QTE→ DEBUG: Flash overlay exists, current position: ", result_flash_overlay.position)
+	print("QTE→ DEBUG: Flash overlay scale: ", result_flash_overlay.scale)
+	
+	# Choose appropriate texture based on result
+	match result:
+		"crit", "normal":
+			result_flash_overlay.texture = preload("res://assets/ui/qte_success.png")
+			print("QTE→ Showing SUCCESS flash with texture: ", result_flash_overlay.texture)
+		"fail":
+			result_flash_overlay.texture = preload("res://assets/ui/qte_fail.png")
+			print("QTE→ Showing FAIL flash with texture: ", result_flash_overlay.texture)
+		_:
+			print("QTE→ DEBUG: Unknown result, not showing flash: ", result)
+			return  # Don't show flash for other results
+	
+	# Show the flash with quick fade in/out
+	result_flash_overlay.visible = true
+	result_flash_overlay.modulate = Color(1, 1, 1, 0)  # Start transparent
+	
+	print("QTE→ DEBUG: Flash overlay made visible, starting animation")
+	
+	# Animate flash: different timing for success vs fail
+	var tween = create_tween()
+	if result == "fail":
+		# Fail flash: much faster to not block subsequent QTEs
+		tween.tween_property(result_flash_overlay, "modulate:a", 1.0, 0.05)  # Quick fade in
+		tween.tween_property(result_flash_overlay, "modulate:a", 1.0, 0.1)   # Brief hold
+		tween.tween_property(result_flash_overlay, "modulate:a", 0.0, 0.1)   # Quick fade out
+	else:
+		# Success flash: longer celebration
+		tween.tween_property(result_flash_overlay, "modulate:a", 1.0, 0.1)  # Fade in quickly
+		tween.tween_property(result_flash_overlay, "modulate:a", 1.0, 0.3)  # Hold
+		tween.tween_property(result_flash_overlay, "modulate:a", 0.0, 0.2)  # Fade out
+	
+	tween.tween_callback(func(): 
+		result_flash_overlay.visible = false
+		print("QTE→ DEBUG: Flash animation complete, overlay hidden")
+	)
+
+# Setup X prompt for parry QTEs
+func _setup_x_prompt() -> void:
+	x_prompt_sprite = Sprite2D.new()
+	x_prompt_sprite.texture = preload("res://assets/ui/prompt_x.png")
+	x_prompt_sprite.scale = Vector2(0.02, 0.02)  # Start small like the ring
+	x_prompt_sprite.visible = false
+	x_prompt_sprite.z_index = -1  # Behind ring elements
+	
+	# Center it in the QTE container
+	if qte_container:
+		var screen_center = get_viewport().get_visible_rect().size / 2
+		x_prompt_sprite.position = screen_center
+		qte_container.add_child(x_prompt_sprite)
+		print("QTE→ X prompt setup complete")
+	else:
+		print("QTE→ ERROR: Could not setup X prompt - no QTE container")
+
+# Show X prompt for parry QTEs
+func _show_x_prompt() -> void:
+	if not x_prompt_sprite:
+		print("QTE→ X prompt missing, attempting to create now...")
+		_setup_x_prompt()
+		if not x_prompt_sprite:
+			print("QTE→ ERROR: Could not create X prompt!")
+			return
+	
+	x_prompt_sprite.visible = true
+	print("QTE→ X prompt visible")
+
+# Hide X prompt
+func _hide_x_prompt() -> void:
+	if x_prompt_sprite:
+		x_prompt_sprite.visible = false
+		print("QTE→ X prompt hidden")
 
 # Safe audio helper function - won't crash if AudioManager not available
 func _safe_audio_call(method_name: String) -> void:

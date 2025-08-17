@@ -7,12 +7,10 @@ var selected_ability = ""
 
 @onready var rng := RandomNumberGenerator.new()
 
-# Breathing animation variables
+# Breathing animation variables - sprite swapping system
 var breathing_tween: Tween
-var original_scale: Vector2
-var original_position: Vector2
-var breath_scale_y: float = 1.0
 var breathing_enabled: bool = true
+var main_sprite_visible: bool = true
 
 # Muzzle flash variables
 var muzzle_flash: ColorRect
@@ -41,20 +39,26 @@ func show_block_animation(duration: float = 1.0):
 	var was_breathing = breathing_enabled
 	stop_breathing_animation()
 	
-	# Get references to both sprites
+	# Get references to all sprites
 	var main_sprite = $Sprite2D
+	var idle2_sprite = $idle2
+	var attack_sprite = $attack
 	var block_sprite = $"p2-block"  # Use quotes for the dash
 	
-	# Switch to block sprite
+	# Hide all other sprites and show block sprite
 	main_sprite.visible = false
+	idle2_sprite.visible = false
+	attack_sprite.visible = false
 	block_sprite.visible = true
 	
 	# Hold for specified duration
 	await get_tree().create_timer(duration).timeout
 	
-	# Switch back to main sprite
+	# Switch back to main sprite and hide block sprite
 	block_sprite.visible = false
 	main_sprite.visible = true
+	idle2_sprite.visible = false
+	attack_sprite.visible = false
 	
 	# Resume breathing if it was enabled
 	if was_breathing:
@@ -66,6 +70,8 @@ func show_death_sprite():
 	
 	# Hide all other sprites
 	$Sprite2D.visible = false
+	$idle2.visible = false
+	$attack.visible = false
 	$"p2-block".visible = false
 	
 	# Show death sprite
@@ -76,18 +82,50 @@ func hide_death_sprite():
 	# Hide death sprite and restore main sprite
 	$"p2-dead".visible = false
 	$Sprite2D.visible = true
+	$idle2.visible = false
+	$attack.visible = false
 	$"p2-block".visible = false
 	
 	# Resume breathing when revived
 	resume_breathing_animation()
 	print("REVIVE→ " + name + " restored to life")
 
+func show_attack_windup():
+	# Show windup pose during QTE - stop breathing and show attack sprite
+	stop_breathing_animation()
+	
+	# Hide all idle sprites and show attack sprite (p2.png windup pose)
+	var main_sprite = $Sprite2D
+	var idle2_sprite = $idle2
+	var attack_sprite = $attack
+	
+	main_sprite.visible = false
+	idle2_sprite.visible = false
+	attack_sprite.visible = true
+	
+	print("[Player2] Showing attack windup pose (p2.png)")
+
+func hide_attack_windup():
+	# Hide attack sprite and return to breathing animation
+	var attack_sprite = $attack
+	attack_sprite.visible = false
+	
+	resume_breathing_animation()
+	print("[Player2] Hiding attack windup pose, resuming breathing")
+
 func attack(target):
 	if target == null:
 		print(name, "tried to attack a NULL target!")
 		return
+	
+	# Show windup pose for basic attack
+	show_attack_windup()
+	
 	var damage = rng.randi_range(5, 10)
 	print(name, "attacks", target.name, "for", damage, "damage")
+	
+	# Small delay to show the windup pose
+	await get_tree().create_timer(0.3).timeout
 	
 	# Trigger muzzle flash for Gun Girl's basic attacks
 	trigger_muzzle_flash("normal")
@@ -99,19 +137,32 @@ func attack(target):
 	
 	VFXManager.play_hit_effects(target)
 	target.take_damage(damage)
+	
+	# Hide windup pose after attack
+	hide_attack_windup()
 
 func attack_critical(target):
 	if target == null:
 		print(name, "tried to attack a NULL target!")
 		return
+	
+	# Show windup pose for critical attack
+	show_attack_windup()
+	
 	var damage = rng.randi_range(15, 25)
 	print(name, "CRITICAL ATTACK on", target.name, "for", damage, "damage!")
+	
+	# Small delay to show the windup pose
+	await get_tree().create_timer(0.3).timeout
 	
 	# Trigger muzzle flash for Gun Girl's critical attacks
 	trigger_muzzle_flash("crit")
 	
 	VFXManager.play_hit_effects(target)
 	target.take_damage(damage)
+	
+	# Hide windup pose after attack
+	hide_attack_windup()
 
 func take_damage(amount):
 	if is_defeated:
@@ -245,66 +296,69 @@ func on_qte_result(result: String, target):
 		_:
 			print("⚠️ Unknown ability: " + selected_ability)
 
-# Breathing Animation System - Safe and Independent
+# Breathing Animation System - Sprite Swapping
 func _start_breathing_animation() -> void:
 	if not breathing_enabled:
 		return
 		
-	# Get main sprite for animation (safe checks)
+	# Get sprite references
 	var main_sprite = get_node_or_null("Sprite2D")
-	if not main_sprite:
-		print("[Player2] No Sprite2D found for breathing animation - skipping")
+	var idle2_sprite = get_node_or_null("idle2")
+	
+	if not main_sprite or not idle2_sprite:
+		print("[Player2] Missing sprites for breathing animation - main:", main_sprite != null, " idle2:", idle2_sprite != null)
 		return
 	
-	# Store original transform values
-	original_scale = main_sprite.scale
-	original_position = main_sprite.position
+	# Ensure proper initial state
+	main_sprite.visible = true
+	idle2_sprite.visible = false
+	main_sprite_visible = true
 	
 	# Start breathing loop
 	_breathing_loop()
-	print("[Player2] Breathing animation started")
+	print("[Player2] Sprite-swapping breathing animation started")
 
 func _breathing_loop() -> void:
 	if not breathing_enabled:
-		return
-		
-	var main_sprite = get_node_or_null("Sprite2D")
-	if not main_sprite:
 		return
 	
 	# Clean up previous tween if it exists
 	if breathing_tween:
 		breathing_tween.kill()
 	
-	# Create new breathing tween with simple back-and-forth motion
+	# Create new breathing tween
 	breathing_tween = create_tween()
 	breathing_tween.set_loops()  # Infinite loop
 	
-	# Simple breathing: normal -> expand -> normal -> contract -> repeat
-	var breath_duration = 1.5
+	var breath_duration = 2.0  # Slower, more natural breathing
 	
-	# Expand phase
-	breathing_tween.tween_method(_update_breathing, 1.0, 1.02, breath_duration / 4)
-	# Contract phase  
-	breathing_tween.tween_method(_update_breathing, 1.02, 0.98, breath_duration / 2)
-	# Return to normal
-	breathing_tween.tween_method(_update_breathing, 0.98, 1.0, breath_duration / 4)
+	# Breathing cycle: main sprite (1s) -> idle2 sprite (1s) -> repeat
+	breathing_tween.tween_callback(_swap_to_idle2).set_delay(breath_duration / 2)
+	breathing_tween.tween_callback(_swap_to_main).set_delay(breath_duration / 2)
 
-func _update_breathing(scale_factor: float) -> void:
+func _swap_to_idle2() -> void:
 	if not breathing_enabled:
 		return
 		
 	var main_sprite = get_node_or_null("Sprite2D")
-	if not main_sprite:
+	var idle2_sprite = get_node_or_null("idle2")
+	
+	if main_sprite and idle2_sprite:
+		main_sprite.visible = false
+		idle2_sprite.visible = true
+		main_sprite_visible = false
+
+func _swap_to_main() -> void:
+	if not breathing_enabled:
 		return
+		
+	var main_sprite = get_node_or_null("Sprite2D")
+	var idle2_sprite = get_node_or_null("idle2")
 	
-	# Apply gentle scale breathing (Y-axis only)
-	breath_scale_y = scale_factor
-	main_sprite.scale = Vector2(original_scale.x, original_scale.y * breath_scale_y)
-	
-	# Optional gentle 2px vertical bob
-	var bob_offset = (scale_factor - 1.0) * -2.0  # Inverted so expansion moves up slightly
-	main_sprite.position = Vector2(original_position.x, original_position.y + bob_offset)
+	if main_sprite and idle2_sprite:
+		main_sprite.visible = true
+		idle2_sprite.visible = false
+		main_sprite_visible = true
 
 func stop_breathing_animation() -> void:
 	breathing_enabled = false
@@ -312,11 +366,14 @@ func stop_breathing_animation() -> void:
 		breathing_tween.kill()
 		breathing_tween = null
 	
-	# Reset to original transform
+	# Reset to main sprite visible
 	var main_sprite = get_node_or_null("Sprite2D")
-	if main_sprite:
-		main_sprite.scale = original_scale
-		main_sprite.position = original_position
+	var idle2_sprite = get_node_or_null("idle2")
+	
+	if main_sprite and idle2_sprite:
+		main_sprite.visible = true
+		idle2_sprite.visible = false
+		main_sprite_visible = true
 	
 	print("[Player2] Breathing animation stopped")
 
