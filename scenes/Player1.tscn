@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://ce1cfkpg1oapd"]
+[gd_scene load_steps=11 format=3 uid="uid://ce1cfkpg1oapd"]
 
 [ext_resource type="Script" uid="uid://dbq0tjhjohpp8" path="res://scripts/player/Player1.gd" id="1_p7jkb"]
 [ext_resource type="Texture2D" uid="uid://2mnnrkd04phy" path="res://assets/characters/p1.png" id="2_1jryi"]
@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://qe12xnadqy1s" path="res://assets/characters/p_1_1.png" id="5_51rl0"]
 [ext_resource type="Script" uid="uid://r8lg7yslkud5" path="res://scenes/breathe/idle.gd" id="5_obn67"]
 [ext_resource type="Texture2D" uid="uid://bix0rau85f0jf" path="res://assets/characters/p_1_2.png" id="6_obn67"]
+[ext_resource type="SpriteFrames" uid="uid://ck2k8v0ckgny" path="res://assets/animations/Player1CombatAnimations.tres" id="7_combat"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_der4s"]
 animations = [{
@@ -57,3 +58,11 @@ visible = false
 position = Vector2(13, 150)
 scale = Vector2(0.15, 0.15)
 texture = ExtResource("4_vt8vw")
+
+[node name="CombatAnimations" type="AnimatedSprite2D" parent="."]
+visible = false
+z_index = 15
+position = Vector2(141, 140)
+scale = Vector2(2, 2)
+sprite_frames = ExtResource("7_combat")
+animation = &"walk"

@@ -127,7 +127,7 @@ func reset_for_new_combat():
 	print("RESET→ " + name + " fully restored")
 
 func get_ability_list() -> Array:
-	return ["2x_cut", "moonfall_slash", "spirit_wave"]
+	return ["2x_cut", "moonfall_slash", "spirit_wave", "uppercut"]
 
 func get_ability_display_name(ability_name: String) -> String:
 	match ability_name:
@@ -137,6 +137,8 @@ func get_ability_display_name(ability_name: String) -> String:
 			return "Moonfall Slash"
 		"spirit_wave":
 			return "Spirit Wave"
+		"uppercut":
+			return "Uppercut"
 		_:
 			return ability_name
 
@@ -147,9 +149,11 @@ func execute_ability(ability_name: String, target):
 	# Small delay for dramatic effect
 	await get_tree().create_timer(0.5).timeout
 	
-	# Handle special dual QTE for 2x Cut
+	# Handle special abilities with custom animations
 	if ability_name == "2x_cut":
 		await execute_2x_cut_dual_qte(target)
+	elif ability_name == "uppercut":
+		await execute_uppercut_sequence(target)
 	else:
 		# Call QTEManager to start the QTE for this ability
 		await QTEManager.start_qte_for_ability(self, ability_name, target)
@@ -171,6 +175,129 @@ func execute_2x_cut_dual_qte(target):
 	process_2x_cut_result(result2, target, 2)
 	
 	print("⚔️ 2x Cut sequence complete!")
+
+func execute_uppercut_sequence(target):
+	print("👊 " + name + " begins Uppercut sequence!")
+	
+	# Get references to animation nodes
+	var idle_animation = get_node_or_null("idle")
+	var combat_animation = get_node_or_null("CombatAnimations")
+	
+	if not combat_animation:
+		print("❌ CombatAnimations node not found!")
+		return
+	
+	# Step 1: Walk to enemy position
+	await walk_to_enemy(target)
+	
+	# Step 2: QTE for uppercut
+	print("👊 Uppercut QTE starting...")
+	var result = await QTEManager.start_qte("confirm attack", 500, "Press Z for Uppercut!")
+	
+	# Step 3: Handle result
+	if result == "crit" or result == "normal":
+		# Success - play uppercut animation
+		print("✨ Uppercut QTE SUCCESS - playing animation!")
+		await play_uppercut_animation()
+		process_uppercut_result(result, target)
+	else:
+		# Failure - just walk back
+		print("💫 Uppercut QTE FAILED - no animation")
+	
+	# Step 4: Walk back to original position
+	await walk_back_to_start()
+	
+	print("👊 Uppercut sequence complete!")
+
+func walk_to_enemy(target):
+	print("🚶 Walking to enemy...")
+	
+	# Hide idle breathing animation
+	var idle_animation = get_node_or_null("idle")
+	if idle_animation:
+		idle_animation.visible = false
+	
+	# Show combat animation node and play walk
+	var combat_animation = get_node_or_null("CombatAnimations")
+	if combat_animation:
+		combat_animation.visible = true
+		combat_animation.play("walk")
+	
+	# Get enemy position (closer to camera)
+	var original_pos = global_position
+	var enemy_pos = target.global_position
+	var attack_position = Vector2(enemy_pos.x - 300, enemy_pos.y)  # In front of enemy (closer to camera)
+	
+	print("🚶 WALK DEBUG:")
+	print("  Player start pos: ", original_pos)
+	print("  Enemy pos: ", enemy_pos)
+	print("  Attack target pos: ", attack_position)
+	print("  Distance to move: ", original_pos.distance_to(attack_position))
+	
+	# Tween to enemy position
+	var tween = create_tween()
+	tween.tween_property(self, "global_position", attack_position, 1.0)
+	await tween.finished
+	
+	print("  Player final pos: ", global_position)
+	
+	# Stop walking animation
+	if combat_animation:
+		combat_animation.stop()
+
+func walk_back_to_start():
+	print("🚶 Walking back to start...")
+	
+	var combat_animation = get_node_or_null("CombatAnimations")
+	var idle_animation = get_node_or_null("idle")
+	
+	# Play walk animation going back
+	if combat_animation:
+		combat_animation.play("walk")
+	
+	# Return to original position (Player1 starts at around 179, 221)
+	var start_position = Vector2(179, 221)
+	var tween = create_tween()
+	tween.tween_property(self, "global_position", start_position, 1.0)
+	await tween.finished
+	
+	# Hide combat animations and restore idle breathing
+	if combat_animation:
+		combat_animation.visible = false
+		combat_animation.stop()
+	
+	if idle_animation:
+		idle_animation.visible = true
+		idle_animation.play("idle")
+
+func play_uppercut_animation():
+	print("👊 Playing uppercut animation...")
+	
+	var combat_animation = get_node_or_null("CombatAnimations")
+	if combat_animation:
+		combat_animation.play("uppercut")
+		# Wait for animation to complete (7 frames at 12 fps = ~0.58 seconds)
+		await get_tree().create_timer(0.6).timeout
+
+func process_uppercut_result(result: String, target):
+	var damage = 0
+	var sfx_player = get_node("/root/BattleScene/SFXPlayer")
+	
+	match result:
+		"crit":
+			damage = 25
+			print("✨ PERFECT UPPERCUT! " + str(damage) + " damage!")
+			VFXManager.play_hit_effects(target)
+			target.take_damage(damage)
+			sfx_player.stream = preload("res://assets/sfx/crit.wav")
+			sfx_player.play()
+		"normal":
+			damage = 18
+			print("👊 Good uppercut! " + str(damage) + " damage!")
+			VFXManager.play_hit_effects(target)
+			target.take_damage(damage)
+			sfx_player.stream = preload("res://assets/sfx/attack.wav")
+			sfx_player.play()
 
 func process_2x_cut_result(result: String, target, strike_number: int):
 	var damage = 0

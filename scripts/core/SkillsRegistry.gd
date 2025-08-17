@@ -52,5 +52,13 @@ func get_skills() -> Dictionary:
 			"crit_mult": 1.5,
 			"sfx": "spirit_hit",
 			"vfx": "spirit_wave"
+		},
+		"Uppercut": {
+			"qte": "tap",
+			"window_ms": 500,
+			"damage": 18,
+			"crit_mult": 1.8,
+			"sfx": "blade_hit",
+			"vfx": "uppercut_strike"
 		}
 	}

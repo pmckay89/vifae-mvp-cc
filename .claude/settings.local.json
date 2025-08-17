@@ -6,7 +6,9 @@
       "Bash(xcopy:*)",
       "Bash(powershell:*)",
       "Bash(del \"nul\")",
-      "Bash(godot:*)"
+      "Bash(godot:*)",
+      "Bash(magick:*)",
+      "Bash(convert:*)"
     ],
     "deny": [],
     "ask": [],
