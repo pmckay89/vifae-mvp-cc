@@ -67,6 +67,34 @@ func end_attack_animation() -> void:
 	if enemy_idle_sprite:
 		enemy_idle_sprite.visible = true
 
+# Add missing show_block_animation method for VFXManager compatibility
+func show_block_animation(duration: float = 1.0):
+	print("🛡️ Enemy hit reaction - hitstun flash only")
+	
+	# Get sprite references
+	var enemy_idle_sprite = get_node_or_null("Sprite2D")
+	var e_block1 = get_node_or_null("e-block")
+	var e_block2 = get_node_or_null("e-block2")
+	
+	# Make sure only the idle sprite is visible during hit reaction
+	if enemy_idle_sprite:
+		enemy_idle_sprite.visible = true
+	
+	# Hide any attack sprites that might be showing
+	if e_block1:
+		e_block1.visible = false
+	if e_block2:
+		e_block2.visible = false
+	
+	# Just wait for the hitstun duration - let the flash effect handle the visual feedback
+	await get_tree().create_timer(duration).timeout
+	
+	# Ensure idle sprite stays visible
+	if enemy_idle_sprite:
+		enemy_idle_sprite.visible = true
+	
+	print("🛡️ Enemy hit reaction complete - enemy stays in place")
+
 # ORIGINAL ATTACK METHOD - Kept for compatibility
 func attack(target: Node) -> void:
 	print("🔥 ENEMY ATTACK STARTED - target:", target.name)

@@ -2,7 +2,7 @@ extends Control
 
 # Audio constants
 const BGM_DIR = "res://assets/music/"
-const OPENING_THEME = BGM_DIR + "opener.wav"
+const OPENING_THEME = "res://assets/sfx/TitleTheme.wav"
 const NEXT_SCENE_AFTER_OPENING = "res://scenes/BattleScene.tscn"
 
 
@@ -17,6 +17,8 @@ func _ready():
 
 	# Set up music fade-in
 	if opening_music:
+		# Load the new title theme
+		opening_music.stream = load(OPENING_THEME)
 		opening_music.volume_db = 12
 		opening_music.play()
 		print("Opening music volume BEFORE tween: ", opening_music.volume_db)

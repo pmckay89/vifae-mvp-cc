@@ -382,8 +382,14 @@ func start_qte():
 		
 		# Player offense - let player handle their own abilities
 		if selected_action == "attack":
-			# Basic attack uses simple QTE
-			qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z to attack!", current_actor)
+			# Check which player - Player1 has ninja sequence, Player2 needs QTE
+			if current_actor.name == "Player1":
+				# Player1 uses ninja attack sequence with built-in QTE
+				await current_actor.attack(selected_target)
+				qte_result = "handled"  # Flag that player handled it
+			else:
+				# Player2 and others use QTE then attack method
+				qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z to attack!", current_actor)
 		else:
 			# Handle self-buff abilities that don't need a target
 			if selected_action == "focus":

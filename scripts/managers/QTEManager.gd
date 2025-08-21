@@ -572,9 +572,9 @@ func start_lightning_surge_qte(action_name: String, prompt_text: String, target_
 	return result
 
 func start_phase_slam_qte(action_name: String, prompt_text: String, target_player = null) -> String:
-	print("💥 Phase Slam QTE started - hold and release!")
+	print("💥 Phase Slam QTE started - enhanced hold and release!")
 	
-	# TASK 2: Show enemy attack animation IMMEDIATELY before QTE
+	# Show enemy attack animation IMMEDIATELY before QTE
 	var enemy = get_node_or_null("/root/BattleScene/Enemy")
 	if enemy and enemy.has_method("attack_animation") and target_player:
 		enemy.attack_animation(target_player, "phase_slam")
@@ -585,79 +585,108 @@ func start_phase_slam_qte(action_name: String, prompt_text: String, target_playe
 	
 	var sfx_player := get_node_or_null("/root/BattleScene/SFXPlayer")
 	
-	# TASK 1 & TASK 3: Show QTE UI using new selective method
-	show_qte("hold_release", prompt_text, 900)
+	# Show QTE UI using pressure bar system
+	show_qte("hold_release", prompt_text, 2000)  # 2 second total time limit
 	
-	var start_time = Time.get_ticks_msec()
-	var fill_duration = 900  # 0.9 seconds to fill
+	var total_time_limit = 2000  # 2 seconds max to complete QTE
+	var qte_start_time = Time.get_ticks_msec()
+	var initial_hold_time = 500  # 0.5 seconds before they can start holding
+	var fill_duration = 900  # 0.9 seconds to fill once holding starts
 	var is_holding = false
 	var release_detected = false
 	var release_time = 0
+	var hold_start_time = 0
 	
-	# Wait for initial press
+	# Phase 1: Simple countdown
 	if qte_text:
-		qte_text.text = prompt_text + " - PRESS AND HOLD X!"
+		qte_text.text = "PHASE SLAM INCOMING..."
 	
-	while not is_holding:
+	while Time.get_ticks_msec() - qte_start_time < initial_hold_time:
+		var elapsed = Time.get_ticks_msec() - qte_start_time
+		
+		# Simple countdown text
+		if qte_text:
+			var time_left = (initial_hold_time - elapsed) / 1000.0
+			qte_text.text = "GET READY... " + str("%.1f" % time_left)
+		
+		await get_tree().process_frame
+	
+	# Phase 2: Clear hold prompt
+	if qte_text:
+		qte_text.text = "HOLD X!"
+	
+	# Wait for initial press with time limit
+	while not is_holding and Time.get_ticks_msec() - qte_start_time < total_time_limit:
 		if Input.is_action_just_pressed(action_name):
 			is_holding = true
-			start_time = Time.get_ticks_msec()  # Reset timer when they start holding
-			print("💥 Holding X - pressure building!")
+			hold_start_time = Time.get_ticks_msec()
+			print("💥 Started holding X - pressure building!")
+			
+			# Play hold start sound
+			if sfx_player:
+				sfx_player.stream = preload("res://assets/sfx/incoming.wav")
+				sfx_player.play()
 			break
 		await get_tree().process_frame
 	
-	# Filling phase - bar fills from top to bottom
-	while Time.get_ticks_msec() - start_time < fill_duration:
-		var elapsed = Time.get_ticks_msec() - start_time
+	# Check if they failed to start holding in time
+	if not is_holding:
+		print("💥 PHASE SLAM FAILED! Didn't start holding in time!")
+		qte_active = false
+		hide_qte()
+		if sfx_player:
+			sfx_player.stream = preload("res://assets/sfx/miss.wav")
+			sfx_player.play()
+		return "fail"
+	
+	# Phase 3: Filling phase with enhanced visuals
+	while Time.get_ticks_msec() - hold_start_time < fill_duration and Time.get_ticks_msec() - qte_start_time < total_time_limit:
+		var elapsed = Time.get_ticks_msec() - hold_start_time
 		var progress = float(elapsed) / float(fill_duration)
 		
+		# Update pressure bar
 		if qte_pressure_bar:
 			qte_pressure_bar.value = progress * 100
 			
-			# Visual urgency: color changes as bar fills
+			# Simple color zones - no flashing
 			if progress >= 0.8:
-				# Flash green in release zone (80-100%) - GOOD timing
+				# Release zone (80-100%) - green
 				var style_box = StyleBoxFlat.new()
-				if (Time.get_ticks_msec() % 200) < 100:
-					style_box.bg_color = Color.LIME_GREEN
-				else:
-					style_box.bg_color = Color.WHITE
+				style_box.bg_color = Color.GREEN
 				qte_pressure_bar.add_theme_stylebox_override("fill", style_box)
 				if qte_text:
-					qte_text.text = prompt_text + " - RELEASE NOW!"
-			elif progress >= 0.6:
-				# Yellow warning zone (60-80%) - getting close
-				var style_box = StyleBoxFlat.new()
-				style_box.bg_color = Color.YELLOW
-				qte_pressure_bar.add_theme_stylebox_override("fill", style_box)
-				if qte_text:
-					qte_text.text = prompt_text + " - GET READY... (" + str(int(progress * 100)) + "%)"
+					qte_text.text = "RELEASE NOW!"
 			else:
-				# Red early zone (0-60%) - BAD timing, don't release
+				# Build zone (0-80%) - blue
 				var style_box = StyleBoxFlat.new()
-				style_box.bg_color = Color.RED
+				style_box.bg_color = Color.BLUE
 				qte_pressure_bar.add_theme_stylebox_override("fill", style_box)
 				if qte_text:
-					qte_text.text = prompt_text + " - HOLD... (" + str(int(progress * 100)) + "%)"
+					qte_text.text = "HOLD... (" + str(int(progress * 100)) + "%)"
 		
 		# Check if they released
 		if Input.is_action_just_released(action_name):
 			release_detected = true
-			release_time = Time.get_ticks_msec() - start_time
+			release_time = Time.get_ticks_msec() - hold_start_time
 			break
 		
-		# Check if they stopped holding
+		# Check if they stopped holding without releasing
 		if not Input.is_action_pressed(action_name):
-			print("💥 Released X too early!")
+			print("💥 Stopped holding X without proper release!")
 			break
 			
 		await get_tree().process_frame
 	
-	# If they never released, count as release at 100%
-	if not release_detected and Input.is_action_pressed(action_name):
+	# Handle time limit exceeded while holding
+	if not release_detected and Input.is_action_pressed(action_name) and Time.get_ticks_msec() - qte_start_time >= total_time_limit:
+		print("💥 Time limit exceeded while holding!")
+		release_detected = false
+	
+	# If they held to the end without releasing, force release
+	if not release_detected and Time.get_ticks_msec() - hold_start_time >= fill_duration:
 		release_time = fill_duration
 		release_detected = true
-		print("💥 Time up - forced release!")
+		print("💥 Held to maximum - forced release!")
 	
 	qte_active = false
 	hide_qte()
@@ -667,9 +696,17 @@ func start_phase_slam_qte(action_name: String, prompt_text: String, target_playe
 	if release_detected:
 		var release_percentage = float(release_time) / float(fill_duration)
 		
-		if release_percentage >= 0.8 and release_percentage <= 1.0:
+		if release_percentage >= 0.9 and release_percentage <= 1.0:
 			result = "normal"
 			print("💥 PHASE SLAM SUCCESS! Perfect release at " + str(int(release_percentage * 100)) + "%!")
+			if sfx_player:
+				sfx_player.stream = preload("res://assets/sfx/parry.wav")
+				sfx_player.play()
+			if target_player != null and target_player.has_method("show_block_animation"):
+				target_player.show_block_animation()
+		elif release_percentage >= 0.8 and release_percentage < 0.9:
+			result = "normal"
+			print("💥 PHASE SLAM SUCCESS! Good release at " + str(int(release_percentage * 100)) + "%!")
 			if sfx_player:
 				sfx_player.stream = preload("res://assets/sfx/parry.wav")
 				sfx_player.play()
@@ -681,7 +718,7 @@ func start_phase_slam_qte(action_name: String, prompt_text: String, target_playe
 				sfx_player.stream = preload("res://assets/sfx/miss.wav")
 				sfx_player.play()
 	else:
-		print("💥 PHASE SLAM FAILED! Never pressed or held properly!")
+		print("💥 PHASE SLAM FAILED! Never held properly or timed out!")
 		if sfx_player:
 			sfx_player.stream = preload("res://assets/sfx/miss.wav")
 			sfx_player.play()

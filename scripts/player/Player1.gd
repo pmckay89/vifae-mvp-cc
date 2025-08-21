@@ -87,10 +87,9 @@ func attack(target):
 	if target == null:
 		print(name, "tried to attack a NULL target!")
 		return
-	var damage = rng.randi_range(5, 10)
-	print(name, "attacks", target.name, "for", damage, "damage")
-	VFXManager.play_hit_effects(target)
-	target.take_damage(damage)
+	
+	print("⚔️ " + name + " begins ninja attack sequence!")
+	await execute_ninja_attack_sequence(target)
 	
 
 func attack_critical(target):
@@ -159,22 +158,74 @@ func execute_ability(ability_name: String, target):
 		await QTEManager.start_qte_for_ability(self, ability_name, target)
 
 func execute_2x_cut_dual_qte(target):
-	print("⚔️ " + name + " begins 2x Cut sequence!")
+	print("⚔️ " + name + " begins ninja 2x Cut sequence!")
 	
-	# First QTE
+	# Get references to animation nodes
+	var idle_animation = get_node_or_null("idle")
+	var combat_animation = get_node_or_null("CombatAnimations")
+	
+	if not combat_animation:
+		print("❌ CombatAnimations node not found!")
+		return
+	
+	# Step 1: Move sprite right toward enemy
+	var original_pos = global_position
+	var attack_pos = Vector2(original_pos.x + 80, original_pos.y)
+	
+	# Hide idle animation
+	if idle_animation:
+		idle_animation.visible = false
+	
+	# Show combat animation node and move right  
+	combat_animation.visible = true
+	var tween = create_tween()
+	tween.tween_property(self, "global_position", attack_pos, 0.3)
+	await tween.finished
+	
+	# Step 2: Play 2x wind-up animation
+	print("⚔️ 2x Wind-up phase...")
+	combat_animation.play("2xwindup")
+	await get_tree().create_timer(0.7).timeout  # 7 frames at 10 fps = 0.7 seconds
+	
+	# Step 3: First QTE
 	print("⚔️ First strike incoming...")
 	var result1 = await QTEManager.start_qte("confirm attack", 500, "Press Z for 1st Cut!")
-	process_2x_cut_result(result1, target, 1)
 	
-	# Brief pause between strikes
-	await get_tree().create_timer(0.2).timeout
+	# Brief pause between QTEs so player can see the second one
+	await get_tree().create_timer(0.3).timeout
 	
-	# Second QTE  
+	# Step 4: Second QTE
 	print("⚔️ Second strike incoming...")
 	var result2 = await QTEManager.start_qte("confirm attack", 500, "Press Z for 2nd Cut!")
+	
+	# Step 5: After both QTEs, play 2x attack animation
+	print("⚔️ Unleashing 2x Cut!")
+	combat_animation.play("2x")
+	await get_tree().create_timer(0.71).timeout
+	
+	# Process both results
+	process_2x_cut_result(result1, target, 1)
 	process_2x_cut_result(result2, target, 2)
 	
-	print("⚔️ 2x Cut sequence complete!")
+	# Step 6: Play jumpback animation
+	print("⚔️ Jumping back...")
+	combat_animation.play("jumpback")
+	await get_tree().create_timer(0.7).timeout
+	
+	# Step 7: Return to original position and restore idle
+	tween = create_tween()
+	tween.tween_property(self, "global_position", original_pos, 0.3)
+	await tween.finished
+	
+	# Hide combat animations and restore idle breathing
+	combat_animation.visible = false
+	combat_animation.stop()
+	
+	if idle_animation:
+		idle_animation.visible = true
+		idle_animation.play("idle")
+	
+	print("⚔️ Ninja 2x Cut sequence complete!")
 
 func execute_uppercut_sequence(target):
 	print("👊 " + name + " begins Uppercut sequence!")
@@ -208,6 +259,99 @@ func execute_uppercut_sequence(target):
 	await walk_back_to_start()
 	
 	print("👊 Uppercut sequence complete!")
+
+func execute_ninja_attack_sequence(target):
+	print("🥷 " + name + " begins ninja attack sequence!")
+	
+	# Get references to animation nodes
+	var idle_animation = get_node_or_null("idle")
+	var combat_animation = get_node_or_null("CombatAnimations")
+	
+	if not combat_animation:
+		print("❌ CombatAnimations node not found!")
+		return
+	
+	# Step 1: Move sprite right toward enemy
+	var original_pos = global_position
+	var attack_pos = Vector2(original_pos.x + 80, original_pos.y)  # Move right toward enemy
+	
+	# Hide idle animation, keep using idle sprite but move it
+	if idle_animation:
+		idle_animation.visible = false
+	
+	# Show combat animation node and move right  
+	combat_animation.visible = true
+	var tween = create_tween()
+	tween.tween_property(self, "global_position", attack_pos, 0.3)
+	await tween.finished
+	
+	# Step 2: Play wind-up animation
+	print("🥷 Wind-up phase...")
+	combat_animation.play("attackwindup")
+	await get_tree().create_timer(0.5).timeout  # 4 frames at 8 fps = 0.5 seconds
+	
+	# Step 3: QTE between wind-up and attack
+	print("🥷 QTE starting...")
+	var result = await QTEManager.start_qte("confirm attack", 500, "Press Z to Attack!")
+	
+	# Step 4: Play attack animation based on QTE result
+	if result == "crit" or result == "normal":
+		print("✨ Attack QTE SUCCESS - playing attack animation!")
+		combat_animation.play("attack")
+		await get_tree().create_timer(0.58).timeout  # 7 frames at 12 fps = ~0.58 seconds
+		process_ninja_attack_result(result, target)
+	else:
+		print("💫 Attack QTE FAILED - weak attack")
+		combat_animation.play("attack")
+		await get_tree().create_timer(0.58).timeout
+		process_ninja_attack_result("fail", target)
+	
+	# Step 5: Play jumpback animation
+	print("🥷 Jumping back...")
+	combat_animation.play("jumpback")
+	await get_tree().create_timer(0.7).timeout  # 7 frames at 10 fps = 0.7 seconds
+	
+	# Step 6: Return to original position and restore idle
+	tween = create_tween()
+	tween.tween_property(self, "global_position", original_pos, 0.3)
+	await tween.finished
+	
+	# Hide combat animations and restore idle breathing
+	combat_animation.visible = false
+	combat_animation.stop()
+	
+	if idle_animation:
+		idle_animation.visible = true
+		idle_animation.play("idle")
+	
+	print("🥷 Ninja attack sequence complete!")
+
+func process_ninja_attack_result(result: String, target):
+	var damage = 0
+	var sfx_player = get_node("/root/BattleScene/SFXPlayer")
+	
+	match result:
+		"crit":
+			damage = 15
+			print("✨ PERFECT NINJA STRIKE! " + str(damage) + " damage!")
+			VFXManager.play_hit_effects(target)
+			target.take_damage(damage)
+			sfx_player.stream = preload("res://assets/sfx/crit.wav")
+			sfx_player.play()
+		"normal":
+			damage = 10
+			print("⚔️ Good ninja attack! " + str(damage) + " damage!")
+			VFXManager.play_hit_effects(target)
+			target.take_damage(damage)
+			sfx_player.stream = preload("res://assets/sfx/attack.wav")
+			sfx_player.play()
+		"fail":
+			damage = 5
+			print("💫 Weak ninja strike... " + str(damage) + " damage.")
+			VFXManager.play_hit_effects(target)
+			target.take_damage(damage)
+			sfx_player.stream = preload("res://assets/sfx/miss.wav")
+			sfx_player.play()
 
 func walk_to_enemy(target):
 	print("🚶 Walking to enemy...")

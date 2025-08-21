@@ -8,7 +8,9 @@
       "Bash(del \"nul\")",
       "Bash(godot:*)",
       "Bash(magick:*)",
-      "Bash(convert:*)"
+      "Bash(convert:*)",
+      "Bash(move:*)",
+      "Bash(mv:*)"
     ],
     "deny": [],
     "ask": [],
