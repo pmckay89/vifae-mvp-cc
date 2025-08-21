@@ -184,6 +184,10 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 			return await start_sniper_box_qte(enemy.global_position)
 		else:
 			return await start_sniper_qte(action_name, prompt_text, target_player)
+	
+	# Check for Mirror Strike QTE
+	if action_name == "mirror_strike":
+		return await start_mirror_strike_qte(prompt_text, target_player)
 
 	qte_active = true
 
@@ -275,7 +279,7 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 				result = "crit"
 				print("✨ PERFECT RING TIMING! CRITICAL!")
 				_safe_audio_call("play_qte_success")
-				ScreenShake.shake(5.0, 0.4)  # Add screen shake for crits
+				# ScreenShake.shake(5.0, 0.4)  # Add screen shake for crits
 				if sfx_player and action_name == "confirm attack":
 					var current_actor = get_node_or_null("/root/BattleScene/TurnManager").current_actor
 					if current_actor and current_actor.name == "Player1":
@@ -968,7 +972,7 @@ func start_basic_attack_qte(action_name: String, window_ms: int, target_player =
 			print("✨ PERFECT TIMING! CRITICAL!")
 			qte_widget.show_success()
 			_safe_audio_call("play_qte_success")
-			ScreenShake.shake(5.0, 0.4)
+			# ScreenShake.shake(5.0, 0.4)
 			if sfx_player and action_name == "confirm attack":
 				var current_actor = get_node_or_null("/root/BattleScene/TurnManager").current_actor
 				if current_actor and current_actor.name == "Player1":
@@ -1134,3 +1138,265 @@ func _safe_audio_call(method_name: String) -> void:
 		audio_manager.call(method_name)
 	else:
 		print("[QTE] AudioManager." + method_name + "() - stub (AudioManager not found)")
+
+# Mirror Strike QTE - Copy-cat sequence defense
+func start_mirror_strike_qte(prompt_text: String, target_player) -> String:
+	print("🪞 Mirror Strike QTE starting!")
+	
+	qte_active = true
+	_ensure_qte_container()
+	
+	# Generate sequence of exactly 6 Z buttons for testing
+	var button_keys = ["Z"]  # Only Z key until we add the others
+	var sequence_length = 6  # Fixed to 6 buttons
+	var target_sequence = []
+	
+	for i in sequence_length:
+		target_sequence.append(button_keys[randi() % button_keys.size()])
+	
+	print("🪞 Generated sequence: ", target_sequence)
+	
+	# Show the sequence and start input simultaneously
+	var player_sequence = []
+	
+	# Start demonstration in background (non-blocking)
+	show_mirror_sequence(target_sequence)
+	
+	# Start input collection immediately (this will block until complete)
+	var result = await collect_mirror_input(target_sequence, player_sequence)
+	
+	qte_active = false
+	hide_qte()
+	
+	print("🪞 Mirror Strike result: ", result)
+	return result
+
+# Show the button sequence to the player
+func show_mirror_sequence(sequence: Array) -> void:
+	print("🪞 Showing sequence: ", sequence)
+	
+	# Create horizontal button display at screen center
+	var display_container = Control.new()
+	display_container.name = "MirrorSequenceDisplay"
+	display_container.size = Vector2(1000, 200)  # Even bigger container for 6 buttons
+	
+	# Calculate true screen center position
+	var screen_size = get_viewport().get_visible_rect().size
+	display_container.position.x = (screen_size.x / 2) - 500  # Center horizontally
+	display_container.position.y = (screen_size.y / 2) - 100  # Center vertically
+	
+	# Debug background removed - container is invisible now
+	
+	print("🪞 DEBUG: Screen size: ", screen_size)
+	print("🪞 DEBUG: Container position: ", display_container.position)
+	print("🪞 DEBUG: Container size: ", display_container.size)
+	
+	# Manual positioning with 80-pixel spacing between centers
+	var button_labels = []
+	var total_width = (sequence.size() - 1) * 80  # Total width of button sequence
+	var start_x = (1000 - total_width) / 2  # Center the sequence in the 1000px container
+	
+	for i in sequence.size():
+		# Create button sprite using PNG images
+		var button_sprite = TextureRect.new()
+		button_sprite.size = Vector2(150, 150)  # Fixed size
+		
+		# Position with 80-pixel spacing between centers
+		button_sprite.position.x = start_x + (i * 80)  # 80 pixels between centers
+		button_sprite.position.y = 25  # Center vertically in 200-pixel container
+		
+		# Load the static sprite for this key
+		var key_name = sequence[i].to_lower()
+		var static_texture = load("res://assets/ui/" + key_name + "_static.png")
+		
+		if static_texture:
+			button_sprite.texture = static_texture
+			button_sprite.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+			button_sprite.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			print("🪞 Loaded button sprite: ", key_name + "_static.png")
+		else:
+			print("❌ Failed to load button sprite: ", key_name + "_static.png")
+			# Fallback to colored rect if texture fails
+			var fallback_rect = ColorRect.new()
+			fallback_rect.color = Color.GRAY
+			fallback_rect.size = Vector2(150, 150)  # Match button size
+			button_sprite.add_child(fallback_rect)
+		
+		display_container.add_child(button_sprite)
+		button_labels.append(button_sprite)  # Keep reference to sprite for animations
+		
+		print("🪞 Button ", i, " positioned at: ", button_sprite.position)
+	
+	print("🪞 DEBUG: Total sequence width: ", total_width)
+	print("🪞 DEBUG: Start X position: ", start_x)
+	
+	qte_container.add_child(display_container)
+	
+	# Force visibility and z-index
+	display_container.visible = true
+	display_container.z_index = 200
+	qte_container.visible = true
+	qte_container.z_index = 150
+	
+	print("🪞 DEBUG: Display container created at position: ", display_container.global_position)
+	print("🪞 DEBUG: Display container size: ", display_container.size)
+	print("🪞 DEBUG: QTE container size: ", qte_container.size)
+	print("🪞 DEBUG: Button count: ", button_labels.size())
+	print("🪞 DEBUG: Display container visible: ", display_container.visible)
+	print("🪞 DEBUG: QTE container visible: ", qte_container.visible)
+	print("🪞 DEBUG: Display container z_index: ", display_container.z_index)
+	print("🪞 DEBUG: QTE container parent: ", qte_container.get_parent())
+	
+	# Store reference for input phase immediately
+	display_container.set_meta("button_labels", button_labels)
+	
+	# Pulse animation for each button (runs in background, doesn't block input)
+	for i in sequence.size():
+		var button = button_labels[i]
+		var tween = create_tween()
+		tween.tween_property(button, "scale", Vector2(1.2, 1.2), 0.3)
+		tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.3)
+		await get_tree().create_timer(0.4).timeout  # Slight delay between pulses
+
+# Collect player input and validate
+func collect_mirror_input(target_sequence: Array, player_sequence: Array) -> String:
+	print("🪞 Input phase starting - sequence length: ", target_sequence.size())
+	
+	# Show "REPEAT THE SEQUENCE!" prompt
+	if qte_text:
+		qte_text.text = "REPEAT THE SEQUENCE!"
+		qte_text.visible = true
+	
+	var start_time = Time.get_ticks_msec()
+	var timeout_ms = 7000  # 7 second timeout
+	
+	# Input collection loop
+	while player_sequence.size() < target_sequence.size():
+		var current_time = Time.get_ticks_msec()
+		if current_time - start_time > timeout_ms:
+			print("🪞 Timeout! Player took too long")
+			await show_mirror_failure("TIMEOUT")
+			return "fail"
+		
+		# Check for input
+		var input_detected = false
+		var pressed_key = ""
+		
+		if Input.is_action_just_pressed("confirm attack"):  # Z
+			pressed_key = "Z"
+			input_detected = true
+		
+		if input_detected:
+			player_sequence.append(pressed_key)
+			var expected_key = target_sequence[player_sequence.size() - 1]
+			
+			print("🪞 Player pressed: ", pressed_key, " Expected: ", expected_key)
+			
+			# Show button press animation
+			await show_button_press(player_sequence.size() - 1, pressed_key)
+			
+			# Check if this input is correct
+			if pressed_key != expected_key:
+				print("🪞 Wrong button! Expected ", expected_key, " got ", pressed_key)
+				await show_mirror_failure("WRONG BUTTON")
+				return "fail"
+			
+			# Update visual progress (highlight correct input)
+			update_mirror_progress(player_sequence.size() - 1)
+		
+		await get_tree().process_frame
+	
+	# Success! All inputs correct
+	print("🪞 Perfect sequence! Player succeeded")
+	await show_mirror_success()
+	return "perfect"
+
+# Show button press animation (switch to pressed sprite briefly)
+func show_button_press(button_index: int, key: String) -> void:
+	var display = qte_container.get_node_or_null("MirrorSequenceDisplay")
+	if not display:
+		return
+	
+	var button_sprites = display.get_meta("button_labels", [])
+	if button_index >= button_sprites.size():
+		return
+	
+	var button_sprite = button_sprites[button_index]
+	if not button_sprite is TextureRect:
+		return
+	
+	# Load pressed texture
+	var key_name = key.to_lower()
+	var pressed_texture = load("res://assets/ui/" + key_name + "_press.png")
+	var static_texture = load("res://assets/ui/" + key_name + "_static.png")
+	
+	if pressed_texture:
+		# Switch to pressed texture
+		button_sprite.texture = pressed_texture
+		print("🪞 Button press: ", key_name + "_press.png")
+		
+		# Wait briefly
+		await get_tree().create_timer(0.15).timeout
+		
+		# Switch back to static texture
+		if static_texture:
+			button_sprite.texture = static_texture
+			print("🪞 Button release: ", key_name + "_static.png")
+
+# Update visual progress during input
+func update_mirror_progress(button_index: int) -> void:
+	var display = qte_container.get_node_or_null("MirrorSequenceDisplay")
+	if display:
+		var button_labels = display.get_meta("button_labels", [])
+		if button_index < button_labels.size():
+			var button = button_labels[button_index]
+			# Change color to green to show success
+			button.add_theme_color_override("font_color", Color.GREEN)
+
+# Show failure animation
+func show_mirror_failure(reason: String) -> void:
+	print("🪞 Showing failure: ", reason)
+	
+	# Make all buttons shake and fall
+	var display = qte_container.get_node_or_null("MirrorSequenceDisplay")
+	if display:
+		var button_labels = display.get_meta("button_labels", [])
+		for button in button_labels:
+			# Change to red color
+			button.add_theme_color_override("font_color", Color.RED)
+			
+			# Shake animation
+			var tween = create_tween()
+			tween.parallel().tween_property(button, "position", button.position + Vector2(randf_range(-10, 10), 0), 0.1)
+			tween.parallel().tween_property(button, "rotation", randf_range(-0.2, 0.2), 0.1)
+			tween.tween_property(button, "position", button.position + Vector2(0, 500), 1.0)  # Fall off screen
+			tween.parallel().tween_property(button, "modulate", Color.TRANSPARENT, 1.0)
+	
+	await get_tree().create_timer(1.0).timeout
+	cleanup_mirror_display()
+
+# Show success animation
+func show_mirror_success() -> void:
+	print("🪞 Showing success!")
+	
+	# Flash all buttons green
+	var display = qte_container.get_node_or_null("MirrorSequenceDisplay")
+	if display:
+		var button_labels = display.get_meta("button_labels", [])
+		for button in button_labels:
+			button.add_theme_color_override("font_color", Color.GREEN)
+			var tween = create_tween()
+			tween.tween_property(button, "scale", Vector2(1.3, 1.3), 0.2)
+			tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.2)
+	
+	await get_tree().create_timer(0.6).timeout
+	cleanup_mirror_display()
+
+# Clean up the mirror display
+func cleanup_mirror_display() -> void:
+	var display = qte_container.get_node_or_null("MirrorSequenceDisplay")
+	if display:
+		display.queue_free()
+	
+	if qte_text:
+		qte_text.visible = false

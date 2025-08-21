@@ -1,0 +1,27 @@
+[gd_scene load_steps=3 format=3 uid="uid://cfyxl6x6t6yft"]
+
+[ext_resource type="Texture2D" uid="uid://c0i27a16b5luc" path="res://assets/ui/z_static.png" id="1_8foeb"]
+[ext_resource type="Texture2D" uid="uid://bhtti54cvkke3" path="res://assets/ui/z_press.png" id="2_06uoh"]
+
+[node name="MirrorStrikeUI" type="Node2D"]
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 604.0
+offset_top = 237.0
+offset_right = 644.0
+offset_bottom = 277.0
+
+[node name="z_static" type="TextureRect" parent="Control"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+texture = ExtResource("1_8foeb")
+
+[node name="z_press" type="TextureRect" parent="Control"]
+layout_mode = 0
+offset_top = -2.0
+offset_right = 64.0
+offset_bottom = 62.0
+texture = ExtResource("2_06uoh")

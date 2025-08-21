@@ -341,19 +341,22 @@ func enemy_think():
 		return
 		
 	# Determine enemy attack pattern (deterministic rotation)
-	var attack_index = enemy_attack_count % 3
+	var attack_index = enemy_attack_count % 4
 	print("DEBUG→ Enemy attack count: " + str(enemy_attack_count))
 	print("DEBUG→ Attack index: " + str(attack_index))
 	enemy_attack_count += 1  # Increment for next time
 	
 	match attack_index:
 		0:
+			selected_action = "mirror_strike"
+			print("ENEMY→ Mirror Strike (copy-cat QTE)")
+		1:
 			selected_action = "arc_slash"
 			print("ENEMY→ Arc Slash (single-tap QTE)")
-		1:
+		2:
 			selected_action = "lightning_surge" 
 			print("ENEMY→ Lightning Surge (multi-tap QTE)")
-		2:
+		3:
 			selected_action = "phase_slam"
 			print("ENEMY→ Phase Slam (hold QTE)")
 			# Play Phase Slam wind-up sound early
@@ -430,6 +433,8 @@ func start_qte():
 				qte_result = await QTEManager.start_qte("parry", 500, "Press X rapidly!", selected_target)
 			"phase_slam":
 				qte_result = await QTEManager.start_qte("parry", 900, "Hold X, release on cue!", selected_target)
+			"mirror_strike":
+				qte_result = await QTEManager.start_qte("mirror_strike", 7000, "REPEAT THE SEQUENCE!", selected_target)
 	
 	print("QTE→ Result: " + qte_result)
 	
@@ -470,6 +475,7 @@ func resolve_action():
 			"arc_slash": base_damage = 100
 			"lightning_surge": base_damage = 120  # 6+6
 			"phase_slam": base_damage = 180
+			"mirror_strike": base_damage = 25
 			
 		# Show enemy attack animation (sound handled by QTE Manager)
 		if current_actor.has_method("attack_animation"):
@@ -480,7 +486,29 @@ func resolve_action():
 			
 		# Apply parry mitigation with graduated timing for Lightning Surge
 		var mitigation = 0.0
-		if selected_action == "lightning_surge":
+		if selected_action == "mirror_strike":
+			# Mirror Strike: perfect = 0 damage, fail = full damage
+			if qte_result == "perfect":
+				damage = 0
+				print("DMG→ Mirror Strike: Perfect sequence! No damage taken.")
+			else:
+				damage = base_damage
+				print("DMG→ Mirror Strike: Failed sequence! " + str(damage) + " damage to " + selected_target.name)
+			
+			# Apply mirror strike damage directly
+			if damage > 0:
+				print("DEBUG→ Applying " + str(damage) + " mirror strike damage to target: " + str(selected_target))
+				if selected_target == null:
+					print("ERROR→ selected_target is NULL!")
+				elif not selected_target.has_method("take_damage"):
+					print("ERROR→ selected_target missing take_damage method!")
+				else:
+					print("DEBUG→ Calling take_damage(" + str(damage) + ") on " + selected_target.name)
+					selected_target.take_damage(damage)
+			else:
+				print("DEBUG→ No mirror strike damage to apply (perfect defense)")
+			
+		elif selected_action == "lightning_surge":
 			# Per-strike damage calculation for Lightning Surge
 			var failed_strikes = int(qte_result)  # QTE returns number of failed strikes as string
 			damage = failed_strikes * 10  # 10 damage per failed strike
