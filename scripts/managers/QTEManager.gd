@@ -1146,8 +1146,8 @@ func start_mirror_strike_qte(prompt_text: String, target_player) -> String:
 	qte_active = true
 	_ensure_qte_container()
 	
-	# Generate sequence of exactly 6 Z buttons for testing
-	var button_keys = ["Z"]  # Only Z key until we add the others
+	# Generate sequence of exactly 6 random buttons
+	var button_keys = ["Z", "X", "W", "A", "D", "S"]  # All available keys for mirror strike
 	var sequence_length = 6  # Fixed to 6 buttons
 	var target_sequence = []
 	
@@ -1284,6 +1284,21 @@ func collect_mirror_input(target_sequence: Array, player_sequence: Array) -> Str
 		
 		if Input.is_action_just_pressed("confirm attack"):  # Z
 			pressed_key = "Z"
+			input_detected = true
+		elif Input.is_action_just_pressed("parry"):  # X
+			pressed_key = "X"
+			input_detected = true
+		elif Input.is_action_just_pressed("move up"):  # W
+			pressed_key = "W"
+			input_detected = true
+		elif Input.is_action_just_pressed("move left"):  # A
+			pressed_key = "A"
+			input_detected = true
+		elif Input.is_action_just_pressed("move right"):  # D
+			pressed_key = "D"
+			input_detected = true
+		elif Input.is_action_just_pressed("move down"):  # S
+			pressed_key = "S"
 			input_detected = true
 		
 		if input_detected:
