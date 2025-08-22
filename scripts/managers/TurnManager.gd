@@ -340,23 +340,26 @@ func enemy_think():
 		end_turn()
 		return
 		
-	# Determine enemy attack pattern (deterministic rotation)
-	var attack_index = enemy_attack_count % 4
+	# Determine enemy attack pattern (deterministic rotation) - 5 attacks total
+	var attack_index = enemy_attack_count % 5
 	print("DEBUG→ Enemy attack count: " + str(enemy_attack_count))
 	print("DEBUG→ Attack index: " + str(attack_index))
 	enemy_attack_count += 1  # Increment for next time
 	
 	match attack_index:
 		0:
+			selected_action = "multishot"
+			print("ENEMY→ Multishot (projectile deflect QTE)")
+		1:
 			selected_action = "mirror_strike"
 			print("ENEMY→ Mirror Strike (copy-cat QTE)")
-		1:
+		2:
 			selected_action = "arc_slash"
 			print("ENEMY→ Arc Slash (single-tap QTE)")
-		2:
+		3:
 			selected_action = "lightning_surge" 
 			print("ENEMY→ Lightning Surge (multi-tap QTE)")
-		3:
+		4:
 			selected_action = "phase_slam"
 			print("ENEMY→ Phase Slam (hold QTE)")
 			# Play Phase Slam wind-up sound early
@@ -427,6 +430,8 @@ func start_qte():
 		
 		# Enemy attack QTE (X button for defense)
 		match selected_action:
+			"multishot":
+				qte_result = await QTEManager.start_qte("multishot", 5000, "PARRY THE INCOMING BOXES!", selected_target)
 			"arc_slash":
 				qte_result = await QTEManager.start_qte("parry", 700, "Press X to parry!", selected_target)
 			"lightning_surge":

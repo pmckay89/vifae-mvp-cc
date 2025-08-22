@@ -1,10 +1,13 @@
-[gd_scene load_steps=8 format=3 uid="uid://brt8asynsnb14"]
+[gd_scene load_steps=34 format=3 uid="uid://brt8asynsnb14"]
 
 [ext_resource type="Script" uid="uid://bmke3c4xaykpx" path="res://scripts/enemy/Enemy.gd" id="1_8mwfh"]
 [ext_resource type="Texture2D" uid="uid://c18ya62t5fg16" path="res://assets/characters/ENemy1.png" id="2_mpr68"]
 [ext_resource type="Texture2D" uid="uid://cfxqolxqitd0v" path="res://assets/characters/enemy_flinch2.png" id="3_5wwv6"]
 [ext_resource type="Script" uid="uid://cqooqbawtijgf" path="res://scripts/enemy/EnemyAI.gd" id="3_xy2ub"]
 [ext_resource type="Texture2D" uid="uid://doebce22ltyh3" path="res://assets/characters/enemy_flinch1.png" id="4_1vja8"]
+[ext_resource type="Texture2D" uid="uid://bs1o8v3hmpu1m" path="res://assets/animations/enemy-XT-idle1.png" id="5_idle"]
+[ext_resource type="Texture2D" uid="uid://dhk8m2kgisim0" path="res://assets/animations/enemy-XT-idle2.png" id="6_idle2"]
+[ext_resource type="Texture2D" uid="uid://4kvon0bntopf" path="res://assets/animations/enemy-xt-laser.png" id="7_laser"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_bg"]
 bg_color = Color(0.1, 0.1, 0.1, 0.8)
@@ -21,6 +24,178 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.4, 1, 0.4, 1)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_0"]
+atlas = ExtResource("5_idle")
+region = Rect2(0, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_1"]
+atlas = ExtResource("5_idle")
+region = Rect2(128, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_2"]
+atlas = ExtResource("5_idle")
+region = Rect2(256, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle2_0"]
+atlas = ExtResource("6_idle2")
+region = Rect2(0, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle2_1"]
+atlas = ExtResource("6_idle2")
+region = Rect2(128, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle2_2"]
+atlas = ExtResource("6_idle2")
+region = Rect2(256, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle2_3"]
+atlas = ExtResource("6_idle2")
+region = Rect2(384, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle2_4"]
+atlas = ExtResource("6_idle2")
+region = Rect2(512, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle2_5"]
+atlas = ExtResource("6_idle2")
+region = Rect2(640, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle2_6"]
+atlas = ExtResource("6_idle2")
+region = Rect2(768, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle2_7"]
+atlas = ExtResource("6_idle2")
+region = Rect2(896, 0, 128, 128)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_laser_0"]
+atlas = ExtResource("7_laser")
+region = Rect2(0, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_laser_1"]
+atlas = ExtResource("7_laser")
+region = Rect2(256, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_laser_2"]
+atlas = ExtResource("7_laser")
+region = Rect2(512, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_laser_3"]
+atlas = ExtResource("7_laser")
+region = Rect2(768, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_laser_4"]
+atlas = ExtResource("7_laser")
+region = Rect2(1024, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_laser_5"]
+atlas = ExtResource("7_laser")
+region = Rect2(1280, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_laser_6"]
+atlas = ExtResource("7_laser")
+region = Rect2(1536, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_laser_7"]
+atlas = ExtResource("7_laser")
+region = Rect2(1792, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_laser_8"]
+atlas = ExtResource("7_laser")
+region = Rect2(2048, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_laser_9"]
+atlas = ExtResource("7_laser")
+region = Rect2(2304, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_laser_10"]
+atlas = ExtResource("7_laser")
+region = Rect2(2560, 0, 256, 256)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_enemy_idle"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_2")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle2_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle2_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle2_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle2_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle2_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle2_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle2_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle2_7")
+}],
+"loop": true,
+"name": &"idle2",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_laser_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_laser_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_laser_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_laser_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_laser_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_laser_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_laser_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_laser_7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_laser_8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_laser_9")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_laser_10")
+}],
+"loop": false,
+"name": &"laser",
+"speed": 10.0
+}]
 
 [node name="Enemy" type="Node2D"]
 position = Vector2(948, 271)
@@ -39,22 +214,24 @@ theme_override_styles/fill = SubResource("StyleBoxFlat_hp_fill")
 fill_mode = 1
 show_percentage = false
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="AnimatedSprite2D" parent="."]
 z_index = 10
 position = Vector2(-29, 136)
-scale = Vector2(0.75, 0.75)
-texture = ExtResource("2_mpr68")
+scale = Vector2(4, 4)
+sprite_frames = SubResource("SpriteFrames_enemy_idle")
+animation = &"idle"
+autoplay = "idle"
 
 [node name="e-block" type="Sprite2D" parent="."]
 visible = false
-z_index = 10
+z_index = 5
 position = Vector2(-621, -53)
 scale = Vector2(0.75, 0.75)
 texture = ExtResource("2_mpr68")
 
 [node name="e-block2" type="Sprite2D" parent="."]
 visible = false
-z_index = 10
+z_index = 5
 position = Vector2(-618, 125)
 scale = Vector2(0.75, 0.75)
 texture = ExtResource("2_mpr68")

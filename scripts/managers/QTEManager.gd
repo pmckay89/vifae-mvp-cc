@@ -149,7 +149,7 @@ func start_qte_for_ability(player, ability_name: String, target):
 	qte_completed.emit()
 
 func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = "Press Z!", target_player = null) -> String:
-	print("🔧 start_qte called with:", action_name, prompt_text)
+	print("🔧 start_qte called with action_name:", action_name, "prompt:", prompt_text)
 	
 	# Try to refresh QTE container references when actually needed
 	_ensure_qte_container()
@@ -184,6 +184,11 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 			return await start_sniper_box_qte(enemy.global_position)
 		else:
 			return await start_sniper_qte(action_name, prompt_text, target_player)
+	
+	# Check for Multishot QTE FIRST for testing
+	if action_name == "multishot":
+		print("🔧 DEBUG: Multishot QTE detected, calling start_multishot_qte")
+		return await start_multishot_qte(prompt_text, target_player)
 	
 	# Check for Mirror Strike QTE
 	if action_name == "mirror_strike":
@@ -752,11 +757,10 @@ func start_sniper_qte(action_name: String, prompt_text: String, _target_player =
 	sweet_spot.position = screen_center - sweet_spot.size / 2
 	qte_container.add_child(sweet_spot)
 	
-	# Create crosshair (moving)
-	var crosshair = ColorRect.new()
-	crosshair.size = Vector2(40, 4)
-	crosshair.color = Color.WHITE
-	crosshair.position = Vector2(50, screen_center.y - 2)  # Start from left side
+	# Create crosshair (moving bullet)
+	var crosshair = Sprite2D.new()
+	crosshair.texture = load("res://assets/objects/BulletR.png")
+	crosshair.position = Vector2(50, screen_center.y)  # Start from left side
 	qte_container.add_child(crosshair)
 	
 	# Movement variables
@@ -785,7 +789,7 @@ func start_sniper_qte(action_name: String, prompt_text: String, _target_player =
 			_input_detected = true
 			
 			# Check hit detection
-			var crosshair_center_x = crosshair.position.x + crosshair.size.x / 2
+			var crosshair_center_x = crosshair.position.x  # Sprite2D position is already centered
 			var sweet_spot_center_x = sweet_spot.position.x + sweet_spot.size.x / 2
 			var distance = abs(crosshair_center_x - sweet_spot_center_x)
 			
@@ -826,6 +830,157 @@ func start_sniper_qte(action_name: String, prompt_text: String, _target_player =
 	show_result_flash(hit_result)
 	
 	return hit_result
+
+# Multishot QTE - 4 projectiles flying toward player simultaneously
+func start_multishot_qte(prompt_text: String, target_player) -> String:
+	print("🎯 Multishot QTE started - parry incoming projectiles!")
+	
+	# Show enemy attack animation IMMEDIATELY before QTE
+	var enemy = get_node_or_null("/root/BattleScene/Enemy")
+	if enemy and enemy.has_method("attack_animation") and target_player:
+		enemy.attack_animation(target_player, "multishot")
+		print("🎯 Enemy multishot animation started")
+	
+	qte_active = true
+	_ensure_qte_container()
+	
+	var sfx_player := get_node_or_null("/root/BattleScene/SFXPlayer")
+	
+	# Show QTE UI using same method as big shot
+	show_qte("press", "PARRY THE INCOMING BOXES!", 5000)  # 5 second window
+	
+	# Hide default circle - using custom elements
+	if qte_circle:
+		qte_circle.visible = false
+	
+	# Get positions using same method as big shot QTE - REVERSED
+	var screen_center = get_viewport().get_visible_rect().size / 2
+	var screen_width = get_viewport().get_visible_rect().size.x
+	var enemy_pos = Vector2(screen_width - 50, screen_center.y)  # Right side (enemy shooting from right)
+	var player_pos = Vector2(100, screen_center.y)  # Left side (player on left)
+	
+	# Create debug goal indicator (50px in front of player) - matches big shot sweet spot style
+	var parry_line_x = player_pos.x + 50  # 50px in front of player (to the right)
+	var goal_indicator = ColorRect.new()
+	goal_indicator.size = Vector2(4, 80)
+	goal_indicator.color = Color.GREEN
+	goal_indicator.position = Vector2(parry_line_x, screen_center.y - 40)
+	qte_container.add_child(goal_indicator)
+	print("🎯 Goal indicator at: ", goal_indicator.position.x, " (player at: ", player_pos.x, ")")
+	
+	# Create 4 projectile lines - same size as big shot crosshair
+	var projectiles = []
+	var projectile_results = []  # Track individual results
+	
+	for i in 4:
+		var projectile = Sprite2D.new()
+		projectile.texture = load("res://assets/objects/BulletL.png")
+		# Slightly stagger Y positions around screen center
+		var y_offset = (i - 1.5) * 15  # Spread vertically around center
+		projectile.position = Vector2(enemy_pos.x, screen_center.y + y_offset)  # Center like big shot
+		qte_container.add_child(projectile)
+		projectiles.append(projectile)
+		projectile_results.append("pending")  # Track each projectile
+		print("🎯 Projectile ", i, " created at: ", projectile.position)
+	
+	# Launch sequence with 0.5s intervals
+	var start_time = Time.get_ticks_msec()
+	var launch_interval = 500  # 0.5 seconds in ms
+	var projectile_speed = 450.0  # pixels per second (50% faster)
+	var parry_distance = 50.0  # Distance from player for parry window
+	var launched_projectiles = []
+	
+	# Launch all 4 projectiles
+	for i in 4:
+		await get_tree().create_timer(launch_interval / 1000.0).timeout
+		launched_projectiles.append({
+			"projectile": projectiles[i],
+			"launch_time": Time.get_ticks_msec(),
+			"index": i,
+			"parried": false,
+			"hit": false
+		})
+		print("🎯 Launched projectile ", i)
+	
+	# Main movement and input loop
+	while launched_projectiles.size() > 0:
+		var current_time = Time.get_ticks_msec()
+		
+		# Update projectile positions and check for parry opportunities
+		for j in range(launched_projectiles.size() - 1, -1, -1):
+			var proj_data = launched_projectiles[j]
+			var projectile = proj_data.projectile
+			var elapsed = (current_time - proj_data.launch_time) / 1000.0
+			
+			# Move projectile toward player (right to left movement)
+			var progress = elapsed * projectile_speed
+			var total_distance = enemy_pos.x - player_pos.x  # Distance from right to left
+			projectile.position.x = enemy_pos.x - progress  # Subtract to move left
+			
+			# Check if projectile is in parry window (at the green line)
+			var distance_to_parry_line = projectile.position.x - parry_line_x  # Distance from projectile to green line
+			var distance_to_player = projectile.position.x - player_pos.x  # Distance from projectile to player
+			
+			if not proj_data.parried and not proj_data.hit:
+				if abs(distance_to_parry_line) <= 20:  # 20px tolerance around green line (extended window)
+					# In parry window - check for input
+					if Input.is_action_just_pressed("parry"):
+						proj_data.parried = true
+						projectile_results[proj_data.index] = "parried"
+						print("🎯 Projectile ", proj_data.index, " PARRIED!")
+						
+						# Angle projectile upward off screen
+						var tween = create_tween()
+						tween.tween_property(projectile, "position", Vector2(projectile.position.x + 100, -50), 0.5)
+						tween.tween_callback(func(): projectile.queue_free())
+						
+						launched_projectiles.remove_at(j)
+						continue
+				
+				# Check if projectile hit player (passed parry window)
+				if distance_to_player <= 0:
+					proj_data.hit = true
+					projectile_results[proj_data.index] = "hit"
+					print("🎯 Projectile ", proj_data.index, " HIT PLAYER!")
+					
+					# Apply damage immediately
+					if target_player and target_player.has_method("take_damage"):
+						target_player.take_damage(10)
+						print("🎯 Applied 10 damage to player")
+					
+					# Remove projectile
+					projectile.queue_free()
+					launched_projectiles.remove_at(j)
+					continue
+		
+		await get_tree().process_frame
+	
+	# Wait for any parry animations to complete before cleanup
+	await get_tree().create_timer(0.6).timeout  # Allow time for final parry animation
+	
+	# Clean up
+	goal_indicator.queue_free()
+	qte_active = false
+	hide_qte()
+	
+	# Count results
+	var hits_taken = 0
+	var parries_made = 0
+	for result in projectile_results:
+		if result == "hit":
+			hits_taken += 1
+		elif result == "parried":
+			parries_made += 1
+	
+	print("🎯 Multishot complete! Parried: ", parries_made, "/4, Hit by: ", hits_taken, "/4")
+	
+	# Return result based on performance
+	if parries_made == 4:
+		return "perfect"
+	elif parries_made >= 2:
+		return "normal"
+	else:
+		return "fail"
 
 func start_sniper_box_qte(enemy_position: Vector2) -> String:
 	print("🎯 Sniper Box QTE started!")
@@ -1143,6 +1298,13 @@ func _safe_audio_call(method_name: String) -> void:
 func start_mirror_strike_qte(prompt_text: String, target_player) -> String:
 	print("🪞 Mirror Strike QTE starting!")
 	
+	# Play phaseslam1.wav before QTE starts
+	var sfx_player := get_node_or_null("/root/BattleScene/SFXPlayer")
+	if sfx_player:
+		sfx_player.stream = preload("res://assets/sfx/phaseslam1.wav")
+		sfx_player.play()
+		print("🎵 Playing phaseslam1.wav for mirror strike")
+	
 	qte_active = true
 	_ensure_qte_container()
 	
@@ -1168,8 +1330,41 @@ func start_mirror_strike_qte(prompt_text: String, target_player) -> String:
 	qte_active = false
 	hide_qte()
 	
+	# If player failed, play laser animation twice
+	if result == "fail":
+		var enemy = get_node_or_null("/root/BattleScene/Enemy")
+		if enemy:
+			await play_laser_animation_twice(enemy)
+	
 	print("🪞 Mirror Strike result: ", result)
 	return result
+
+# Play laser animation twice for failed mirror strike
+func play_laser_animation_twice(enemy: Node) -> void:
+	print("🔫 Playing laser animation twice for failed mirror strike")
+	
+	var animated_sprite = enemy.get_node_or_null("Sprite2D") as AnimatedSprite2D
+	if not animated_sprite:
+		print("❌ Could not find enemy AnimatedSprite2D for laser animation")
+		return
+	
+	# Play laser animation twice
+	for i in 2:
+		print("🔫 Playing laser animation ", i + 1, "/2")
+		animated_sprite.play("laser")
+		
+		# Wait for animation to complete (11 frames at 10 FPS = 1.1 seconds)
+		await get_tree().create_timer(1.1).timeout
+		
+		# Brief pause between animations
+		if i == 0:  # Only pause between first and second
+			await get_tree().create_timer(0.2).timeout
+	
+	# Return to appropriate idle animation based on HP
+	if enemy.has_method("_update_idle_animation"):
+		enemy._update_idle_animation()
+	
+	print("🔫 Laser animation sequence complete")
 
 # Show the button sequence to the player
 func show_mirror_sequence(sequence: Array) -> void:

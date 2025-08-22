@@ -8,6 +8,20 @@ var rng := RandomNumberGenerator.new()
 
 func _ready():
 	rng.randomize()
+	_update_idle_animation()
+
+func _update_idle_animation():
+	var animated_sprite = get_node_or_null("Sprite2D") as AnimatedSprite2D
+	if animated_sprite:
+		var health_percentage = float(hp) / float(hp_max)
+		if health_percentage <= 0.5:
+			if animated_sprite.animation != "idle2":
+				animated_sprite.play("idle2")
+				print("🎬 Switched to idle2 animation (HP ≤ 50%)")
+		else:
+			if animated_sprite.animation != "idle":
+				animated_sprite.play("idle")
+				print("🎬 Using idle animation (HP > 50%)")
 
 # This is called by the new TurnManager system for enemy attack animations
 func attack_animation(target: Node, attack_type: String = "", play_sound: bool = true) -> void:
@@ -18,11 +32,19 @@ func attack_animation(target: Node, attack_type: String = "", play_sound: bool =
 	# Show enemy attack sprite based on target
 	var e_block1 = get_node_or_null("e-block")
 	var e_block2 = get_node_or_null("e-block2")
-	var enemy_idle_sprite = get_node_or_null("Sprite2D")  # Default enemy sprite
+	var enemy_idle_sprite = get_node_or_null("Sprite2D")  # Now AnimatedSprite2D with idle animation
 	
 	print("🔧 e-block1 exists:", e_block1 != null)
 	print("🔧 e-block2 exists:", e_block2 != null)
 	print("🔧 enemy idle sprite exists:", enemy_idle_sprite != null)
+	
+	# Special cases - keep enemy in idle position for ranged attacks
+	if attack_type == "multishot" or attack_type == "mirror_strike":
+		print("🎯 ", attack_type, " attack - keeping enemy in idle position")
+		# Keep idle sprite visible, don't show attack sprites
+		if enemy_idle_sprite:
+			enemy_idle_sprite.visible = true
+		return
 	
 	# Hide default enemy sprite during attack
 	if enemy_idle_sprite:
@@ -203,6 +225,9 @@ func take_damage(amount: int) -> void:
 	# Show flinch animation when taking damage
 	if amount > 0:
 		show_flinch_animation()
+
+	# Check if we need to switch idle animations based on new HP
+	_update_idle_animation()
 
 	if hp == 0:
 		is_defeated = true
