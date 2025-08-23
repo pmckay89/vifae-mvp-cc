@@ -484,18 +484,18 @@ func on_qte_result(result: String, target):
 	
 	match selected_ability:
 		"moonfall_slash":
-			# This is handled by rapid-press QTE now - result contains hit count
+			# Damage is now handled individually by each moon impact
 			var hit_count = int(result)
-			var total_damage = hit_count * 5
+			var moon_count = (hit_count + 1) / 2  # Every 2 hits = 1 moon
 			print("🌙 " + name + " unleashes Moonfall Slash barrage!")
-			print("  → " + str(hit_count) + " rapid strikes for " + str(total_damage) + " total damage!")
+			print("  → " + str(hit_count) + " rapid strikes summoned " + str(moon_count) + " moons!")
+			print("  → Each moon will deal individual damage on impact...")
 			
 			if hit_count > 0:
-				# Apply damage all at once for now, could add animation later
+				# Visual effects only - damage handled by individual moons
 				VFXManager.play_hit_effects(target)
-				target.take_damage(total_damage)
 			else:
-				print("  → No strikes connected...")
+				print("  → No strikes connected, no moons summoned...")
 		
 		"spirit_wave":
 			match result:

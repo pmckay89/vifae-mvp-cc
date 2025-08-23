@@ -18,6 +18,9 @@ var result_flash_overlay: Sprite2D
 # X prompt for parry QTEs
 var x_prompt_sprite: Sprite2D
 
+# Moonfall Slash screen fade overlay (now a Control container for spotlight effect)
+var moonfall_fade_overlay: Control
+
 func _ready() -> void:
 	print("QTE→ DEBUG: QTEManager _ready() called")
 	# Only try to set up QTE if we're actually in the battle scene
@@ -28,6 +31,7 @@ func _ready() -> void:
 		_ensure_qte_container()
 		_setup_result_flash_overlay()
 		_setup_x_prompt()
+		_setup_moonfall_fade_overlay()
 		
 		# TASK 1: Force hide all QTE UI elements on start
 		if qte_container:
@@ -107,7 +111,11 @@ func start_qte_for_ability(player, ability_name: String, target):
 
 	match ability_name:
 		"moonfall_slash":
-			# Special rapid-press QTE
+			# Start cinematic fade BEFORE the QTE
+			print("🌙 Moonfall Slash selected - beginning cinematic sequence...")
+			await _start_moonfall_fade_buildup()
+			
+			# Now start the rapid-press QTE
 			var hit_count = await start_rapid_press_qte("Press Z as fast as possible!")
 			if player and player.has_method("on_qte_result"):
 				player.on_qte_result(str(hit_count), target)
@@ -1026,14 +1034,15 @@ func start_sniper_box_qte(enemy_position: Vector2) -> String:
 		return "fail"
 
 func start_rapid_press_qte(prompt_text: String) -> int:
-	print("🌙 Rapid Press QTE started - mash Z for 1 second!")
+	print("🌙 Moonfall Slash QTE started - mash Z to summon moons!")
 	
 	qte_active = true
 	_ensure_qte_container()
 	
 	var hit_count = 0
+	var moon_count = 0
 	var max_hits = 10
-	var duration = 1000  # 1 second in milliseconds
+	var duration = 1500  # 1.5 seconds in milliseconds
 	var start_time = Time.get_ticks_msec()
 	
 	# Show QTE UI
@@ -1047,22 +1056,32 @@ func start_rapid_press_qte(prompt_text: String) -> int:
 		var elapsed_time = Time.get_ticks_msec() - start_time
 		var time_left = duration - elapsed_time
 		
-		# Update text with hit count and time remaining
+		# Update text with moon count and time remaining
 		if qte_text:
 			var time_left_float = float(time_left) / 1000.0
-			qte_text.text = prompt_text + "\nHits: " + str(hit_count) + "/" + str(max_hits) + " | Time: " + str("%.1f" % time_left_float) + "s"
+			qte_text.text = prompt_text + "\nMoons: " + str(moon_count) + "/5 | Time: " + str("%.1f" % time_left_float) + "s"
 		
 		# Check for Z press - no cooldown, spam encouraged!
 		if Input.is_action_just_pressed("confirm attack"):
 			hit_count += 1
 			print("🌙 Hit " + str(hit_count) + "/" + str(max_hits) + "!")
+			
+			# Every 2 hits spawns 1 moon (max 5 moons)
+			if hit_count % 2 == 0 and moon_count < 5:
+				moon_count += 1
+				_spawn_moonfall_moon(moon_count)
+				print("🌙 Moon " + str(moon_count) + " summoned!")
 		
 		await get_tree().process_frame
 	
 	qte_active = false
 	hide_qte()
 	
-	print("🌙 Rapid Press QTE complete! Final hits: " + str(hit_count) + "/" + str(max_hits))
+	# End Moonfall Slash screen fade after a delay to let moons finish
+	await get_tree().create_timer(1.5).timeout  # Let moons complete their flight
+	_end_moonfall_fade()
+	
+	print("🌙 Moonfall Slash complete! " + str(hit_count) + " hits, " + str(moon_count) + " moons summoned!")
 	return hit_count
 
 func start_basic_attack_qte(action_name: String, window_ms: int, target_player = null) -> String:
@@ -1262,6 +1281,38 @@ func _setup_x_prompt() -> void:
 		print("QTE→ X prompt setup complete")
 	else:
 		print("QTE→ ERROR: Could not setup X prompt - no QTE container")
+
+func _setup_moonfall_fade_overlay() -> void:
+	print("QTE→ DEBUG: _setup_moonfall_fade_overlay() called - creating simple black overlay")
+	
+	# Simple black overlay - characters will be duplicated above it
+	moonfall_fade_overlay = Control.new()
+	moonfall_fade_overlay.visible = false
+	moonfall_fade_overlay.z_index = 1500  # Characters will be duplicated above this
+	moonfall_fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	# Force fullscreen size
+	var viewport_size = get_viewport().get_visible_rect().size
+	moonfall_fade_overlay.position = Vector2.ZERO
+	moonfall_fade_overlay.size = viewport_size
+	
+	# Add black background
+	var black_bg = ColorRect.new()
+	black_bg.color = Color(0, 0, 0, 0)  # Start transparent
+	black_bg.size = viewport_size
+	black_bg.position = Vector2.ZERO
+	moonfall_fade_overlay.add_child(black_bg)
+	moonfall_fade_overlay.set_meta("black_bg", black_bg)  # Store reference
+	
+	print("QTE→ Created black overlay - viewport size: ", viewport_size)
+	
+	# Add to UILayer
+	var ui_layer = get_node_or_null("/root/BattleScene/UILayer")
+	if ui_layer:
+		ui_layer.add_child(moonfall_fade_overlay)
+		print("QTE→ Black overlay setup complete")
+	else:
+		print("QTE→ ERROR: Could not setup black overlay - no UILayer found")
 
 # Show X prompt for parry QTEs
 func _show_x_prompt() -> void:
@@ -1610,3 +1661,250 @@ func cleanup_mirror_display() -> void:
 	
 	if qte_text:
 		qte_text.visible = false
+
+# Moonfall Slash dramatic buildup - darken background only, keep characters and UI normal
+func _start_moonfall_fade_buildup() -> void:
+	print("🌙 Beginning Moonfall Slash cinematic buildup - darkening background only...")
+	
+	# Store original states for restoration
+	_store_node_visibility()
+	
+	# Phase 1: Darken background elements (arena, etc) but NOT characters or UI
+	_darken_background_elements()
+	
+	# Phase 2: Hide non-essential elements (like Player2) to focus on the attack
+	_hide_player2_only()
+	print("🌙 Background darkened, Player2 hidden, maintaining normal lighting on Player1 and Enemy...")
+	
+	# Phase 3: Brief pause for dramatic effect (2 seconds)
+	await get_tree().create_timer(2.0).timeout
+	
+	print("🌙 Moonfall cinematic buildup complete - ready for QTE!")
+
+func _end_moonfall_fade() -> void:
+	print("🌙 Ending Moonfall Slash cinematic...")
+	
+	# Restore all original states (background brightness, Player2 visibility, etc)
+	_restore_node_visibility()
+	
+	print("🌙 Moonfall cinematic complete - everything restored")
+
+# Store visibility states before hiding nodes
+var stored_visibility_states = {}
+
+# Store original z-index values for characters
+var original_character_z_indices = {}
+
+# Duplicate sprites for cinematic effect
+var duplicate_player1: Sprite2D
+var duplicate_enemy: Sprite2D
+
+func _store_node_visibility() -> void:
+	stored_visibility_states.clear()
+	
+	var battle_scene = get_node_or_null("/root/BattleScene")
+	if not battle_scene:
+		return
+	
+	# Store visibility of main scene nodes (only for nodes that have visibility)
+	for child in battle_scene.get_children():
+		if child.name not in ["Player1", "Enemy", "UILayer"]:  # Keep these visible
+			# Only store visibility for nodes that actually have a visible property
+			if child is CanvasItem or child is Control:
+				stored_visibility_states[str(child.get_path())] = child.visible
+
+func _hide_non_essential_nodes() -> void:
+	var battle_scene = get_node_or_null("/root/BattleScene")
+	if not battle_scene:
+		return
+	
+	# Hide everything except Player1, Enemy, and UILayer (only nodes with visibility)
+	for child in battle_scene.get_children():
+		if child.name not in ["Player1", "Enemy", "UILayer"]:
+			# Only hide nodes that actually have a visible property
+			if child is CanvasItem or child is Control:
+				child.visible = false
+
+func _restore_node_visibility() -> void:
+	# Restore all stored states (visibility and modulate)
+	for key in stored_visibility_states:
+		if key.ends_with("_modulate"):
+			# Restore modulate property
+			var node_path = key.replace("_modulate", "")
+			var node = get_node_or_null(node_path)
+			if node and node is CanvasItem:
+				node.modulate = stored_visibility_states[key]
+				print("🌙 Restored modulate for: ", node.name)
+		else:
+			# Restore visibility
+			var node = get_node_or_null(key)
+			if node and (node is CanvasItem or node is Control):
+				node.visible = stored_visibility_states[key]
+	
+	stored_visibility_states.clear()
+
+func _darken_background_elements() -> void:
+	# Darken only background elements like arena, not characters or UI
+	var background = get_node_or_null("/root/BattleScene/Background")
+	if background and background is CanvasItem:
+		# Store original modulate using string path
+		stored_visibility_states[str(background.get_path()) + "_modulate"] = background.modulate
+		
+		# Darken background with tween
+		var tween = create_tween()
+		tween.tween_property(background, "modulate", Color(0.2, 0.2, 0.2, 1.0), 1.0)  # Very dark
+		await tween.finished
+		print("🌙 Background darkened")
+	else:
+		print("🌙 WARNING: No Background node found to darken")
+
+func _hide_player2_only() -> void:
+	# Hide only Player2 to focus on Player1's attack
+	var player2 = get_node_or_null("/root/BattleScene/Player2")
+	if player2:
+		stored_visibility_states[str(player2.get_path())] = player2.visible
+		player2.visible = false
+		print("🌙 Player2 hidden - focusing on Player1's attack")
+
+func _create_bright_duplicates() -> void:
+	# Create bright sprite duplicates above the dark overlay
+	var ui_layer = get_node_or_null("/root/BattleScene/UILayer")
+	if not ui_layer:
+		print("🌙 ERROR: No UILayer for duplicates")
+		return
+	
+	var player1 = get_node_or_null("/root/BattleScene/Player1")
+	var enemy = get_node_or_null("/root/BattleScene/Enemy")
+	
+	print("🌙 DEBUG: Player1 type: ", player1.get_class() if player1 else "null")
+	print("🌙 DEBUG: Enemy type: ", enemy.get_class() if enemy else "null")
+	
+	# Create Player1 duplicate
+	if player1:
+		print("🌙 DEBUG: Player1 position: ", player1.global_position)
+		print("🌙 DEBUG: Player1 children: ", player1.get_children())
+		duplicate_player1 = _create_sprite_duplicate(player1)
+		if duplicate_player1:
+			duplicate_player1.z_index = 1600  # Above dark overlay (1500)
+			ui_layer.add_child(duplicate_player1)
+			print("🌙 Player1 duplicate created at position: ", duplicate_player1.global_position, " with texture: ", duplicate_player1.texture != null)
+		else:
+			print("🌙 ERROR: Failed to create Player1 duplicate")
+	
+	# Create Enemy duplicate  
+	if enemy:
+		print("🌙 DEBUG: Enemy position: ", enemy.global_position)  
+		print("🌙 DEBUG: Enemy children: ", enemy.get_children())
+		duplicate_enemy = _create_sprite_duplicate(enemy)
+		if duplicate_enemy:
+			duplicate_enemy.z_index = 1600  # Above dark overlay (1500)
+			ui_layer.add_child(duplicate_enemy)
+			print("🌙 Enemy duplicate created at position: ", duplicate_enemy.global_position, " with texture: ", duplicate_enemy.texture != null)
+		else:
+			print("🌙 ERROR: Failed to create Enemy duplicate")
+
+func _create_sprite_duplicate(original_node: Node) -> Sprite2D:
+	# Create a duplicate of a sprite node
+	if not original_node is CanvasItem:
+		print("🌙 DEBUG: Node is not CanvasItem: ", original_node.name)
+		return null
+		
+	var duplicate = Sprite2D.new()
+	var texture = null
+	
+	print("🌙 DEBUG: Trying to extract texture from ", original_node.name, " (", original_node.get_class(), ")")
+	
+	# Try different ways to get texture
+	if original_node is Sprite2D:
+		texture = original_node.texture
+		print("🌙 DEBUG: Sprite2D texture: ", texture != null)
+	elif original_node is AnimatedSprite2D:
+		texture = original_node.sprite_frames.get_frame_texture(original_node.animation, original_node.frame)
+		print("🌙 DEBUG: AnimatedSprite2D texture: ", texture != null)
+	elif original_node.has_method("get_texture"):
+		texture = original_node.get_texture()
+		print("🌙 DEBUG: get_texture() result: ", texture != null)
+	elif original_node.get("texture"):
+		texture = original_node.texture
+		print("🌙 DEBUG: .texture property: ", texture != null)
+	else:
+		# Maybe it's a container with sprite children - try to find the visible sprite
+		for child in original_node.get_children():
+			if child is Sprite2D and child.visible and child.texture:
+				texture = child.texture
+				print("🌙 DEBUG: Found texture in child ", child.name, ": ", texture != null)
+				break
+			elif child is AnimatedSprite2D and child.visible:
+				texture = child.sprite_frames.get_frame_texture(child.animation, child.frame)
+				print("🌙 DEBUG: Found texture in animated child ", child.name, ": ", texture != null)
+				break
+		
+	if texture:
+		duplicate.texture = texture
+		duplicate.global_position = original_node.global_position
+		duplicate.scale = original_node.scale
+		duplicate.modulate = Color(1.0, 1.0, 1.0, 1.0)
+		print("🌙 SUCCESS: Created duplicate with texture at ", duplicate.global_position)
+		return duplicate
+	else:
+		print("🌙 ERROR: Could not find any texture for: ", original_node.name)
+		return null
+
+func _cleanup_duplicates() -> void:
+	# Remove duplicate sprites
+	if duplicate_player1:
+		duplicate_player1.queue_free()
+		duplicate_player1 = null
+		print("🌙 Player1 duplicate cleaned up")
+		
+	if duplicate_enemy:
+		duplicate_enemy.queue_free()
+		duplicate_enemy = null
+		print("🌙 Enemy duplicate cleaned up")
+
+func _spawn_moonfall_moon(moon_id: int) -> void:
+	# Create moon above Player1, flying to Enemy
+	var player1 = get_node_or_null("/root/BattleScene/Player1")
+	var enemy = get_node_or_null("/root/BattleScene/Enemy")
+	var battle_scene = get_node_or_null("/root/BattleScene")
+	
+	if not player1 or not enemy or not battle_scene:
+		print("🌙 ERROR: Could not spawn moon - missing nodes")
+		return
+	
+	# Load the moon script and create instance
+	var moon_script = load("res://scripts/vfx/MoonfallMeteor.gd")
+	if not moon_script:
+		print("🌙 ERROR: Could not load MoonfallMeteor.gd")
+		return
+	
+	var moon = AnimatedSprite2D.new()
+	moon.script = moon_script
+	
+	# Determine moon type: moons 1-3 use slash1, moons 4-5 use slash2
+	var moon_type = "slash1"
+	if moon_id >= 4:
+		moon_type = "slash2"
+		print("🌙 Using alternate moon type for moon ", moon_id)
+	
+	# Position moon with much more variation above the battle area
+	var spawn_x = player1.global_position.x + randf_range(-100, 100)  # Wide spawn spread
+	var spawn_y = player1.global_position.y - randf_range(120, 200)  # Varied height above
+	moon.global_position = Vector2(spawn_x, spawn_y)
+	
+	# Target the lower half of the large enemy (bigger lower range)
+	var target_x = enemy.global_position.x + randf_range(-80, 80)   # Wide impact area
+	var target_y = enemy.global_position.y + randf_range(50, 200)  # Extended lower range
+	var target_pos = Vector2(target_x, target_y)
+	
+	# Add to scene with high z-index (above everything)
+	moon.z_index = 1700  # Above characters and dark overlay
+	battle_scene.add_child(moon)
+	
+	# Launch the moon with type information
+	if moon.has_method("launch_to_target"):
+		if moon.has_method("set_moon_type"):
+			moon.set_moon_type(moon_type)
+		moon.launch_to_target(target_pos, moon_id)
+	
+	print("🌙 Moon ", moon_id, " (", moon_type, ") spawned at: ", moon.global_position, " targeting: ", target_pos)
