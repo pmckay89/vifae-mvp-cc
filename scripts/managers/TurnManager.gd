@@ -37,6 +37,9 @@ const GAME_OVER_THEME = "res://assets/music/closer.wav"
 @onready var result_overlay := get_node_or_null("/root/BattleScene/UILayer/ResultOverlay")
 @onready var pause_overlay := get_node_or_null("/root/BattleScene/UILayer/PauseOverlay")
 
+# Attack announcement UI
+var attack_announcement_label: Label
+
 # Menu state
 var menu_selection: int = 0
 var in_skills_menu: bool = false
@@ -73,6 +76,12 @@ func _ready():
 	for actor in turn_order:
 		actor_names.append(actor.name)
 	print("STATE→ Turn order established: ", actor_names)
+	
+	# Setup attack announcement UI
+	_setup_attack_announcement_ui()
+	
+	# Initialize HP displays dynamically based on actual character HP
+	_initialize_hp_displays()
 	
 	# Start the state machine
 	change_state(State.BEGIN_TURN)
@@ -377,6 +386,9 @@ func enemy_think():
 				sfx_player.play()
 				print("🎵 Playing Phase Slam wind-up sound (phaseslam1.wav)")
 	
+	# Show attack announcement (2 second display)
+	await show_attack_announcement(selected_action)
+	
 	change_state(State.QTE_ACTIVE)
 
 func start_qte():
@@ -485,10 +497,10 @@ func resolve_action():
 		# Enemy action damage (mitigated by parry)
 		var base_damage = 0
 		match selected_action:
-			"arc_slash": base_damage = 100
+			"arc_slash": base_damage = 25  # Light attack - 3-tier parry system
 			"lightning_surge": base_damage = 120  # 6+6
-			"phase_slam": base_damage = 180
-			"mirror_strike": base_damage = 25
+			"phase_slam": base_damage = 70  # Heavy attack - timing-based parry
+			"mirror_strike": base_damage = 30  # Sequence defense - binary (perfect/fail)
 			
 		# Show enemy attack animation (sound handled by QTE Manager)
 		if current_actor.has_method("attack_animation"):
@@ -542,10 +554,17 @@ func resolve_action():
 			
 			# Lightning surge damage handled directly above, skip normal damage calculation
 		else:
-			# Standard binary mitigation for other attacks
-			match qte_result:
-				"normal": mitigation = 1.0   # 0% damage (successful parry)
-				"fail": mitigation = 0.0     # 100% damage (failed parry)
+			# 3-tier parry system for arc_slash, binary for others
+			if selected_action == "arc_slash":
+				match qte_result:
+					"perfect": mitigation = 1.0   # 0% damage (perfect parry)
+					"normal": mitigation = 0.4    # 40% damage reduction (late parry) 
+					"fail": mitigation = 0.0      # 100% damage (missed parry)
+			else:
+				# Standard binary mitigation for other attacks
+				match qte_result:
+					"normal", "perfect": mitigation = 1.0   # 0% damage (successful parry)
+					"fail": mitigation = 0.0     # 100% damage (failed parry)
 			
 			damage = int(base_damage * (1.0 - mitigation))
 			print("DMG→ Enemy deals " + str(damage) + " to " + selected_target.name + " (base: " + str(base_damage) + ", " + qte_result + " parry = " + str(int(mitigation * 100)) + "% mitigated)")
@@ -686,10 +705,17 @@ func reset_combat():
 			actor.is_defeated = false
 			print("RESET→ " + actor.name + " HP reset to " + str(actor.hp_max))
 	
-	# Force HP bar updates
-	CombatUI.update_hp_bar("Player1", 50, 50)
-	CombatUI.update_hp_bar("Player2", 50, 50) 
-	CombatUI.update_hp_bar("Enemy", 150, 150)
+	# Force HP bar updates with actual HP values
+	var player1 = get_node_or_null("/root/BattleScene/Player1")
+	var player2 = get_node_or_null("/root/BattleScene/Player2")
+	var enemy = get_node_or_null("/root/BattleScene/Enemy")
+	
+	if player1:
+		CombatUI.update_hp_bar("Player1", player1.hp, player1.hp_max)
+	if player2:
+		CombatUI.update_hp_bar("Player2", player2.hp, player2.hp_max)
+	if enemy:
+		CombatUI.update_hp_bar("Enemy", enemy.hp, enemy.hp_max)
 	
 	# Reset turn state
 	current_turn_index = 0
@@ -711,7 +737,27 @@ func reset_combat():
 		skills_menu.visible = false
 	
 	print("RESET→ Complete, starting new combat")
-	change_state(State.BEGIN_TURN)
+
+# Initialize HP displays with actual character values (not hardcoded)
+func _initialize_hp_displays():
+	print("HP→ Initializing dynamic HP displays")
+	
+	var player1 = get_node_or_null("/root/BattleScene/Player1")
+	var player2 = get_node_or_null("/root/BattleScene/Player2")
+	var enemy = get_node_or_null("/root/BattleScene/Enemy")
+	
+	# Update player HP labels with actual values
+	if player1:
+		CombatUI.update_hp_bar("Player1", player1.hp, player1.hp_max)
+		print("HP→ Player1 initialized: ", player1.hp, "/", player1.hp_max)
+	
+	if player2:
+		CombatUI.update_hp_bar("Player2", player2.hp, player2.hp_max)
+		print("HP→ Player2 initialized: ", player2.hp, "/", player2.hp_max)
+	
+	if enemy:
+		CombatUI.update_hp_bar("Enemy", enemy.hp, enemy.hp_max)
+		print("HP→ Enemy initialized: ", enemy.hp, "/", enemy.hp_max)
 
 func end_turn():
 	current_turn_index = (current_turn_index + 1) % turn_order.size()
@@ -806,3 +852,72 @@ func _safe_audio_call(method_name: String) -> void:
 				print("[TurnManager] Unknown audio method: " + method_name)
 	else:
 		print("[TurnManager] SFXPlayer not found")
+
+func _setup_attack_announcement_ui():
+	# Create attack announcement label
+	attack_announcement_label = Label.new()
+	attack_announcement_label.name = "AttackAnnouncement"
+	attack_announcement_label.visible = false
+	
+	# Position at center-top of screen
+	attack_announcement_label.anchors_preset = Control.PRESET_CENTER_TOP
+	attack_announcement_label.anchor_left = 0.5
+	attack_announcement_label.anchor_right = 0.5
+	attack_announcement_label.anchor_top = 0.0
+	attack_announcement_label.offset_left = -150  # Half width to center the text
+	attack_announcement_label.offset_right = 150   # Half width to center the text
+	attack_announcement_label.offset_top = 50
+	attack_announcement_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	attack_announcement_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	
+	# Style to match menu buttons (large, bold text)
+	attack_announcement_label.add_theme_font_size_override("font_size", 32)
+	attack_announcement_label.add_theme_color_override("font_color", Color.WHITE)
+	attack_announcement_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	attack_announcement_label.add_theme_constant_override("outline_size", 3)
+	
+	# Add semi-transparent background
+	var style_box = StyleBoxFlat.new()
+	style_box.bg_color = Color(0, 0, 0, 0.7)  # Dark semi-transparent
+	style_box.corner_radius_bottom_left = 8
+	style_box.corner_radius_bottom_right = 8
+	style_box.corner_radius_top_left = 8
+	style_box.corner_radius_top_right = 8
+	style_box.content_margin_bottom = 10
+	style_box.content_margin_left = 20
+	style_box.content_margin_right = 20
+	style_box.content_margin_top = 10
+	attack_announcement_label.add_theme_stylebox_override("normal", style_box)
+	
+	# Add to UILayer
+	var ui_layer = get_node("/root/BattleScene/UILayer")
+	if ui_layer:
+		ui_layer.add_child(attack_announcement_label)
+		print("UI→ Attack announcement label created")
+	else:
+		print("ERROR→ Could not find UILayer for attack announcement")
+
+func show_attack_announcement(attack_name: String):
+	if not attack_announcement_label:
+		print("ERROR→ Attack announcement label not found")
+		return
+	
+	# Map attack names to display text
+	var display_name = ""
+	match attack_name:
+		"arc_slash": display_name = "ARC SLASH"
+		"lightning_surge": display_name = "LIGHTNING SURGE"
+		"phase_slam": display_name = "PHASE SLAM"
+		"mirror_strike": display_name = "MIRROR STRIKE"
+		"multishot": display_name = "MULTISHOT"
+		_: display_name = attack_name.to_upper()
+	
+	# Show announcement
+	attack_announcement_label.text = display_name
+	attack_announcement_label.visible = true
+	print("UI→ Showing attack announcement: ", display_name)
+	
+	# Auto-hide after 2 seconds
+	await get_tree().create_timer(2.0).timeout
+	attack_announcement_label.visible = false
+	print("UI→ Attack announcement hidden")

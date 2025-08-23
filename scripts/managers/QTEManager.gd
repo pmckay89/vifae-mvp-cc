@@ -861,20 +861,21 @@ func start_multishot_qte(prompt_text: String, target_player) -> String:
 	if qte_circle:
 		qte_circle.visible = false
 	
-	# Get positions using same method as big shot QTE - REVERSED
-	var screen_center = get_viewport().get_visible_rect().size / 2
-	var screen_width = get_viewport().get_visible_rect().size.x
-	var enemy_pos = Vector2(screen_width - 50, screen_center.y)  # Right side (enemy shooting from right)
-	var player_pos = Vector2(100, screen_center.y)  # Left side (player on left)
+	# Get actual character positions from scene
+	var enemy_node = get_node_or_null("/root/BattleScene/Enemy")
+	var enemy_pos = enemy_node.global_position if enemy_node else Vector2(900, 300)
 	
-	# Create debug goal indicator (50px in front of player) - matches big shot sweet spot style
-	var parry_line_x = player_pos.x + 50  # 50px in front of player (to the right)
+	# Use target player's actual position
+	var player_pos = target_player.global_position if target_player else Vector2(135, 300)
+	
+	# Position green line directly on the targeted character sprite
+	var parry_line_x = player_pos.x + 100
 	var goal_indicator = ColorRect.new()
 	goal_indicator.size = Vector2(4, 80)
 	goal_indicator.color = Color.GREEN
-	goal_indicator.position = Vector2(parry_line_x, screen_center.y - 40)
+	goal_indicator.position = Vector2(parry_line_x, player_pos.y - 40)
 	qte_container.add_child(goal_indicator)
-	print("🎯 Goal indicator at: ", goal_indicator.position.x, " (player at: ", player_pos.x, ")")
+	print("🎯 Goal indicator at: ", goal_indicator.position, " (player at: ", player_pos, ")")
 	
 	# Create 4 projectile lines - same size as big shot crosshair
 	var projectiles = []
@@ -883,9 +884,16 @@ func start_multishot_qte(prompt_text: String, target_player) -> String:
 	for i in 4:
 		var projectile = Sprite2D.new()
 		projectile.texture = load("res://assets/objects/BulletL.png")
-		# Slightly stagger Y positions around screen center
-		var y_offset = (i - 1.5) * 15  # Spread vertically around center
-		projectile.position = Vector2(enemy_pos.x, screen_center.y + y_offset)  # Center like big shot
+		# Slightly stagger Y positions around target character
+		var y_offset = (i - 1.5) * 15  # Spread vertically around target
+		projectile.position = Vector2(enemy_pos.x, player_pos.y + y_offset)  # Aim at target character
+		
+		# First projectile is visible immediately, others hidden until launch
+		if i == 0:
+			projectile.visible = true
+		else:
+			projectile.visible = false
+		
 		qte_container.add_child(projectile)
 		projectiles.append(projectile)
 		projectile_results.append("pending")  # Track each projectile
@@ -894,74 +902,42 @@ func start_multishot_qte(prompt_text: String, target_player) -> String:
 	# Launch sequence with 0.5s intervals
 	var start_time = Time.get_ticks_msec()
 	var launch_interval = 500  # 0.5 seconds in ms
-	var projectile_speed = 450.0  # pixels per second (50% faster)
+	var projectile_speed = 675.0  # pixels per second (50% faster than 450)
 	var parry_distance = 50.0  # Distance from player for parry window
 	var launched_projectiles = []
 	
-	# Launch all 4 projectiles
+	# Launch projectiles with immediate movement
+	var active_projectiles = []
+	
+	# Start async movement for each projectile as it launches
 	for i in 4:
-		await get_tree().create_timer(launch_interval / 1000.0).timeout
-		launched_projectiles.append({
+		# Skip delay for first projectile (already visible)
+		if i > 0:
+			await get_tree().create_timer(launch_interval / 1000.0).timeout
+			# Make projectile visible
+			projectiles[i].visible = true
+		
+		print("🎯 Launched projectile ", i)
+		
+		# Play launch sound slightly after projectile begins moving
+		await get_tree().create_timer(0.1).timeout
+		_play_multishot_launch_sound()
+		
+		# Start movement immediately for this projectile
+		var proj_data = {
 			"projectile": projectiles[i],
 			"launch_time": Time.get_ticks_msec(),
 			"index": i,
 			"parried": false,
 			"hit": false
-		})
-		print("🎯 Launched projectile ", i)
+		}
+		active_projectiles.append(proj_data)
+		
+		# Start async movement for this projectile
+		_start_projectile_movement(proj_data, enemy_pos, player_pos, projectile_speed, parry_distance, projectile_results, target_player, parry_line_x)
 	
-	# Main movement and input loop
-	while launched_projectiles.size() > 0:
-		var current_time = Time.get_ticks_msec()
-		
-		# Update projectile positions and check for parry opportunities
-		for j in range(launched_projectiles.size() - 1, -1, -1):
-			var proj_data = launched_projectiles[j]
-			var projectile = proj_data.projectile
-			var elapsed = (current_time - proj_data.launch_time) / 1000.0
-			
-			# Move projectile toward player (right to left movement)
-			var progress = elapsed * projectile_speed
-			var total_distance = enemy_pos.x - player_pos.x  # Distance from right to left
-			projectile.position.x = enemy_pos.x - progress  # Subtract to move left
-			
-			# Check if projectile is in parry window (at the green line)
-			var distance_to_parry_line = projectile.position.x - parry_line_x  # Distance from projectile to green line
-			var distance_to_player = projectile.position.x - player_pos.x  # Distance from projectile to player
-			
-			if not proj_data.parried and not proj_data.hit:
-				if abs(distance_to_parry_line) <= 20:  # 20px tolerance around green line (extended window)
-					# In parry window - check for input
-					if Input.is_action_just_pressed("parry"):
-						proj_data.parried = true
-						projectile_results[proj_data.index] = "parried"
-						print("🎯 Projectile ", proj_data.index, " PARRIED!")
-						
-						# Angle projectile upward off screen
-						var tween = create_tween()
-						tween.tween_property(projectile, "position", Vector2(projectile.position.x + 100, -50), 0.5)
-						tween.tween_callback(func(): projectile.queue_free())
-						
-						launched_projectiles.remove_at(j)
-						continue
-				
-				# Check if projectile hit player (passed parry window)
-				if distance_to_player <= 0:
-					proj_data.hit = true
-					projectile_results[proj_data.index] = "hit"
-					print("🎯 Projectile ", proj_data.index, " HIT PLAYER!")
-					
-					# Apply damage immediately
-					if target_player and target_player.has_method("take_damage"):
-						target_player.take_damage(10)
-						print("🎯 Applied 10 damage to player")
-					
-					# Remove projectile
-					projectile.queue_free()
-					launched_projectiles.remove_at(j)
-					continue
-		
-		await get_tree().process_frame
+	# Wait for all projectiles to complete (they're moving independently)
+	await get_tree().create_timer(5.0).timeout  # Max QTE time
 	
 	# Wait for any parry animations to complete before cleanup
 	await get_tree().create_timer(0.6).timeout  # Allow time for final parry animation
@@ -989,6 +965,57 @@ func start_multishot_qte(prompt_text: String, target_player) -> String:
 		return "normal"
 	else:
 		return "fail"
+
+# Async movement for individual projectiles
+func _start_projectile_movement(proj_data: Dictionary, enemy_pos: Vector2, player_pos: Vector2, projectile_speed: float, parry_distance: float, projectile_results: Array, target_player, parry_line_x: float):
+	var projectile = proj_data.projectile
+	# Use the passed parry_line_x position (matches green line)
+	
+	# Movement loop for this single projectile
+	while projectile and is_instance_valid(projectile) and not proj_data.parried and not proj_data.hit:
+		var current_time = Time.get_ticks_msec()
+		var elapsed = (current_time - proj_data.launch_time) / 1000.0
+		
+		# Move projectile toward player (right to left movement)
+		var progress = elapsed * projectile_speed
+		projectile.position.x = enemy_pos.x - progress  # Subtract to move left
+		
+		# Check if projectile is in parry window (at the green line)
+		var distance_to_parry_line = projectile.position.x - parry_line_x
+		var distance_to_player = projectile.position.x - player_pos.x
+		
+		if abs(distance_to_parry_line) <= 50:  # 50px tolerance around green line (more generous)
+			# In parry window - check for input
+			if Input.is_action_just_pressed("parry"):
+				proj_data.parried = true
+				projectile_results[proj_data.index] = "parried"
+				print("🎯 Projectile ", proj_data.index, " PARRIED!")
+				
+				# Play random parry sound
+				_play_random_multishot_parry_sound()
+				
+				# Angle projectile upward off screen
+				var tween = create_tween()
+				tween.tween_property(projectile, "position", Vector2(projectile.position.x + 100, -50), 0.5)
+				tween.tween_callback(func(): projectile.queue_free())
+				return
+		
+		# Check if projectile hit player (passed parry window)
+		if distance_to_player <= 0:
+			proj_data.hit = true
+			projectile_results[proj_data.index] = "hit"
+			print("🎯 Projectile ", proj_data.index, " HIT PLAYER!")
+			
+			# Apply damage immediately
+			if target_player and target_player.has_method("take_damage"):
+				target_player.take_damage(15)
+				print("🎯 Applied 15 damage to player")
+			
+			# Remove projectile
+			projectile.queue_free()
+			return
+		
+		await get_tree().process_frame
 
 func start_sniper_box_qte(enemy_position: Vector2) -> String:
 	print("🎯 Sniper Box QTE started!")
@@ -1979,3 +2006,50 @@ func _cleanup_z_key_animation():
 		z_key_sprite = null
 		
 	print("🌙 Z key animation cleaned up")
+
+func _play_multishot_launch_sound():
+	# Create a new AudioStreamPlayer for each launch to allow overlapping
+	var launch_player = AudioStreamPlayer.new()
+	var battle_scene = get_node_or_null("/root/BattleScene")
+	
+	if battle_scene:
+		battle_scene.add_child(launch_player)
+		
+		var launch_sound = load("res://assets/sfx/multishot_launch.wav")
+		if launch_sound:
+			launch_player.stream = launch_sound
+			launch_player.play()
+			print("🎯 Playing multishot launch sound")
+			
+			# Auto-cleanup after sound finishes
+			launch_player.finished.connect(func(): launch_player.queue_free())
+		else:
+			print("🎯 Warning: Could not load multishot_launch.wav")
+			launch_player.queue_free()
+	else:
+		print("🎯 Warning: Could not find BattleScene for multishot launch sound")
+
+# Play random parry sound for multishot
+func _play_random_multishot_parry_sound():
+	var battle_scene = get_node_or_null("/root/BattleScene")
+	if battle_scene:
+		var parry_player = AudioStreamPlayer.new()
+		battle_scene.add_child(parry_player)
+		
+		# Pick random parry sound (1-4)
+		var sound_number = randi() % 4 + 1  # Random number 1-4
+		var sound_file = "multishot_parry" + str(sound_number) + ".wav"
+		var parry_sound = load("res://assets/sfx/" + sound_file)
+		
+		if parry_sound:
+			parry_player.stream = parry_sound
+			parry_player.play()
+			print("🎯 Playing random multishot parry sound: ", sound_file)
+			
+			# Auto-cleanup after sound finishes
+			parry_player.finished.connect(func(): parry_player.queue_free())
+		else:
+			print("🎯 Warning: Could not load ", sound_file)
+			parry_player.queue_free()
+	else:
+		print("🎯 Warning: Could not find BattleScene for multishot parry sound")

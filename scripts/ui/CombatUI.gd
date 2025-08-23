@@ -12,8 +12,8 @@ func update_hp_bar(actor_name: String, hp: int, max_hp: int):
 			path = "/root/BattleScene/UILayer/HPBars/Player2HP"
 			display_name = "GUN GIRL"
 		"Enemy":
-			path = "/root/BattleScene/UILayer/HPBars/EnemyHP"
-			display_name = "TITAN SPARK"
+			path = "/root/BattleScene/UILayer/EnemyHUD/EnemyHPLabel"
+			display_name = "BOSS HP"
 		_:
 			print("⚠️ Unknown actor name: " + actor_name)
 			return
