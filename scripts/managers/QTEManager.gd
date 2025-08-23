@@ -1052,14 +1052,17 @@ func start_rapid_press_qte(prompt_text: String) -> int:
 	if qte_circle:
 		qte_circle.visible = false
 	
+	# Setup Z key animation sprite
+	_setup_z_key_animation()
+	
 	while Time.get_ticks_msec() - start_time < duration and hit_count < max_hits:
 		var elapsed_time = Time.get_ticks_msec() - start_time
 		var time_left = duration - elapsed_time
 		
-		# Update text with moon count and time remaining
+		# Update text with hit count, moon count and time remaining  
 		if qte_text:
 			var time_left_float = float(time_left) / 1000.0
-			qte_text.text = prompt_text + "\nMoons: " + str(moon_count) + "/5 | Time: " + str("%.1f" % time_left_float) + "s"
+			qte_text.text = "Hits: " + str(hit_count) + "/" + str(max_hits) + " | Moons: " + str(moon_count) + "/5 | Time: " + str("%.1f" % time_left_float) + "s"
 		
 		# Check for Z press - no cooldown, spam encouraged!
 		if Input.is_action_just_pressed("confirm attack"):
@@ -1070,12 +1073,27 @@ func start_rapid_press_qte(prompt_text: String) -> int:
 			if hit_count % 2 == 0 and moon_count < 5:
 				moon_count += 1
 				_spawn_moonfall_moon(moon_count)
+				
+				# Play moonfall impact sound when moon spawns
+				var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+				if sfx_player:
+					var moonfall_sound = load("res://assets/sfx/moonfall_impact.wav")
+					if moonfall_sound:
+						sfx_player.stream = moonfall_sound
+						sfx_player.play()
+						print("🎵 Playing moonfall impact sound for moon " + str(moon_count))
+					else:
+						print("⚠️ Could not load moonfall_impact.wav")
+				
 				print("🌙 Moon " + str(moon_count) + " summoned!")
 		
 		await get_tree().process_frame
 	
 	qte_active = false
 	hide_qte()
+	
+	# Cleanup Z key animation
+	_cleanup_z_key_animation()
 	
 	# End Moonfall Slash screen fade after a delay to let moons finish
 	await get_tree().create_timer(1.5).timeout  # Let moons complete their flight
@@ -1908,3 +1926,56 @@ func _spawn_moonfall_moon(moon_id: int) -> void:
 		moon.launch_to_target(target_pos, moon_id)
 	
 	print("🌙 Moon ", moon_id, " (", moon_type, ") spawned at: ", moon.global_position, " targeting: ", target_pos)
+
+# Z key animation variables
+var z_key_sprite: Sprite2D
+var z_key_tween: Tween
+
+func _setup_z_key_animation():
+	# Create Z key sprite for animation
+	z_key_sprite = Sprite2D.new()
+	z_key_sprite.texture = load("res://assets/ui/z_static.png")
+	z_key_sprite.z_index = 1650  # Above dark overlay, below moons
+	
+	# Position next to the text area (middle-left of screen)
+	if qte_container:
+		var screen_center = get_viewport().get_visible_rect().size / 2
+		z_key_sprite.position = Vector2(screen_center.x - 150, screen_center.y + 80)  # Left of center, below text
+		z_key_sprite.scale = Vector2(0.8, 0.8)  # Slightly smaller
+		qte_container.add_child(z_key_sprite)
+		
+		# Start looping animation: static -> press -> static
+		_start_z_key_loop()
+		
+		print("🌙 Z key animation setup complete at position: ", z_key_sprite.position)
+	else:
+		print("🌙 ERROR: Could not setup Z key animation - no QTE container")
+
+func _start_z_key_loop():
+	if not z_key_sprite:
+		return
+		
+	z_key_tween = create_tween()
+	z_key_tween.set_loops()  # Loop indefinitely
+	
+	# Animation sequence: static (0.5s) -> press (0.3s) -> static (0.2s) -> repeat
+	z_key_tween.tween_callback(func(): z_key_sprite.texture = load("res://assets/ui/z_static.png"))
+	z_key_tween.tween_interval(0.5)
+	z_key_tween.tween_callback(func(): z_key_sprite.texture = load("res://assets/ui/z_press.png"))
+	z_key_tween.tween_interval(0.3)
+	z_key_tween.tween_callback(func(): z_key_sprite.texture = load("res://assets/ui/z_static.png"))
+	z_key_tween.tween_interval(0.2)
+	
+	print("🌙 Z key animation loop started")
+
+func _cleanup_z_key_animation():
+	# Stop animation and cleanup
+	if z_key_tween:
+		z_key_tween.kill()
+		z_key_tween = null
+		
+	if z_key_sprite:
+		z_key_sprite.queue_free()
+		z_key_sprite = null
+		
+	print("🌙 Z key animation cleaned up")

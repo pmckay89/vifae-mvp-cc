@@ -79,6 +79,9 @@ func _on_impact():
 		# Show individual damage popup for this moon using direct popup creation
 		_show_moon_damage_popup(enemy, moon_damage)
 		
+		# Play impact sound based on moon type and ID
+		_play_moon_impact_sound()
+		
 		# Add individual screen shake - bigger for the last two moons (slash2 type)
 		if moon_type == "slash2":  # Moons 4-5 are the large ones
 			ScreenShake.shake(6.0, 0.25)  # Big shake for large moons
@@ -111,3 +114,27 @@ func _show_moon_damage_popup(target_node: Node, amount: int):
 	popup.position = Vector2(90, -50)
 	popup.show_damage(amount)
 	print("🌙 Moon damage popup created: ", amount, " damage")
+
+func _play_moon_impact_sound():
+	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+	if not sfx_player:
+		print("🌙 Warning: Could not find SFXPlayer for moon impact sound")
+		return
+	
+	var sound_file = ""
+	
+	if moon_type == "slash2":  # Moons 4-5 use the big impact sound
+		sound_file = "moonslash_hit3.wav"
+	else:  # Moons 1-3 alternate between hit1 and hit2
+		if moon_id % 2 == 1:  # Odd moons (1, 3) use hit1
+			sound_file = "moonslash_hit1.wav"
+		else:  # Even moons (2) use hit2
+			sound_file = "moonslash_hit2.wav"
+	
+	var impact_sound = load("res://assets/sfx/" + sound_file)
+	if impact_sound:
+		sfx_player.stream = impact_sound
+		sfx_player.play()
+		print("🌙 Moon ", moon_id, " impact sound: ", sound_file)
+	else:
+		print("🌙 Warning: Could not load ", sound_file)

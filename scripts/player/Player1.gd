@@ -1,6 +1,6 @@
 extends Node2D
 
-var hp_max: int = 50
+var hp_max: int = 100
 var hp: int = 50
 var is_defeated: bool = false
 var selected_ability = ""

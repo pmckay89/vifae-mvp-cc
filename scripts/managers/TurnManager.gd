@@ -313,6 +313,14 @@ func show_menu():
 	menu_selection = 0
 	in_skills_menu = false
 	
+	# Play turn ready sound for players only
+	if is_player(current_actor):
+		var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+		if sfx_player:
+			sfx_player.stream = preload("res://assets/sfx/turn_ready.wav")
+			sfx_player.play()
+			print("🎵 Playing turn ready sound for " + current_actor.name)
+	
 	if action_menu:
 		action_menu.visible = true
 	if skills_menu:

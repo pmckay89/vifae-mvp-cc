@@ -1,7 +1,7 @@
 extends Node2D
 
 # Enemy stats only - no turn management
-var hp_max: int = 150
+var hp_max: int = 300
 var hp: int = hp_max
 var is_defeated: bool = false
 var rng := RandomNumberGenerator.new()
@@ -9,6 +9,19 @@ var rng := RandomNumberGenerator.new()
 func _ready():
 	rng.randomize()
 	_update_idle_animation()
+	
+	# Initialize HP bar color to full health (green)
+	var bar: ProgressBar = get_node_or_null("/root/BattleScene/UILayer/EnemyHUD/EnemyHPBar")
+	if bar:
+		bar.min_value = 0
+		bar.max_value = hp_max
+		bar.value = hp
+		_update_hp_bar_color(bar)
+	
+	# Hide head health bar permanently
+	var head_bar: ProgressBar = get_node_or_null("HealthBar")
+	if head_bar:
+		head_bar.visible = false
 
 func _update_idle_animation():
 	var animated_sprite = get_node_or_null("Sprite2D") as AnimatedSprite2D
@@ -192,13 +205,14 @@ func take_damage(amount: int) -> void:
 	hp = max(hp - amount, 0)
 	print(name, "takes", amount, "damage. HP:", hp)
 
-	# Update enemy HP bar
+	# Update enemy HP bar with color gradient
 	var bar: ProgressBar = get_node_or_null("/root/BattleScene/UILayer/EnemyHUD/EnemyHPBar")
 	if bar:
 		if bar.max_value != hp_max:
 			bar.min_value = 0
 			bar.max_value = hp_max
 		bar.value = hp
+		_update_hp_bar_color(bar)
 	else:
 		push_warning("Enemy HP bar not found at /root/BattleScene/UILayer/EnemyHUD/EnemyHPBar")
 	
@@ -209,12 +223,10 @@ func take_damage(amount: int) -> void:
 	else:
 		push_warning("Enemy HP label not found at /root/BattleScene/UILayer/EnemyHUD/EnemyHPLabel")
 	
-	# Update health bar above enemy head
+	# Hide health bar above enemy head (permanently disabled for now)
 	var head_bar: ProgressBar = get_node_or_null("HealthBar")
 	if head_bar:
-		if head_bar.max_value != hp_max:
-			head_bar.min_value = 0
-			head_bar.max_value = hp_max
+		head_bar.visible = false
 		head_bar.value = hp
 	else:
 		push_warning("Enemy head HealthBar not found")
@@ -312,3 +324,37 @@ func show_flinch_animation() -> void:
 	await get_tree().create_timer(0.1).timeout  # Brief hold on normal
 	
 	print("FLINCH→ Enemy flinch animation complete")
+
+func _update_hp_bar_color(bar: ProgressBar):
+	if not bar:
+		return
+	
+	var hp_percentage = float(hp) / float(hp_max)
+	var fill_color: Color
+	
+	# Create gradient: Green (100%) → Yellow (≈60%) → Red (≈30%)
+	if hp_percentage > 0.6:
+		# Green to Yellow transition (100% to 60%)
+		var transition = (hp_percentage - 0.6) / 0.4  # 0.0 to 1.0
+		fill_color = Color.YELLOW.lerp(Color.GREEN, transition)
+	elif hp_percentage > 0.3:
+		# Yellow to Red transition (60% to 30%)
+		var transition = (hp_percentage - 0.3) / 0.3  # 0.0 to 1.0  
+		fill_color = Color.RED.lerp(Color.YELLOW, transition)
+	else:
+		# Pure Red (30% and below)
+		fill_color = Color.RED
+	
+	# Create new StyleBoxFlat with the calculated color
+	var style_box = StyleBoxFlat.new()
+	style_box.bg_color = fill_color
+	style_box.border_width_left = 1
+	style_box.border_width_top = 1
+	style_box.border_width_right = 1
+	style_box.border_width_bottom = 1
+	style_box.border_color = Color(1, 0.4, 0.4, 1)  # Keep original border
+	
+	# Apply the new style
+	bar.add_theme_stylebox_override("fill", style_box)
+	
+	print("HP Bar color updated: ", int(hp_percentage * 100), "% -> ", fill_color)
