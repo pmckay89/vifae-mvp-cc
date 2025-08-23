@@ -92,6 +92,168 @@ func attack(target):
 	await execute_ninja_attack_sequence(target)
 	
 
+# New method for standard QTE system - just handles visual effects after QTE
+func perform_attack(qte_result: String, target):
+	if target == null:
+		print(name, "tried to attack a NULL target!")
+		return
+	
+	var sfx_player = get_node("/root/BattleScene/SFXPlayer")
+	
+	# Play ONLY the animation part, not the full sequence with QTE
+	await play_attack_animation_only(target)
+	
+	# Then apply visual/audio effects based on QTE result
+	# Note: TurnManager will handle damage calculation
+	match qte_result:
+		"crit":
+			print("✨ PERFECT NINJA STRIKE!")
+			VFXManager.play_hit_effects(target)
+			if sfx_player:
+				sfx_player.stream = preload("res://assets/sfx/crit.wav")
+				sfx_player.play()
+		"normal":
+			print("⚔️ Good ninja attack!")
+			VFXManager.play_hit_effects(target)
+			if sfx_player:
+				sfx_player.stream = preload("res://assets/sfx/attack.wav")
+				sfx_player.play()
+		"fail":
+			print("💫 Ninja attack missed...")
+			if sfx_player:
+				sfx_player.stream = preload("res://assets/sfx/miss.wav")
+				sfx_player.play()
+
+# Animation-only version without QTE or damage
+func play_attack_animation_only(target):
+	print("🥷 " + name + " ninja animation only!")
+	
+	# Get references to animation nodes
+	var idle_animation = get_node_or_null("idle")
+	var combat_animation = get_node_or_null("CombatAnimations")
+	
+	if not combat_animation:
+		print("❌ CombatAnimations node not found!")
+		return
+	
+	# Step 1: Move sprite right toward enemy
+	var original_pos = global_position
+	var attack_pos = Vector2(original_pos.x + 80, original_pos.y)
+	
+	# Hide idle animation during attack
+	if idle_animation and idle_animation.has_method("stop"):
+		idle_animation.stop()
+	
+	# Step 2: Windup animation
+	if combat_animation.has_method("play"):
+		combat_animation.play("attackwindup")
+		print("🥷 Windup animation started")
+		await get_tree().create_timer(0.8).timeout
+	
+	# Step 3: Attack animation  
+	if combat_animation.has_method("play"):
+		combat_animation.play("attack")
+		print("🥷 Attack animation!")
+		await get_tree().create_timer(0.3).timeout
+	
+	# Step 4: Jump back animation
+	if combat_animation.has_method("play"):
+		combat_animation.play("jumpback")
+		print("🥷 Jumping back...")
+		await get_tree().create_timer(0.6).timeout
+	
+	# Step 5: Restore idle animation
+	if idle_animation and idle_animation.has_method("play"):
+		idle_animation.play("idle")
+	
+	print("🥷 Ninja attack animation complete!")
+
+# New split methods for TurnManager integration
+# STANDARDIZED ATTACK SYSTEM - Player1 Implementation
+func start_attack_windup():
+	print("🥷 " + name + " begins ninja windup!")
+	
+	# Get references to animation nodes
+	var idle_animation = get_node_or_null("idle")
+	var combat_animation = get_node_or_null("CombatAnimations")
+	
+	if not combat_animation:
+		print("❌ CombatAnimations node not found!")
+		return
+	
+	print("🥷 Found CombatAnimations node: ", combat_animation)
+	
+	# Hide idle animation during attack
+	if idle_animation:
+		if idle_animation.has_method("stop"):
+			idle_animation.stop()
+		idle_animation.visible = false
+		print("🥷 Stopped and hid idle animation")
+	
+	# Play windup animation on AnimatedSprite2D
+	if combat_animation is AnimatedSprite2D:
+		print("🥷 Playing attackwindup animation on AnimatedSprite2D")
+		combat_animation.play("attackwindup")
+		combat_animation.visible = true
+		await get_tree().create_timer(0.8).timeout
+		print("🥷 Windup animation complete")
+	else:
+		print("❌ CombatAnimations is not AnimatedSprite2D: ", combat_animation.get_class())
+	
+	print("🥷 Windup complete, ready for QTE!")
+
+func finish_attack_sequence(qte_result: String, target):
+	print("🥷 " + name + " finishing attack with result: " + qte_result)
+	
+	var combat_animation = get_node_or_null("CombatAnimations")
+	var idle_animation = get_node_or_null("idle")
+	
+	if not combat_animation:
+		print("❌ CombatAnimations node not found in finish!")
+		return
+	
+	print("🥷 Found CombatAnimations in finish: ", combat_animation)
+	
+	# Step 1: Attack animation
+	if combat_animation is AnimatedSprite2D:
+		print("🥷 Playing attack animation on AnimatedSprite2D")
+		combat_animation.play("attack")
+		combat_animation.visible = true
+		await get_tree().create_timer(0.3).timeout
+		print("🥷 Attack animation complete")
+	else:
+		print("❌ CombatAnimations is not AnimatedSprite2D in finish: ", combat_animation.get_class())
+	
+	# Step 2: Only print feedback (TurnManager handles all audio/damage/hit effects)
+	match qte_result:
+		"crit":
+			print("✨ PERFECT NINJA STRIKE!")
+		"normal":
+			print("⚔️ Good ninja attack!")
+		"fail":
+			print("💫 Ninja attack missed...")
+	
+	# Step 3: Jump back animation
+	if combat_animation is AnimatedSprite2D:
+		print("🥷 Playing jumpback animation on AnimatedSprite2D")
+		combat_animation.play("jumpback")
+		combat_animation.visible = true
+		await get_tree().create_timer(0.6).timeout
+		print("🥷 Jumpback complete")
+	
+	# Step 4: Hide combat animation and restore idle
+	if combat_animation is AnimatedSprite2D:
+		combat_animation.visible = false
+		print("🥷 Hid combat animation")
+	
+	if idle_animation:
+		idle_animation.visible = true
+		if idle_animation.has_method("play"):
+			idle_animation.play("idle")
+		print("🥷 Restored idle animation")
+	
+	print("🥷 Ninja attack sequence complete!")
+
 func attack_critical(target):
 	if target == null:
 		print(name, "tried to attack a NULL target!")

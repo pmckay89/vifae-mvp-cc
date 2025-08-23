@@ -2,6 +2,31 @@ extends Node
 
 const TurnOrderProvider = preload("res://scripts/core/TurnOrderProvider.gd")
 
+# STANDARDIZED CHARACTER ATTACK SYSTEM
+# 
+# All player characters should implement these methods for scalable combat:
+# 
+# REQUIRED METHODS:
+# - start_attack_windup() -> await: Play windup animation, prepare for QTE
+# - finish_attack_sequence(qte_result: String, target) -> await: Handle post-QTE animation and visual effects
+# 
+# SYSTEM FLOW:
+# 1. TurnManager calls start_attack_windup() on character
+# 2. TurnManager runs QTE
+# 3. TurnManager calls finish_attack_sequence(result, target) on character
+# 4. TurnManager handles all damage calculation, sound effects, and mechanical results
+# 
+# CHARACTER RESPONSIBILITIES:
+# - Visual animations and effects only
+# - No damage calculation or sound effects (TurnManager handles these)
+# - Character-specific visual feedback (muzzle flash, sword trails, etc.)
+# 
+# TURNMANAGER RESPONSIBILITIES:  
+# - All damage calculation based on QTE results
+# - All sound effect playback (character-specific sounds supported)
+# - All mechanical effects (resolve, buffs, etc.)
+# - Consistent combat flow across all characters
+
 # MVP State Machine - Strict Input Split
 enum State {
 	BEGIN_TURN,
@@ -83,6 +108,9 @@ func _ready():
 	# Initialize HP displays dynamically based on actual character HP
 	_initialize_hp_displays()
 	
+	# Initialize Resolve system
+	ResolveManager.reset_all_resolve()
+	
 	# Start the state machine
 	change_state(State.BEGIN_TURN)
 
@@ -111,6 +139,20 @@ func _input(event):
 	# Music toggle
 	if event.keycode == KEY_M:
 		toggle_music()
+		return
+	
+	# DEBUG: Resolve testing (Q/A = Player1, E/D = Player2)
+	if event.keycode == KEY_Q:
+		ResolveManager.debug_increment_resolve("Player1")
+		return
+	if event.keycode == KEY_A:
+		ResolveManager.debug_decrement_resolve("Player1") 
+		return
+	if event.keycode == KEY_E:
+		ResolveManager.debug_increment_resolve("Player2")
+		return
+	if event.keycode == KEY_D:
+		ResolveManager.debug_decrement_resolve("Player2")
 		return
 		
 	match current_state:
@@ -406,17 +448,24 @@ func start_qte():
 		# Small delay to prevent menu input carryover
 		await get_tree().create_timer(1.0).timeout
 		
-		# Player offense - let player handle their own abilities
+		# Player offense - STANDARDIZED SYSTEM for all characters
 		if selected_action == "attack":
-			# Check which player - Player1 has ninja sequence, Player2 needs QTE
-			if current_actor.name == "Player1":
-				# Player1 uses ninja attack sequence with built-in QTE
-				await current_actor.attack(selected_target)
-				qte_result = "handled"  # Flag that player handled it
+			# Universal pattern: windup → QTE → finish sequence
+			if current_actor.has_method("start_attack_windup") and current_actor.has_method("finish_attack_sequence"):
+				# Step 1: Play windup animation
+				await current_actor.start_attack_windup()
+				# Step 2: QTE during windup
+				qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!", current_actor)
+				# Step 3: Finish attack animation based on result
+				await current_actor.finish_attack_sequence(qte_result, selected_target)
 			else:
-				# Player2 and others use QTE then attack method
-				qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z to attack!", current_actor)
+				# Fallback for characters without standardized system
+				print("⚠️ Character " + current_actor.name + " using legacy attack system")
+				qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!", current_actor)
+				if current_actor.has_method("attack"):
+					await current_actor.attack(selected_target)
 		else:
+			# Handle abilities (not basic attacks)
 			# Handle self-buff abilities that don't need a target
 			if selected_action == "focus":
 				await current_actor.execute_ability(selected_action, null)
@@ -479,17 +528,45 @@ func resolve_action():
 			# Player already handled damage through their ability system
 			print("DMG→ Player ability " + selected_action + " handled by player system")
 		elif selected_action == "attack":
-			# Only basic attack uses TurnManager damage calculation
+			# Only basic attack uses TurnManager damage calculation - binary result
 			match qte_result:
-				"crit": damage = 10
-				"normal": damage = 6
-				"fail": damage = 0
+				"crit", "normal": 
+					damage = 8  # Success = consistent damage
+					# Award resolve for successful attack
+					ResolveManager.set_resolve(current_actor.name, ResolveManager.get_resolve(current_actor.name) + 1)
+				"fail": damage = 0            # Fail = no damage
 			var target_name = "null target"
 			if selected_target:
 				target_name = selected_target.name
 			print("DMG→ Player deals " + str(damage) + " to " + target_name)
+			
+			# Play sound effects based on QTE result and player type
+			var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+			match qte_result:
+				"crit":
+					if sfx_player:
+						if current_actor.name == "Player2":
+							sfx_player.stream = preload("res://assets/sfx/gun2.wav")  # Gun Girl crit
+						else:
+							sfx_player.stream = preload("res://assets/sfx/crit.wav")   # Sword Spirit crit
+						sfx_player.play()
+				"normal":
+					if sfx_player:
+						if current_actor.name == "Player2":
+							sfx_player.stream = preload("res://assets/sfx/gun1.wav")  # Gun Girl normal
+						else:
+							sfx_player.stream = preload("res://assets/sfx/attack.wav") # Sword Spirit normal
+						sfx_player.play()
+				"fail":
+					if sfx_player:
+						sfx_player.stream = preload("res://assets/sfx/miss.wav")  # Same miss sound for both
+						sfx_player.play()
+			
+			# Apply damage and hit effects
 			if damage > 0 and selected_target and selected_target.has_method("take_damage"):
 				selected_target.take_damage(damage)
+				# Play hit effects for successful attacks
+				VFXManager.play_hit_effects(selected_target)
 		else:
 			print("WARNING→ Unhandled player action: " + selected_action)
 			
@@ -716,6 +793,9 @@ func reset_combat():
 		CombatUI.update_hp_bar("Player2", player2.hp, player2.hp_max)
 	if enemy:
 		CombatUI.update_hp_bar("Enemy", enemy.hp, enemy.hp_max)
+	
+	# Reset Resolve system
+	ResolveManager.reset_all_resolve()
 	
 	# Reset turn state
 	current_turn_index = 0

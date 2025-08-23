@@ -245,10 +245,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -482.5
-offset_top = 245.0
-offset_right = -320.5
-offset_bottom = 295.0
+offset_left = -569.0
+offset_top = 213.0
+offset_right = -388.0
+offset_bottom = 317.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -256,9 +256,17 @@ grow_vertical = 2
 layout_mode = 2
 text = "SWORD SPIRIT: 100/100"
 
+[node name="Player1Resolve" type="Label" parent="UILayer/HPBars"]
+layout_mode = 2
+text = "RESOLVE: 0/6"
+
 [node name="Player2HP" type="Label" parent="UILayer/HPBars"]
 layout_mode = 2
-text = "GUN GIRL: 100/100"
+text = "GUN GIRL:  	 		      100/100"
+
+[node name="Player2Resolve" type="Label" parent="UILayer/HPBars"]
+layout_mode = 2
+text = "RESOLVE: 0/6"
 
 [node name="SkillsMenu" type="Control" parent="UILayer"]
 layout_mode = 3

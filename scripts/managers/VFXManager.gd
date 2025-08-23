@@ -16,9 +16,13 @@ func play_hit_effects(target_node: Node):
 	if flash:
 		flash_hit(flash)
 
-	# Play block sprite as reaction
-	if target_node.has_method("show_block_animation"):
+	# Play appropriate hit reaction based on target type
+	if target_node.name.begins_with("Player") and target_node.has_method("show_block_animation"):
+		# Players have block animations
 		target_node.show_block_animation()
+	elif target_node.name == "Enemy" and target_node.has_method("show_flinch_animation"):
+		# Enemy uses flinch animation as hit reaction (already called in take_damage)
+		print("🛡️ Enemy hit reaction handled by flinch animation")
 
 func flash_hit(flash_node: Node):
 	if flash_node == null:

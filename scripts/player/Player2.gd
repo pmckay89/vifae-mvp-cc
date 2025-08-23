@@ -113,6 +113,26 @@ func hide_attack_windup():
 	resume_breathing_animation()
 	print("[Player2] Hiding attack windup pose, resuming breathing")
 
+# STANDARDIZED ATTACK SYSTEM - Player2 Implementation
+func start_attack_windup():
+	print("🔫 " + name + " starting attack windup")
+	show_attack_windup()
+	# Small delay for windup animation
+	await get_tree().create_timer(0.3).timeout
+	print("🔫 Windup complete, ready for QTE!")
+
+func finish_attack_sequence(qte_result: String, target):
+	print("🔫 " + name + " finishing attack with result: " + qte_result)
+	
+	# Brief pause for attack timing
+	await get_tree().create_timer(0.2).timeout
+	
+	# Hide attack pose
+	hide_attack_windup()
+	
+	print("🔫 Gun Girl attack sequence complete!")
+
+# LEGACY METHOD - kept for compatibility with old systems
 func attack(target):
 	if target == null:
 		print(name, "tried to attack a NULL target!")
@@ -127,15 +147,8 @@ func attack(target):
 	# Small delay to show the windup pose
 	await get_tree().create_timer(0.3).timeout
 	
-	# Trigger muzzle flash for Gun Girl's basic attacks
-	trigger_muzzle_flash("normal")
-	
-	# Add gun sound effect for Gun Girl
-	var sfx_player = get_node("/root/BattleScene/SFXPlayer")
-	sfx_player.stream = preload("res://assets/sfx/gun1.wav")
-	sfx_player.play()
-	
-	VFXManager.play_hit_effects(target)
+	# TurnManager now handles sound effects and hit effects for basic attacks
+	print("🔫 Gun Girl basic attack (effects handled by TurnManager)")
 	target.take_damage(damage)
 	
 	# Hide windup pose after attack
@@ -154,9 +167,6 @@ func attack_critical(target):
 	
 	# Small delay to show the windup pose
 	await get_tree().create_timer(0.3).timeout
-	
-	# Trigger muzzle flash for Gun Girl's critical attacks
-	trigger_muzzle_flash("crit")
 	
 	VFXManager.play_hit_effects(target)
 	target.take_damage(damage)
@@ -499,8 +509,8 @@ func trigger_muzzle_flash(attack_type: String = "normal") -> void:
 	muzzle_flash_tween = create_tween()
 	muzzle_flash_tween.tween_callback(_hide_muzzle_flash).set_delay(0.06)
 	
-	# Trigger hit sound through safe audio system
-	_safe_audio_call("play_hit", attack_type)
+	# Sound effects are now handled by TurnManager for basic attacks
+	print("[Player2] Muzzle flash shown (TurnManager handles sound effects)")
 
 func _hide_muzzle_flash() -> void:
 	if muzzle_flash:

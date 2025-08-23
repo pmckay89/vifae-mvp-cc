@@ -293,37 +293,19 @@ func start_qte(action_name: String, window_ms: int = 700, prompt_text: String = 
 				print("✨ PERFECT RING TIMING! CRITICAL!")
 				_safe_audio_call("play_qte_success")
 				# ScreenShake.shake(5.0, 0.4)  # Add screen shake for crits
-				if sfx_player and action_name == "confirm attack":
-					var current_actor = get_node_or_null("/root/BattleScene/TurnManager").current_actor
-					if current_actor and current_actor.name == "Player1":
-						# Player1 = Sword Spirit (crit = parry.wav)
-						sfx_player.stream = preload("res://assets/sfx/parry.wav")
-					elif current_actor and current_actor.name == "Player2":
-						# Player2 = Gun Girl (crit = gun2.wav)
-						sfx_player.stream = preload("res://assets/sfx/gun2.wav")
-					sfx_player.play()
+				# Attack sounds now handled by TurnManager
 			# Good timing: close to perfect or slightly after (65-75% and 85-95%)
 			elif (timing_percentage >= 0.65 and timing_percentage < 0.75) or (timing_percentage > 0.85 and timing_percentage <= 0.95):
 				result = "normal"
 				print("✅ GOOD RING TIMING! SUCCESS!")
 				_safe_audio_call("play_qte_success")
-				if sfx_player and action_name == "confirm attack":
-					var current_actor = get_node_or_null("/root/BattleScene/TurnManager").current_actor
-					if current_actor and current_actor.name == "Player1":
-						# Player1 = Sword Spirit (normal = attack.wav)
-						sfx_player.stream = preload("res://assets/sfx/attack.wav")
-					elif current_actor and current_actor.name == "Player2":
-						# Player2 = Gun Girl (normal = gun1.wav)
-						sfx_player.stream = preload("res://assets/sfx/gun1.wav")
-					sfx_player.play()
+				# Attack sounds now handled by TurnManager
 			# Poor timing: too early or too late (0-65% or 95-100%)
 			else:
 				result = "fail"
 				print("⚠️ POOR RING TIMING! WEAK HIT!")
 				_safe_audio_call("play_qte_fail")
-				if sfx_player and action_name == "confirm attack":
-					sfx_player.stream = preload("res://assets/sfx/miss.wav")
-					sfx_player.play()
+				# Attack sounds now handled by TurnManager
 	else:
 		# No input detected - timeout fail
 		_safe_audio_call("play_qte_fail")
@@ -821,18 +803,7 @@ func start_sniper_qte(action_name: String, prompt_text: String, _target_player =
 	qte_active = false
 	hide_qte()
 	
-	# Play feedback sound
-	if sfx_player:
-		match hit_result:
-			"crit":
-				sfx_player.stream = preload("res://assets/sfx/gun2.wav")
-				sfx_player.play()
-			"normal":
-				sfx_player.stream = preload("res://assets/sfx/gun2.wav")
-				sfx_player.play()
-			"fail":
-				sfx_player.stream = preload("res://assets/sfx/miss.wav")
-				sfx_player.play()
+	# Sound effects now handled by TurnManager
 	
 	# Show result flash for sniper QTE
 	show_result_flash(hit_result)
@@ -1192,33 +1163,19 @@ func start_basic_attack_qte(action_name: String, window_ms: int, target_player =
 			qte_widget.show_success()
 			_safe_audio_call("play_qte_success")
 			# ScreenShake.shake(5.0, 0.4)
-			if sfx_player and action_name == "confirm attack":
-				var current_actor = get_node_or_null("/root/BattleScene/TurnManager").current_actor
-				if current_actor and current_actor.name == "Player1":
-					sfx_player.stream = preload("res://assets/sfx/parry.wav")
-				elif current_actor and current_actor.name == "Player2":
-					sfx_player.stream = preload("res://assets/sfx/gun2.wav")
-				sfx_player.play()
+			# Attack sounds now handled by TurnManager
 		elif timing_percentage < 0.7:
 			result = "normal"
 			print("✅ GOOD TIMING! SUCCESS!")
 			qte_widget.show_success()
 			_safe_audio_call("play_qte_success")
-			if sfx_player and action_name == "confirm attack":
-				var current_actor = get_node_or_null("/root/BattleScene/TurnManager").current_actor
-				if current_actor and current_actor.name == "Player1":
-					sfx_player.stream = preload("res://assets/sfx/attack.wav")
-				elif current_actor and current_actor.name == "Player2":
-					sfx_player.stream = preload("res://assets/sfx/gun1.wav")
-				sfx_player.play()
+			# Attack sounds now handled by TurnManager
 		else:
 			result = "fail"
 			print("⚠️ TOO LATE! WEAK HIT!")
 			qte_widget.show_failure()
 			_safe_audio_call("play_qte_fail")
-			if sfx_player and action_name == "confirm attack":
-				sfx_player.stream = preload("res://assets/sfx/miss.wav")
-				sfx_player.play()
+			# Attack sounds now handled by TurnManager
 	else:
 		# No input detected - timeout fail
 		qte_widget.show_failure()

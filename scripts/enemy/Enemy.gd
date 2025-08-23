@@ -102,33 +102,7 @@ func end_attack_animation() -> void:
 	if enemy_idle_sprite:
 		enemy_idle_sprite.visible = true
 
-# Add missing show_block_animation method for VFXManager compatibility
-func show_block_animation(duration: float = 1.0):
-	print("🛡️ Enemy hit reaction - hitstun flash only")
-	
-	# Get sprite references
-	var enemy_idle_sprite = get_node_or_null("Sprite2D")
-	var e_block1 = get_node_or_null("e-block")
-	var e_block2 = get_node_or_null("e-block2")
-	
-	# Make sure only the idle sprite is visible during hit reaction
-	if enemy_idle_sprite:
-		enemy_idle_sprite.visible = true
-	
-	# Hide any attack sprites that might be showing
-	if e_block1:
-		e_block1.visible = false
-	if e_block2:
-		e_block2.visible = false
-	
-	# Just wait for the hitstun duration - let the flash effect handle the visual feedback
-	await get_tree().create_timer(duration).timeout
-	
-	# Ensure idle sprite stays visible
-	if enemy_idle_sprite:
-		enemy_idle_sprite.visible = true
-	
-	print("🛡️ Enemy hit reaction complete - enemy stays in place")
+# Note: show_block_animation no longer needed - VFXManager now handles enemy hits properly
 
 # ORIGINAL ATTACK METHOD - Kept for compatibility
 func attack(target: Node) -> void:
@@ -300,9 +274,6 @@ func show_flinch_animation() -> void:
 		print("FLINCH→ Warning: Flinch sprites not found")
 		return
 	
-	# Save original visibility states
-	var main_was_visible = main_sprite.visible
-	
 	# Start flinch sequence: normal → flinch → flinch2 → normal
 	# Phase 1: Show flinch sprite
 	main_sprite.visible = false
@@ -317,9 +288,9 @@ func show_flinch_animation() -> void:
 	
 	await get_tree().create_timer(0.1).timeout  # Second flinch frame
 	
-	# Phase 3: Return to normal
+	# Phase 3: Always return to visible main sprite (ensure enemy doesn't disappear)
 	flinch2_sprite.visible = false
-	main_sprite.visible = main_was_visible
+	main_sprite.visible = true  # Force main sprite to be visible
 	
 	await get_tree().create_timer(0.1).timeout  # Brief hold on normal
 	
