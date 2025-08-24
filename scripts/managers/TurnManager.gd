@@ -583,8 +583,8 @@ func resolve_action():
 		if current_actor.has_method("attack_animation"):
 			current_actor.attack_animation(selected_target, selected_action, false)
 			
-		# ADD THIS LINE - delay to see the animation
-		await get_tree().create_timer(0.8).timeout
+		# Reduced delay for faster turn switching
+		await get_tree().create_timer(0.2).timeout
 			
 		# Apply parry mitigation with graduated timing for Lightning Surge
 		var mitigation = 0.0
@@ -596,6 +596,11 @@ func resolve_action():
 			else:
 				damage = base_damage
 				print("DMG→ Mirror Strike: Failed sequence! " + str(damage) + " damage to " + selected_target.name)
+			
+			# Award resolve for perfect mirror strike sequence
+			if damage == 0:
+				ResolveManager.set_resolve(selected_target.name, ResolveManager.get_resolve(selected_target.name) + 1)
+				print("RESOLVE→ " + selected_target.name + " gains +1 resolve for perfect mirror strike sequence!")
 			
 			# Apply mirror strike damage directly
 			if damage > 0:
@@ -616,6 +621,11 @@ func resolve_action():
 			damage = failed_strikes * 10  # 10 damage per failed strike
 			print("DMG→ Lightning Surge: " + str(failed_strikes) + " strikes hit for " + str(damage) + " damage to " + selected_target.name)
 			
+			# Award resolve for perfect lightning surge defense
+			if damage == 0:
+				ResolveManager.set_resolve(selected_target.name, ResolveManager.get_resolve(selected_target.name) + 1)
+				print("RESOLVE→ " + selected_target.name + " gains +1 resolve for perfect lightning surge defense!")
+			
 			# Apply lightning surge damage directly
 			if damage > 0:
 				print("DEBUG→ Applying " + str(damage) + " lightning damage to target: " + str(selected_target))
@@ -627,7 +637,7 @@ func resolve_action():
 					print("DEBUG→ Calling take_damage(" + str(damage) + ") on " + selected_target.name)
 					selected_target.take_damage(damage)
 			else:
-				print("DEBUG→ No lightning damage to apply (damage = " + str(damage) + ")")
+				print("DEBUG→ No lightning damage to apply (perfect defense = " + str(damage) + " damage)")
 			
 			# Lightning surge damage handled directly above, skip normal damage calculation
 		else:
@@ -645,6 +655,14 @@ func resolve_action():
 			
 			damage = int(base_damage * (1.0 - mitigation))
 			print("DMG→ Enemy deals " + str(damage) + " to " + selected_target.name + " (base: " + str(base_damage) + ", " + qte_result + " parry = " + str(int(mitigation * 100)) + "% mitigated)")
+			
+			# Award resolve for perfect parries/defenses
+			if selected_action == "arc_slash" and qte_result == "perfect" and damage == 0:
+				ResolveManager.set_resolve(selected_target.name, ResolveManager.get_resolve(selected_target.name) + 1)
+				print("RESOLVE→ " + selected_target.name + " gains +1 resolve for perfect arc_slash parry!")
+			elif selected_action == "phase_slam" and (qte_result == "perfect" or qte_result == "normal") and damage == 0:
+				ResolveManager.set_resolve(selected_target.name, ResolveManager.get_resolve(selected_target.name) + 1)
+				print("RESOLVE→ " + selected_target.name + " gains +1 resolve for successful phase_slam defense!")
 			
 			# Play Phase Slam impact sound after QTE resolves
 			if selected_action == "phase_slam":
@@ -672,9 +690,9 @@ func resolve_action():
 	
 	# Block input and add delay to prevent QTE button mashing carryover
 	input_blocked = true
-	print("TURNMGR→ Blocking input for 1 second to prevent carryover")
+	print("TURNMGR→ Blocking input for 0.3 seconds to prevent carryover")
 	_clear_pending_inputs()
-	await get_tree().create_timer(1.0).timeout
+	await get_tree().create_timer(0.3).timeout
 	_clear_pending_inputs()  # Clear again after delay
 	input_blocked = false
 	print("TURNMGR→ Input unblocked")

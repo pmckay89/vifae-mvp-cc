@@ -929,6 +929,14 @@ func start_multishot_qte(prompt_text: String, target_player) -> String:
 	
 	print("🎯 Multishot complete! Parried: ", parries_made, "/4, Hit by: ", hits_taken, "/4")
 	
+	# Award resolve for perfect multishot defense (no damage taken)
+	if parries_made == 4 and target_player:
+		var resolve_manager = get_node_or_null("/root/ResolveManager")
+		if resolve_manager and resolve_manager.has_method("set_resolve"):
+			var current_resolve = resolve_manager.get_resolve(target_player.name)
+			resolve_manager.set_resolve(target_player.name, current_resolve + 1)
+			print("RESOLVE→ " + target_player.name + " gains +1 resolve for perfect multishot defense!")
+	
 	# Return result based on performance
 	if parries_made == 4:
 		return "perfect"

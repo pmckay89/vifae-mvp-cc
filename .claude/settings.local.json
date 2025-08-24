@@ -12,7 +12,9 @@
       "Bash(move:*)",
       "Bash(mv:*)",
       "Bash(grep:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Read(/C:\\func start_multishot_qte\\,/**)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": [],
