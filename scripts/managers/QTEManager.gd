@@ -848,6 +848,9 @@ func start_multishot_qte(prompt_text: String, target_player) -> String:
 	qte_container.add_child(goal_indicator)
 	print("🎯 Goal indicator at: ", goal_indicator.position, " (player at: ", player_pos, ")")
 	
+	# Setup X key animation for parry timing
+	_setup_x_key_animation()
+	
 	# Create 4 projectile lines - same size as big shot crosshair
 	var projectiles = []
 	var projectile_results = []  # Track individual results
@@ -879,6 +882,7 @@ func start_multishot_qte(prompt_text: String, target_player) -> String:
 	
 	# Launch projectiles with immediate movement
 	var active_projectiles = []
+	var projectile_tracker = {"active_count": 4}  # Shared reference for tracking
 	
 	# Start async movement for each projectile as it launches
 	for i in 4:
@@ -905,16 +909,21 @@ func start_multishot_qte(prompt_text: String, target_player) -> String:
 		active_projectiles.append(proj_data)
 		
 		# Start async movement for this projectile
-		_start_projectile_movement(proj_data, enemy_pos, player_pos, projectile_speed, parry_distance, projectile_results, target_player, parry_line_x)
+		_start_projectile_movement(proj_data, enemy_pos, player_pos, projectile_speed, parry_distance, projectile_results, target_player, parry_line_x, projectile_tracker)
 	
-	# Wait for all projectiles to complete (they're moving independently)
-	await get_tree().create_timer(5.0).timeout  # Max QTE time
+	# Wait for all projectiles to complete dynamically
+	var max_wait_time = 5.0  # Safety fallback
+	var wait_start = Time.get_ticks_msec()
 	
-	# Wait for any parry animations to complete before cleanup
-	await get_tree().create_timer(0.6).timeout  # Allow time for final parry animation
+	while projectile_tracker.active_count > 0 and (Time.get_ticks_msec() - wait_start) < (max_wait_time * 1000):
+		await get_tree().process_frame
+	
+	# Brief wait for final parry animation (reduced from 0.6s)
+	await get_tree().create_timer(0.2).timeout  # Minimal delay for final effects
 	
 	# Clean up
 	goal_indicator.queue_free()
+	_cleanup_x_key_animation()
 	qte_active = false
 	hide_qte()
 	
@@ -946,7 +955,7 @@ func start_multishot_qte(prompt_text: String, target_player) -> String:
 		return "fail"
 
 # Async movement for individual projectiles
-func _start_projectile_movement(proj_data: Dictionary, enemy_pos: Vector2, player_pos: Vector2, projectile_speed: float, parry_distance: float, projectile_results: Array, target_player, parry_line_x: float):
+func _start_projectile_movement(proj_data: Dictionary, enemy_pos: Vector2, player_pos: Vector2, projectile_speed: float, parry_distance: float, projectile_results: Array, target_player, parry_line_x: float, tracker: Dictionary):
 	var projectile = proj_data.projectile
 	# Use the passed parry_line_x position (matches green line)
 	
@@ -977,6 +986,10 @@ func _start_projectile_movement(proj_data: Dictionary, enemy_pos: Vector2, playe
 				var tween = create_tween()
 				tween.tween_property(projectile, "position", Vector2(projectile.position.x + 100, -50), 0.5)
 				tween.tween_callback(func(): projectile.queue_free())
+				
+				# Decrement active projectile counter
+				tracker.active_count -= 1
+				print("🎯 Projectile completed (parried). Active count: ", tracker.active_count)
 				return
 		
 		# Check if projectile hit player (passed parry window)
@@ -992,6 +1005,10 @@ func _start_projectile_movement(proj_data: Dictionary, enemy_pos: Vector2, playe
 			
 			# Remove projectile
 			projectile.queue_free()
+			
+			# Decrement active projectile counter
+			tracker.active_count -= 1
+			print("🎯 Projectile completed (hit). Active count: ", tracker.active_count)
 			return
 		
 		await get_tree().process_frame
@@ -1923,6 +1940,10 @@ func _spawn_moonfall_moon(moon_id: int) -> void:
 var z_key_sprite: Sprite2D
 var z_key_tween: Tween
 
+# X key animation variables
+var x_key_sprite: Sprite2D
+var x_key_tween: Tween
+
 func _setup_z_key_animation():
 	# Create Z key sprite for animation
 	z_key_sprite = Sprite2D.new()
@@ -1971,6 +1992,55 @@ func _cleanup_z_key_animation():
 		z_key_sprite = null
 		
 	print("🌙 Z key animation cleaned up")
+
+func _setup_x_key_animation():
+	# Create X key sprite for animation
+	x_key_sprite = Sprite2D.new()
+	x_key_sprite.texture = load("res://assets/ui/x_static.png")
+	x_key_sprite.z_index = 1650  # Above dark overlay, below other elements
+	
+	# Position near the parry line for multishot
+	if qte_container:
+		var screen_center = get_viewport().get_visible_rect().size / 2
+		x_key_sprite.position = Vector2(screen_center.x - 50, screen_center.y - 100)  # Above parry area
+		x_key_sprite.scale = Vector2(2.4, 2.4)  # 3x larger for visibility
+		qte_container.add_child(x_key_sprite)
+		
+		# Start looping animation: static -> press -> static
+		_start_x_key_loop()
+		
+		print("🎯 X key animation setup complete at position: ", x_key_sprite.position)
+	else:
+		print("🎯 ERROR: Could not setup X key animation - no QTE container")
+
+func _start_x_key_loop():
+	if not x_key_sprite:
+		return
+		
+	x_key_tween = create_tween()
+	x_key_tween.set_loops()  # Loop indefinitely
+	
+	# Animation sequence: static (0.5s) -> press (0.3s) -> static (0.2s) -> repeat
+	x_key_tween.tween_callback(func(): x_key_sprite.texture = load("res://assets/ui/x_static.png"))
+	x_key_tween.tween_interval(0.5)
+	x_key_tween.tween_callback(func(): x_key_sprite.texture = load("res://assets/ui/x_press.png"))
+	x_key_tween.tween_interval(0.3)
+	x_key_tween.tween_callback(func(): x_key_sprite.texture = load("res://assets/ui/x_static.png"))
+	x_key_tween.tween_interval(0.2)
+	
+	print("🎯 X key animation loop started")
+
+func _cleanup_x_key_animation():
+	# Stop animation and cleanup
+	if x_key_tween:
+		x_key_tween.kill()
+		x_key_tween = null
+		
+	if x_key_sprite:
+		x_key_sprite.queue_free()
+		x_key_sprite = null
+		
+	print("🎯 X key animation cleaned up")
 
 func _play_multishot_launch_sound():
 	# Create a new AudioStreamPlayer for each launch to allow overlapping
