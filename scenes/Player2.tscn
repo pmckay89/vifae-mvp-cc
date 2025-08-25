@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://c8rlmnvaxhyuc"]
+[gd_scene load_steps=38 format=3 uid="uid://c8rlmnvaxhyuc"]
 
 [ext_resource type="Script" uid="uid://ddlnogaisv00" path="res://scripts/player/Player2.gd" id="1_2adyw"]
 [ext_resource type="Texture2D" uid="uid://cmlogkyxy6j8e" path="res://assets/characters/p2.png" id="2_safxn"]
@@ -9,6 +9,141 @@
 [ext_resource type="Texture2D" uid="uid://1ub1rsii5bnj" path="res://assets/vfx/buff3.png" id="6_y5wyn"]
 [ext_resource type="Texture2D" uid="uid://dswagp1u44mft" path="res://assets/characters/p2_idle2.png" id="7_idle2"]
 [ext_resource type="Texture2D" uid="uid://dhndmb27scvvf" path="res://assets/characters/p2_idle.png" id="7_u3gjl"]
+[ext_resource type="Texture2D" uid="uid://cwr4rn6e6cl4r" path="res://assets/animations/individual pngs/vifae-idle00.png" id="8_idle00"]
+[ext_resource type="Texture2D" uid="uid://dy38cvt3istbt" path="res://assets/animations/individual pngs/vifae-idle01.png" id="9_idle01"]
+[ext_resource type="Texture2D" uid="uid://bm1v1jypv2ts1" path="res://assets/animations/individual pngs/vifae-idle02.png" id="10_idle02"]
+[ext_resource type="Texture2D" uid="uid://c4irisncbgrks" path="res://assets/animations/individual pngs/vifae-idle03.png" id="11_idle03"]
+[ext_resource type="Script" uid="uid://yj1mec45ct2s" path="res://hero-idle.gd" id="12_hero_idle"]
+[ext_resource type="Texture2D" uid="uid://bqfioih43l1sr" path="res://assets/animations/individual pngs/vifae-run00.png" id="13_run00"]
+[ext_resource type="Texture2D" uid="uid://drptey45yyfp7" path="res://assets/animations/individual pngs/vifae-run01.png" id="14_run01"]
+[ext_resource type="Texture2D" uid="uid://ddldhar40xtwc" path="res://assets/animations/individual pngs/vifae-run02.png" id="15_run02"]
+[ext_resource type="Texture2D" uid="uid://bm73rxafjkory" path="res://assets/animations/individual pngs/vifae-run03.png" id="16_run03"]
+[ext_resource type="Texture2D" uid="uid://mmmcpme0736y" path="res://assets/animations/individual pngs/vifae-run04.png" id="17_run04"]
+[ext_resource type="Texture2D" uid="uid://cwhb3yk538m4j" path="res://assets/animations/individual pngs/vifae-run05.png" id="18_run05"]
+[ext_resource type="Texture2D" uid="uid://b43pwxoujai2i" path="res://assets/animations/individual pngs/Vifae_throw1.png" id="19_throw1"]
+[ext_resource type="Texture2D" uid="uid://cj788nlurrf6a" path="res://assets/animations/individual pngs/Vifae_throw2.png" id="20_throw2"]
+[ext_resource type="Texture2D" uid="uid://c0qaf0shd776l" path="res://assets/animations/individual pngs/Vifae_throw3.png" id="21_throw3"]
+[ext_resource type="Texture2D" uid="uid://cow503nhcvg0k" path="res://assets/animations/individual pngs/Vifae_throw4.png" id="22_throw4"]
+[ext_resource type="Texture2D" uid="uid://bvl4mgp00fsuo" path="res://assets/animations/individual pngs/Vifae_throw5.png" id="23_throw5"]
+[ext_resource type="Texture2D" uid="uid://emdpwxnubhnv" path="res://assets/animations/individual pngs/Vifae_throw6.png" id="24_throw6"]
+[ext_resource type="Texture2D" uid="uid://b0niugted5mqr" path="res://assets/animations/individual pngs/Vifae_throw7.png" id="25_throw7"]
+[ext_resource type="Texture2D" uid="uid://15a4gai4rvok" path="res://assets/animations/individual pngs/Vifae_hitstun1.png" id="26_hitstun1"]
+[ext_resource type="Texture2D" uid="uid://bg1l3gor20jso" path="res://assets/animations/individual pngs/Vifae_hitstun2.png" id="27_hitstun2"]
+[ext_resource type="Texture2D" uid="uid://ylbfp84yj073" path="res://assets/animations/individual pngs/Vifae_hitstun3.png" id="28_hitstun3"]
+[ext_resource type="Texture2D" uid="uid://bx0f63otqvyno" path="res://assets/animations/individual pngs/Vifae_hitstun4.png" id="29_hitstun4"]
+[ext_resource type="Texture2D" uid="uid://fue27vlf5k3p" path="res://assets/animations/individual pngs/Vifae_hitstun5.png" id="30_hitstun5"]
+[ext_resource type="Texture2D" uid="uid://bjx53h0rkioll" path="res://assets/animations/individual pngs/Vifae_hitstun6.png" id="31_hitstun6"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_idle"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("26_hitstun1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("27_hitstun2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("28_hitstun3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29_hitstun4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("30_hitstun5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("31_hitstun6")
+}],
+"loop": true,
+"name": &"hitstun",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("8_idle00")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_idle01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_idle02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_idle03")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("8_idle00")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_idle01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_idle02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_idle03")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_idle00")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_idle01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_idle02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_idle03")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_run00")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_run01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_run02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_run03")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_run04")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_run05")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_throw1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_throw2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_throw3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_throw4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_throw5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_throw6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_throw7")
+}],
+"loop": true,
+"name": &"idle-run-throw",
+"speed": 10.0
+}]
 
 [sub_resource type="Animation" id="Animation_u3gjl"]
 length = 0.001
@@ -145,6 +280,17 @@ visible = false
 position = Vector2(115, 79)
 scale = Vector2(0.14, 0.14)
 texture = ExtResource("2_safxn")
+
+[node name="IdleAnimatedSprite" type="AnimatedSprite2D" parent="."]
+z_index = 10
+position = Vector2(86, 74)
+scale = Vector2(2, 2)
+sprite_frames = SubResource("SpriteFrames_idle")
+animation = &"idle"
+autoplay = "idle"
+script = ExtResource("12_hero_idle")
+
+[node name="AbilityAnimationPlayer" type="AnimationPlayer" parent="IdleAnimatedSprite"]
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {

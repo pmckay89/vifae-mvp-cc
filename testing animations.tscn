@@ -1,15 +1,25 @@
-[gd_scene load_steps=37 format=3 uid="uid://b55wbmfbve30"]
+[gd_scene load_steps=52 format=3 uid="uid://b55wbmfbve30"]
 
 [ext_resource type="Texture2D" uid="uid://h62ecpojvn1h" path="res://assets/characters/enemy-XT.png" id="1_84ipl"]
 [ext_resource type="Texture2D" uid="uid://cwr4rn6e6cl4r" path="res://assets/animations/individual pngs/vifae-idle00.png" id="2_8k0kx"]
+[ext_resource type="Texture2D" uid="uid://d1xbbqywtfudk" path="res://assets/vfx/grenade_explosion1.png" id="2_bkjk3"]
+[ext_resource type="Texture2D" uid="uid://doik3ypx20lbq" path="res://assets/vfx/grenade_explosion2.png" id="3_b7qjs"]
 [ext_resource type="Texture2D" uid="uid://dy38cvt3istbt" path="res://assets/animations/individual pngs/vifae-idle01.png" id="3_wcysq"]
 [ext_resource type="Texture2D" uid="uid://bm1v1jypv2ts1" path="res://assets/animations/individual pngs/vifae-idle02.png" id="4_4pbb1"]
+[ext_resource type="Texture2D" uid="uid://b84eh2qf63nmn" path="res://assets/vfx/grenade_explosion3.png" id="4_qe48y"]
 [ext_resource type="Texture2D" uid="uid://c4irisncbgrks" path="res://assets/animations/individual pngs/vifae-idle03.png" id="5_8jryr"]
+[ext_resource type="Texture2D" uid="uid://dr00cdlu3q4va" path="res://assets/vfx/grenade_explosion4.png" id="5_ah32m"]
+[ext_resource type="Texture2D" uid="uid://15a4gai4rvok" path="res://assets/animations/individual pngs/Vifae_hitstun1.png" id="6_2d1xl"]
 [ext_resource type="Texture2D" uid="uid://bqfioih43l1sr" path="res://assets/animations/individual pngs/vifae-run00.png" id="6_ot3lu"]
 [ext_resource type="Texture2D" uid="uid://drptey45yyfp7" path="res://assets/animations/individual pngs/vifae-run01.png" id="7_2pbok"]
+[ext_resource type="Texture2D" uid="uid://bg1l3gor20jso" path="res://assets/animations/individual pngs/Vifae_hitstun2.png" id="7_8e5ig"]
 [ext_resource type="Texture2D" uid="uid://ddldhar40xtwc" path="res://assets/animations/individual pngs/vifae-run02.png" id="8_13bab"]
+[ext_resource type="Texture2D" uid="uid://ylbfp84yj073" path="res://assets/animations/individual pngs/Vifae_hitstun3.png" id="8_ec6wc"]
+[ext_resource type="Texture2D" uid="uid://bx0f63otqvyno" path="res://assets/animations/individual pngs/Vifae_hitstun4.png" id="9_ov8xa"]
 [ext_resource type="Texture2D" uid="uid://bm73rxafjkory" path="res://assets/animations/individual pngs/vifae-run03.png" id="9_uajox"]
 [ext_resource type="Texture2D" uid="uid://mmmcpme0736y" path="res://assets/animations/individual pngs/vifae-run04.png" id="10_qveeu"]
+[ext_resource type="Texture2D" uid="uid://fue27vlf5k3p" path="res://assets/animations/individual pngs/Vifae_hitstun5.png" id="10_swtcx"]
+[ext_resource type="Texture2D" uid="uid://bjx53h0rkioll" path="res://assets/animations/individual pngs/Vifae_hitstun6.png" id="11_bsygo"]
 [ext_resource type="Texture2D" uid="uid://cwhb3yk538m4j" path="res://assets/animations/individual pngs/vifae-run05.png" id="11_coxcj"]
 [ext_resource type="Texture2D" uid="uid://b43pwxoujai2i" path="res://assets/animations/individual pngs/Vifae_throw1.png" id="12_d2rb4"]
 [ext_resource type="Texture2D" uid="uid://cj788nlurrf6a" path="res://assets/animations/individual pngs/Vifae_throw2.png" id="13_m3rx5"]
@@ -31,8 +41,63 @@
 [ext_resource type="Texture2D" uid="uid://c3xo2p66agqg3" path="res://assets/animations/individual pngs/Vifae_backflip11.png" id="29_swtcx"]
 [ext_resource type="Script" uid="uid://dq5f4rfbbarbk" path="res://idle-run-throw.gd" id="31_bsygo"]
 
+[sub_resource type="SpriteFrames" id="SpriteFrames_1r6xd"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_bkjk3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_b7qjs")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_qe48y")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_ah32m")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_bkjk3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_b7qjs")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_qe48y")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_ah32m")
+}],
+"loop": true,
+"name": &"explosion",
+"speed": 5.0
+}]
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_j41j0"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_2d1xl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_8e5ig")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_ec6wc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_ov8xa")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_swtcx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_bsygo")
+}],
+"loop": true,
+"name": &"hitstun",
+"speed": 5.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": ExtResource("2_8k0kx")
@@ -151,31 +216,6 @@ animations = [{
 "name": &"idle-run-throw",
 "speed": 10.0
 }, {
-"frames": [],
-"loop": true,
-"name": &"new_animation_1",
-"speed": 5.0
-}, {
-"frames": [],
-"loop": true,
-"name": &"new_animation_2",
-"speed": 5.0
-}, {
-"frames": [],
-"loop": true,
-"name": &"new_animation_3",
-"speed": 5.0
-}, {
-"frames": [],
-"loop": true,
-"name": &"new_animation_4",
-"speed": 5.0
-}, {
-"frames": [],
-"loop": true,
-"name": &"new_animation_5",
-"speed": 5.0
-}, {
 "frames": [{
 "duration": 1.0,
 "texture": ExtResource("6_ot3lu")
@@ -226,27 +266,112 @@ tracks/1/keys = {
 "update": 0,
 "values": [Vector2(-8.33334, 36)]
 }
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("HeroRoot/Hero:frame")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [1]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("HeroRoot/Explosion:animation")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [&"explosion"]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("HeroRoot/Explosion:position")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(436.176, -98.7907)]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("HeroRoot/Explosion:frame")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [1]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("HeroRoot/Explosion:visible")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
 
-[sub_resource type="Animation" id="Animation_wcysq"]
-resource_name = "idle"
-
-[sub_resource type="Animation" id="Animation_1r6xd"]
-resource_name = "idle_run"
+[sub_resource type="Animation" id="Animation_lteku"]
+resource_name = "explosion"
+length = 0.666675
+step = 0.0833333
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("HeroRoot/Hero:animation")
+tracks/0/path = NodePath("HeroRoot/Explosion:animation")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.0001, 0.0002, 0.0003, 0.133333),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [&"idle", &"idle", &"idle", &"idle", &"run"]
+"values": [&"explosion"]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("HeroRoot/Explosion:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.25, 0.333333),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(436.176, -98.7907), Vector2(436.176, -98.7907), Vector2(484.238, -66.4186)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("HeroRoot/Explosion:frame")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.0833333, 0.166667, 0.333333, 0.416667, 0.5, 0.583333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [1, 2, 3, 4, 5, 6, 7]
 }
 
 [sub_resource type="Animation" id="Animation_ilecv"]
 resource_name = "grenade attack"
+length = 2.83334
+step = 0.0833333
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -266,26 +391,293 @@ tracks/1/path = NodePath("HeroRoot/Hero:position")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.689544),
-"transitions": PackedFloat32Array(1, 1),
+"times": PackedFloat32Array(0, 0.666667, 1.33333, 2.08333, 2.25, 2.41667, 2.58333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
 "update": 0,
-"values": [Vector2(0, 0), Vector2(500, 31)]
+"values": [Vector2(-8.33334, 36), Vector2(-8.33334, 36), Vector2(469.445, 41), Vector2(474.074, 40), Vector2(289.815, -61), Vector2(22.2222, -45), Vector2(-8, 36)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("HeroRoot/Hero:frame")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.0833333, 0.166667, 0.25, 0.333333, 0.416667, 0.5, 0.666667, 0.75, 0.833333, 0.916667, 1, 1.08333, 1.16667, 1.25, 1.33333, 1.41667, 1.58333, 1.66667, 1.75, 1.83333, 1.91667, 2, 2.08333, 2.16667, 2.25, 2.33333, 2.41667, 2.5, 2.58333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [19, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 18, 14, 16, 17, 19, 20, 7, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("HeroRoot/Explosion:animation")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(1.66667),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [&"explosion"]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("HeroRoot/Explosion:position")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(1.66667, 1.91667, 2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(785.186, -163), Vector2(785.186, -163), Vector2(826.852, -105)]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("HeroRoot/Explosion:visible")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0, 1.66667, 2.41667),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 1,
+"values": [false, true, false]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("HeroRoot/Explosion:frame")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(1.66667, 1.75, 1.83333, 1.91667, 2, 2.08333, 2.16667),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [1, 2, 3, 4, 5, 6, 7]
+}
+
+[sub_resource type="Animation" id="Animation_8eth3"]
+resource_name = "grenade_success"
+length = 1.33334
+step = 0.0833333
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("HeroRoot/Hero:animation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(),
+"transitions": PackedFloat32Array(),
+"update": 1,
+"values": []
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("HeroRoot/Hero:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0.833333, 1, 1.18, 1.33333),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(474.074, 40), Vector2(450, -60), Vector2(237.963, -89), Vector2(121, 36)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("HeroRoot/Hero:frame")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0.0833334, 0.166667, 0.333333, 0.416667, 0.5, 0.583333, 0.666667, 0.75, 0.833333, 0.916667, 1, 1.08333, 1.16667, 1.25, 1.33333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [16, 17, 19, 20, 7, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("HeroRoot/Explosion:animation")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0.416667),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [&"explosion"]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("HeroRoot/Explosion:position")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0.416667, 0.666667, 0.75),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(785.186, -163), Vector2(785.186, -163), Vector2(826.852, -105)]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("HeroRoot/Explosion:visible")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0.416667, 1.16667),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [true, false]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("HeroRoot/Explosion:frame")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0.416667, 0.5, 0.583333, 0.666667, 0.75, 0.833333, 0.916667),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [1, 2, 3, 4, 5, 6, 7]
+}
+
+[sub_resource type="Animation" id="Animation_uewg7"]
+resource_name = "grenade_windup"
+length = 1.50001
+step = 0.0833333
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("HeroRoot/Hero:animation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [&"idle-run-throw"]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("HeroRoot/Hero:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.666667, 1.33333),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(121, 36), Vector2(121, 36), Vector2(469.445, 41)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("HeroRoot/Hero:frame")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.0833333, 0.166667, 0.25, 0.333333, 0.416667, 0.5, 0.666667, 0.75, 0.833333, 0.916667, 1, 1.08333, 1.16667, 1.25, 1.33333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [19, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 18, 14, 16]
+}
+
+[sub_resource type="Animation" id="Animation_dtqsa"]
+resource_name = "hitstun"
+length = 0.333342
+step = 0.0833333
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("HeroRoot/Hero:animation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [&"hitstun"]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("HeroRoot/Hero:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.0833333, 0.166667, 0.25, 0.333333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 5]
+}
+
+[sub_resource type="Animation" id="Animation_wcysq"]
+resource_name = "idle"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("HeroRoot/Hero:animation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [&"idle"]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("HeroRoot/Hero:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(),
+"transitions": PackedFloat32Array(),
+"update": 1,
+"values": []
+}
+
+[sub_resource type="Animation" id="Animation_1r6xd"]
+resource_name = "idle_run"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("HeroRoot/Hero:animation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.0001, 0.0002, 0.0003, 0.133333),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 1,
+"values": [&"idle", &"idle", &"idle", &"idle", &"run"]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_racpi"]
 _data = {
 &"RESET": SubResource("Animation_qevt4"),
+&"explosion": SubResource("Animation_lteku"),
 &"grenade attack": SubResource("Animation_ilecv"),
+&"grenade_success": SubResource("Animation_8eth3"),
+&"grenade_windup": SubResource("Animation_uewg7"),
+&"hitstun": SubResource("Animation_dtqsa"),
 &"idle": SubResource("Animation_wcysq"),
 &"idle_run": SubResource("Animation_1r6xd")
 }
 
 [node name="Node2D" type="Node2D"]
+position = Vector2(1, 0)
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(576, 324)
 
 [node name="EnemyDummy" type="Sprite2D" parent="."]
+visible = false
 position = Vector2(941, 347)
 scale = Vector2(4.64453, 4.76172)
 texture = ExtResource("1_84ipl")
@@ -294,11 +686,20 @@ texture = ExtResource("1_84ipl")
 position = Vector2(90, 466)
 scale = Vector2(1.08, 1)
 
+[node name="Explosion" type="AnimatedSprite2D" parent="HeroRoot"]
+visible = false
+position = Vector2(436.176, -98.7907)
+scale = Vector2(2.8, 2.8)
+sprite_frames = SubResource("SpriteFrames_1r6xd")
+animation = &"explosion"
+frame = 1
+
 [node name="Hero" type="AnimatedSprite2D" parent="HeroRoot"]
 position = Vector2(-8.33334, 36)
 scale = Vector2(1.79167, 1.79167)
 sprite_frames = SubResource("SpriteFrames_j41j0")
 animation = &"run"
+frame = 1
 script = ExtResource("31_bsygo")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="HeroRoot/Hero"]

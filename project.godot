@@ -27,6 +27,7 @@ VFXManager="*res://scripts/managers/VFXManager.gd"
 CombatUI="*res://scripts/ui/CombatUI.gd"
 ScreenShake="*res://scripts/ui/ScreenShake.gd"
 ResolveManager="*res://ResolveManager.gd"
+AnimationBridge="*res://scripts/managers/AnimationBridge.gd"
 
 [editor]
 

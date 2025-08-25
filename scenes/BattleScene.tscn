@@ -50,7 +50,7 @@ script = ExtResource("1_ftvu5")
 position = Vector2(134, 233)
 
 [node name="Player2" parent="." instance=ExtResource("3_bsu3s")]
-position = Vector2(136, 392)
+position = Vector2(121, 389)
 
 [node name="Enemy" parent="." instance=ExtResource("4_sdfhe")]
 position = Vector2(939, 199)

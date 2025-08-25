@@ -25,7 +25,7 @@ func _ready():
 	add_to_group("players")
 	_setup_muzzle_flash()
 	_ensure_buff_animation_hidden()
-	_start_breathing_animation()
+	_setup_new_idle_animation()
 
 func start_turn():
 	if is_defeated:
@@ -202,7 +202,7 @@ func reset_for_new_combat():
 	print("RESET→ " + name + " fully restored")
 
 func get_ability_list() -> Array:
-	return ["big_shot", "scatter_shot", "focus"]
+	return ["big_shot", "scatter_shot", "focus", "grenade"]
 
 func get_ability_display_name(ability_name: String) -> String:
 	match ability_name:
@@ -212,6 +212,8 @@ func get_ability_display_name(ability_name: String) -> String:
 			return "Scatter Shot"
 		"focus":
 			return "Focus"
+		"grenade":
+			return "Grenade"
 		_:
 			return ability_name
 
@@ -225,10 +227,15 @@ func execute_ability(ability_name: String, target):
 		activate_focus()
 		return
 	
+	# Handle bridge-animated abilities (grenade, future abilities)
+	if not get_bridge_ability_config(ability_name).is_empty():
+		await execute_animated_ability(ability_name, target)
+		return
+	
 	# Small delay for dramatic effect
 	await get_tree().create_timer(0.5).timeout
 	
-	# Call QTEManager to start the QTE for this ability
+	# Call QTEManager to start the QTE for this ability (legacy abilities)
 	await QTEManager.start_qte_for_ability(self, ability_name, target)
 
 func on_qte_result(result: String, target):
@@ -308,6 +315,11 @@ func on_qte_result(result: String, target):
 
 # Breathing Animation System - Sprite Swapping
 func _start_breathing_animation() -> void:
+	# Skip old breathing animation if we have the new idle animation system
+	if get_node_or_null("IdleAnimatedSprite"):
+		print("[Player2] Skipping old breathing animation - using new idle animation")
+		return
+		
 	if not breathing_enabled:
 		return
 		
@@ -419,8 +431,12 @@ func _ensure_buff_animation_hidden():
 		for child in get_children():
 			print("  - ", child.name, " (", child.get_class(), ") visible: ", child.get("visible"))
 			if child is AnimatedSprite2D:
-				child.visible = false
-				print("    → Set AnimatedSprite2D to hidden")
+				# Don't hide our new idle animation sprite
+				if child.name == "IdleAnimatedSprite":
+					print("    → Keeping IdleAnimatedSprite visible")
+				else:
+					child.visible = false
+					print("    → Set AnimatedSprite2D to hidden")
 			elif child is Sprite2D:
 				print("    → Found Sprite2D, visible: ", child.visible)
 				# Check if this sprite might be the buff sprite
@@ -530,3 +546,79 @@ func _safe_audio_call(method_name: String, param: String = "") -> void:
 	else:
 		var call_str = method_name + ("(" + param + ")" if param != "" else "()")
 		print("[Player2] AudioManager." + call_str + " - stub (AudioManager not found)")
+
+func _setup_new_idle_animation():
+	print("[Player2] Setting up new idle animation")
+	
+	# Simply hide old sprites and show new one
+	$Sprite2D.visible = false
+	$idle2.visible = false
+	$attack.visible = false
+	$"p2-block".visible = false
+	$"p2-dead".visible = false
+	
+	# Show new idle animation
+	var idle_animated = $IdleAnimatedSprite
+	idle_animated.visible = true
+	idle_animated.play("idle")
+	
+	# Disable old breathing system
+	breathing_enabled = false
+	
+	print("[Player2] New idle animation should now be playing")
+
+# ===== ANIMATION BRIDGE SYSTEM =====
+
+# Configuration for bridge-based abilities
+func get_bridge_ability_config(ability_name: String) -> Dictionary:
+	match ability_name:
+		"grenade":
+			return {
+				"uses_bridge": true,
+				"qte_type": "confirm attack",
+				"damage": 35
+			}
+		_:
+			return {}
+
+# Bridge-based animated ability executor
+func execute_animated_ability(ability_name: String, target):
+	var config = get_bridge_ability_config(ability_name)
+	if config.is_empty():
+		print("⚠️ No bridge config found for: ", ability_name)
+		return
+	
+	print("🎬 [Player2] Starting bridge ability: ", ability_name)
+	
+	# Step 1: Spawn animation at player position
+	var animation_instance = AnimationBridge.spawn_ability_animation(ability_name, global_position, self)
+	if not animation_instance:
+		print("❌ [Player2] Failed to spawn animation")
+		return
+	
+	# Step 2: Play windup and wait for ready signal
+	AnimationBridge.play_windup_animation(ability_name)
+	await AnimationBridge.animation_ready_for_qte
+	print("🎯 [Player2] Windup complete, starting QTE")
+	
+	# Step 3: Run QTE
+	var qte_manager = get_node_or_null("/root/QTEManager")
+	if qte_manager and qte_manager.has_method("start_qte"):
+		var qte_result = await qte_manager.start_qte(config.qte_type, 700, "Press Z!", target)
+		print("🎯 [Player2] QTE result: ", qte_result)
+		
+		# Step 4: Apply damage if successful
+		if qte_result in ["crit", "normal"] and target and target.has_method("take_damage"):
+			var damage = config.damage
+			if qte_result == "crit":
+				damage *= 2
+			target.take_damage(damage)
+			print("💥 [Player2] Applied ", damage, " damage")
+		
+		# Step 5: Play result animation and wait for completion
+		AnimationBridge.play_result_animation(ability_name, qte_result)
+		await AnimationBridge.animation_sequence_complete
+		print("🎬 [Player2] Animation sequence complete")
+	else:
+		print("❌ [Player2] QTEManager not found")
+		AnimationBridge.cleanup_animation(ability_name)
