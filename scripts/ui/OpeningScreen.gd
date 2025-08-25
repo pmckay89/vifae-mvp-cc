@@ -3,7 +3,7 @@ extends Control
 # Audio constants
 const BGM_DIR = "res://assets/music/"
 const OPENING_THEME = "res://assets/sfx/TitleTheme.wav"
-const NEXT_SCENE_AFTER_OPENING = "res://scenes/BattleScene.tscn"
+const NEXT_SCENE_AFTER_OPENING = "res://scenes/TitleScreen.tscn"
 
 
 @onready var opening_music: AudioStreamPlayer = $OpeningMusic

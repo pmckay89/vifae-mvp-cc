@@ -1,0 +1,54 @@
+[gd_scene load_steps=3 format=3 uid="uid://bx8l0kh4kqh3j"]
+
+[ext_resource type="Texture2D" uid="uid://dwvvnr7dhm32g" path="res://assets/backgrounds/titlescreen.png" id="1_2hjgx"]
+[ext_resource type="Script" path="res://scripts/TitleScreen.gd" id="1_xv5wl"]
+
+[node name="TitleScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_xv5wl")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+texture = ExtResource("1_2hjgx")
+expand_mode = 1
+
+[node name="MenuContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -100.0
+offset_right = 100.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StartButton" type="Button" parent="MenuContainer"]
+layout_mode = 2
+text = "Start"
+
+[node name="LoadButton" type="Button" parent="MenuContainer"]
+layout_mode = 2
+text = "Load"
+
+[node name="SettingsButton" type="Button" parent="MenuContainer"]
+layout_mode = 2
+text = "Settings"
+
+[node name="QuitButton" type="Button" parent="MenuContainer"]
+layout_mode = 2
+text = "Quit"
+
+[connection signal="pressed" from="MenuContainer/StartButton" to="." method="_on_start_button_pressed"]
+[connection signal="pressed" from="MenuContainer/LoadButton" to="." method="_on_load_button_pressed"]
+[connection signal="pressed" from="MenuContainer/SettingsButton" to="." method="_on_settings_button_pressed"]
+[connection signal="pressed" from="MenuContainer/QuitButton" to="." method="_on_quit_button_pressed"]
