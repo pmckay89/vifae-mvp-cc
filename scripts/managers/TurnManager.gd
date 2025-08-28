@@ -55,9 +55,12 @@ const GAME_OVER_THEME = "res://assets/music/closer.wav"
 @onready var action_menu := get_node_or_null("/root/BattleScene/UILayer/ActionMenu")
 @onready var attack_button := get_node_or_null("/root/BattleScene/UILayer/ActionMenu/AttackButton")
 @onready var skills_button := get_node_or_null("/root/BattleScene/UILayer/ActionMenu/SkillsButton")
+@onready var item_button := get_node_or_null("/root/BattleScene/UILayer/ActionMenu/ItemButton")
 @onready var skills_menu := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu")
+@onready var items_menu := get_node_or_null("/root/BattleScene/UILayer/ItemsMenu")
 @onready var twocut_button := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu/TwoCutButton")
 @onready var bigshot_button := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu/BigShotButton")
+@onready var hp_potion_button := get_node_or_null("/root/BattleScene/UILayer/ItemsMenu/HPPotionButton")
 @onready var bgm_player := get_node("../BGMPlayer")
 @onready var result_overlay := get_node_or_null("/root/BattleScene/UILayer/ResultOverlay")
 @onready var pause_overlay := get_node_or_null("/root/BattleScene/UILayer/PauseOverlay")
@@ -68,7 +71,24 @@ var attack_announcement_label: Label
 # Menu state
 var menu_selection: int = 0
 var in_skills_menu: bool = false
+var in_items_menu: bool = false
 var skill_selection: int = 0  # For cycling through skills
+var item_selection: int = 0  # For cycling through items
+
+# Per-player inventory system - scalable for multiple potion types and counts
+var player_potions: Dictionary = {
+	"Player1": {"hp_potion": 1},
+	"Player2": {"hp_potion": 1}
+}
+
+# Skill resolve costs - expandable for other skills
+var skill_resolve_costs: Dictionary = {
+	"2x_cut": 1,
+	"big_shot": 2,  # Placeholder cost
+	"moonfall_slash": 3,  # Placeholder cost
+	"spirit_wave": 2,  # Placeholder cost  
+	"uppercut": 1  # Placeholder cost
+}
 var music_enabled: bool = true
 
 # Input blocking to prevent QTE carryover
@@ -168,6 +188,8 @@ func _input(event):
 func handle_menu_input(event):
 	if in_skills_menu:
 		handle_skills_menu_input(event)
+	elif in_items_menu:
+		handle_items_menu_input(event)
 	else:
 		handle_action_menu_input(event)
 
@@ -179,7 +201,7 @@ func handle_action_menu_input(event):
 		print("MENU→ Selection: " + str(menu_selection))
 		
 	elif event.is_action_pressed("move down"):
-		menu_selection = min(1, menu_selection + 1)  # Attack=0, Skills=1
+		menu_selection = min(2, menu_selection + 1)  # Attack=0, Skills=1, Items=2
 		update_menu_highlight()
 		_safe_audio_call("play_ui_move")
 		print("MENU→ Selection: " + str(menu_selection))
@@ -197,6 +219,9 @@ func handle_action_menu_input(event):
 		elif menu_selection == 1:
 			print("MENU→ Opening Skills submenu")
 			open_skills_menu()
+		elif menu_selection == 2:
+			print("MENU→ Opening Items submenu")
+			open_items_menu()
 			
 	elif event.is_action_pressed("cancel dodge"):  # C cancels
 		print("MENU→ Cancel pressed (no effect at top level)")
@@ -233,6 +258,15 @@ func handle_skills_menu_input(event):
 			elif current_actor.name == "Player2":
 				selected_action = "big_shot"
 				print("MENU→ Big Shot selected")
+		
+		# Check resolve cost before proceeding
+		var current_player_name = current_actor.name
+		if not can_afford_skill(current_player_name, selected_action):
+			var cost = get_skill_resolve_cost(selected_action)
+			var current_resolve = ResolveManager.get_resolve(current_player_name)
+			print("MENU→ " + current_player_name + " cannot afford " + selected_action + " (cost: " + str(cost) + ", have: " + str(current_resolve) + ")")
+			_safe_audio_call("play_ui_error")  # Error sound
+			return
 		
 		selected_target = get_enemy()
 		if selected_target == null:
@@ -271,15 +305,24 @@ func update_skills_menu_display():
 	
 	# Clear existing text and setup for list display
 	var skills_text = ""
+	var current_player_name = current_actor.name
+	
 	for i in range(abilities.size()):
 		var ability = abilities[i]
 		var display_name = current_actor.get_ability_display_name(ability) if current_actor.has_method("get_ability_display_name") else ability
+		var cost = get_skill_resolve_cost(ability)
+		var can_afford = can_afford_skill(current_player_name, ability)
+		
+		# Build display text with resolve cost
+		var skill_display = display_name
+		if cost > 0:
+			skill_display += " (" + str(cost) + " resolve)"
 		
 		# Add selection indicator for current skill
 		if i == skill_selection:
-			skills_text += "→ " + display_name + " ←\n"
+			skills_text += "→ " + skill_display + " ←\n"
 		else:
-			skills_text += "  " + display_name + "\n"
+			skills_text += "  " + skill_display + "\n"
 	
 	# Display all skills in the first button, hide the second
 	if twocut_button:
@@ -298,17 +341,108 @@ func close_skills_menu():
 		twocut_button.visible = false
 	if bigshot_button:
 		bigshot_button.visible = false
+	# Restore action menu and update highlighting
 	if action_menu:
 		action_menu.visible = true
 	update_menu_highlight()
 
+func handle_items_menu_input(event):
+	if event.is_action_pressed("confirm attack"):  # Z confirms
+		_safe_audio_call("play_ui_confirm")
+		
+		if item_selection == 0:  # HP Potion
+			var current_player_name = current_actor.name
+			var potion_count = get_player_potion_count(current_player_name, "hp_potion")
+			
+			if potion_count <= 0:
+				print("MENU→ " + current_player_name + " has no HP Potions left!")
+				_safe_audio_call("play_ui_error")  # Error sound
+				return
+				
+			selected_action = "hp_potion"
+			selected_target = current_actor  # Self-target
+			print("MENU→ HP Potion selected")
+			close_items_menu()
+			change_state(State.QTE_ACTIVE)
+		
+	elif event.is_action_pressed("cancel dodge"):  # C backs out
+		print("MENU→ Backing out of Items menu")
+		close_items_menu()
+
+func open_items_menu():
+	_safe_audio_call("play_ui_confirm")  # Play sound when opening items menu
+	in_items_menu = true
+	item_selection = 0  # Reset to first item
+	if action_menu:
+		action_menu.visible = false
+	if items_menu:
+		items_menu.visible = true
+	
+	update_items_menu_display()
+
+func update_items_menu_display():
+	var current_player_name = current_actor.name
+	var potion_count = get_player_potion_count(current_player_name, "hp_potion")
+	var potion_text = "HP Potion " + str(potion_count)
+	
+	if hp_potion_button:
+		hp_potion_button.visible = true
+		hp_potion_button.text = potion_text
+		hp_potion_button.disabled = (potion_count <= 0)
+		hp_potion_button.grab_focus()
+
+func close_items_menu():
+	in_items_menu = false
+	if items_menu:
+		items_menu.visible = false
+	if hp_potion_button:
+		hp_potion_button.visible = false
+	if action_menu:
+		action_menu.visible = true
+	update_menu_highlight()
+
+# Inventory helper functions
+func get_player_potion_count(player_name: String, potion_type: String) -> int:
+	if player_name in player_potions and potion_type in player_potions[player_name]:
+		return player_potions[player_name][potion_type]
+	return 0
+
+func use_player_potion(player_name: String, potion_type: String) -> bool:
+	var count = get_player_potion_count(player_name, potion_type)
+	if count > 0:
+		player_potions[player_name][potion_type] = count - 1
+		return true
+	return false
+
+# Skill resolve cost helper functions
+func get_skill_resolve_cost(skill_name: String) -> int:
+	if skill_name in skill_resolve_costs:
+		return skill_resolve_costs[skill_name]
+	return 0  # No cost for unknown skills
+
+func can_afford_skill(player_name: String, skill_name: String) -> bool:
+	var cost = get_skill_resolve_cost(skill_name)
+	var current_resolve = ResolveManager.get_resolve(player_name)
+	return current_resolve >= cost
+
+func spend_skill_resolve(player_name: String, skill_name: String) -> bool:
+	if can_afford_skill(player_name, skill_name):
+		var cost = get_skill_resolve_cost(skill_name)
+		var current_resolve = ResolveManager.get_resolve(player_name)
+		ResolveManager.set_resolve(player_name, current_resolve - cost)
+		print("RESOLVE→ " + player_name + " spent " + str(cost) + " resolve for " + skill_name)
+		return true
+	return false
+
 func update_menu_highlight():
 	# Simple highlighting using button focus
-	if attack_button and skills_button:
+	if attack_button and skills_button and item_button:
 		if menu_selection == 0:
 			attack_button.grab_focus()
-		else:
+		elif menu_selection == 1:
 			skills_button.grab_focus()
+		elif menu_selection == 2:
+			item_button.grab_focus()
 
 func change_state(new_state: State):
 	print("STATE→ " + State.keys()[current_state] + " -> " + State.keys()[new_state])
@@ -466,12 +600,19 @@ func start_qte():
 					await current_actor.attack(selected_target)
 		else:
 			# Handle abilities (not basic attacks)
+			# Handle HP Potion - special case handled by TurnManager
+			if selected_action == "hp_potion":
+				qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!", current_actor)
 			# Handle self-buff abilities that don't need a target
-			if selected_action == "focus":
+			elif selected_action == "focus":
 				await current_actor.execute_ability(selected_action, null)
 				qte_result = "handled"  # Flag that player handled it
 			# All other abilities use the player's ability system
 			elif current_actor.has_method("execute_ability") and selected_target:
+				# Spend resolve for the skill
+				var current_player_name = current_actor.name
+				spend_skill_resolve(current_player_name, selected_action)
+				
 				await current_actor.execute_ability(selected_action, selected_target)
 				qte_result = "handled"  # Flag that player handled it
 			else:
@@ -567,6 +708,34 @@ func resolve_action():
 				selected_target.take_damage(damage)
 				# Play hit effects for successful attacks
 				VFXManager.play_hit_effects(selected_target)
+		elif selected_action == "hp_potion":
+			# HP Potion healing
+			var current_player_name = current_actor.name
+			var used_successfully = use_player_potion(current_player_name, "hp_potion")
+			
+			if used_successfully:
+				var heal_amount = 50
+				var old_hp = current_actor.hp
+				current_actor.hp = min(current_actor.hp + heal_amount, current_actor.hp_max)
+				var actual_heal = current_actor.hp - old_hp
+				
+				# Update HP bar UI
+				if current_actor.name == "Player1":
+					CombatUI.update_hp_bar("Player1", current_actor.hp, current_actor.hp_max)
+				elif current_actor.name == "Player2":
+					CombatUI.update_hp_bar("Player2", current_actor.hp, current_actor.hp_max)
+				
+				# Show green healing popup
+				var popup_scene = load("res://scenes/DamagePopup.tscn")
+				if popup_scene:
+					var popup = popup_scene.instantiate()
+					current_actor.add_child(popup)
+					popup.position = Vector2(90, -50)
+					popup.show_damage(actual_heal, "heal")
+				
+				print("HEAL→ " + current_actor.name + " healed " + str(actual_heal) + " HP (now " + str(current_actor.hp) + "/" + str(current_actor.hp_max) + ")")
+			else:
+				print("ERROR→ " + current_player_name + " tried to use HP Potion but had none!")
 		else:
 			print("WARNING→ Unhandled player action: " + selected_action)
 			
@@ -822,7 +991,10 @@ func reset_combat():
 	selected_target = null
 	menu_selection = 0
 	in_skills_menu = false
+	in_items_menu = false
 	skill_selection = 0  # Reset skill menu selection
+	item_selection = 0  # Reset item menu selection
+	# NOTE: player_potions persist across battles - no reset here
 	enemy_attack_count = 0  # Reset enemy attack pattern
 	input_blocked = false  # Ensure input is not blocked on reset
 	

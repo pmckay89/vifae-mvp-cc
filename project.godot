@@ -33,6 +33,10 @@ AnimationBridge="*res://scripts/managers/AnimationBridge.gd"
 
 version_control/autoload_on_startup=true
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/AsepriteWizard/plugin.cfg")
+
 [input]
 
 "move up"={

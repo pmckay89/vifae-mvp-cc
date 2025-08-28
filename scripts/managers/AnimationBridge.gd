@@ -17,6 +17,15 @@ var animation_library = {
 		"success_animation": "grenade_success", 
 		"fail_animation": "hitstun",
 		"spawn_offset": Vector2(0, 0) # Offset from player position
+	},
+	"bullet_rain": {
+		"scene_path": "res://testing animations.tscn",
+		"controller_node_path": "HeroRoot/Hero", # The AnimatedSprite2D to control
+		"animation_player_path": "HeroRoot/Hero/AnimationPlayer", # The AnimationPlayer
+		"windup_animation": "idle",
+		"success_animation": "bullet rain", 
+		"fail_animation": "hitstun",
+		"spawn_offset": Vector2(0, 0) # Offset from player position
 	}
 }
 
@@ -94,6 +103,12 @@ func play_windup_animation(ability_name: String):
 	
 	var config = anim_data.config
 	var instance = anim_data.instance
+	
+	# Skip windup for bullet_rain - go straight to QTE
+	if ability_name == "bullet_rain":
+		print("🎬 [AnimationBridge] Skipping windup for bullet_rain, ready for QTE immediately")
+		animation_ready_for_qte.emit(ability_name)
+		return
 	
 	# Get the AnimationPlayer from the spawned instance
 	var animation_player = instance.get_node_or_null(config.animation_player_path)

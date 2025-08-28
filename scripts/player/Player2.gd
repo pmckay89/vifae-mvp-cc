@@ -202,7 +202,7 @@ func reset_for_new_combat():
 	print("RESET→ " + name + " fully restored")
 
 func get_ability_list() -> Array:
-	return ["big_shot", "scatter_shot", "focus", "grenade"]
+	return ["big_shot", "scatter_shot", "focus", "grenade", "bullet_rain"]
 
 func get_ability_display_name(ability_name: String) -> String:
 	match ability_name:
@@ -214,6 +214,8 @@ func get_ability_display_name(ability_name: String) -> String:
 			return "Focus"
 		"grenade":
 			return "Grenade"
+		"bullet_rain":
+			return "Bullet Rain"
 		_:
 			return ability_name
 
@@ -578,6 +580,12 @@ func get_bridge_ability_config(ability_name: String) -> Dictionary:
 				"qte_type": "confirm attack",
 				"damage": 35
 			}
+		"bullet_rain":
+			return {
+				"uses_bridge": true,
+				"qte_type": "confirm attack",
+				"damage": 30
+			}
 		_:
 			return {}
 
@@ -596,10 +604,13 @@ func execute_animated_ability(ability_name: String, target):
 		print("❌ [Player2] Failed to spawn animation")
 		return
 	
-	# Step 2: Play windup and wait for ready signal
-	AnimationBridge.play_windup_animation(ability_name)
-	await AnimationBridge.animation_ready_for_qte
-	print("🎯 [Player2] Windup complete, starting QTE")
+	# Step 2: Play windup and wait for ready signal (skip for bullet_rain)
+	if ability_name != "bullet_rain":
+		AnimationBridge.play_windup_animation(ability_name)
+		await AnimationBridge.animation_ready_for_qte
+		print("🎯 [Player2] Windup complete, starting QTE")
+	else:
+		print("🎯 [Player2] Skipping windup for bullet_rain, starting QTE immediately")
 	
 	# Step 3: Run QTE
 	var qte_manager = get_node_or_null("/root/QTEManager")
