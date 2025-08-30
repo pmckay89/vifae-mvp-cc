@@ -10,7 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://ct511gfryly8b" path="res://scenes/ui/PauseOverlay.tscn" id="6_irk3j"]
 [ext_resource type="Texture2D" uid="uid://c0gjtifwjdhty" path="res://assets/ui/QTE.png" id="6_sdfhe"]
 [ext_resource type="Script" uid="uid://ceb3t4pnexfbv" path="res://scenes/ui/ResultOverlay.gd" id="7_7acxt"]
-[ext_resource type="AudioStream" uid="uid://6diuvpafafnp" path="res://assets/music/bgm.mp3" id="7_bsu3s"]
+[ext_resource type="AudioStream" uid="uid://0g2th53lt00s" path="res://assets/music/bgm2.mp3" id="7_bsu3s"]
 [ext_resource type="Script" uid="uid://rv08adbymf0w" path="res://scenes/ui/PauseOverlay.gd" id="7_l1ooa"]
 [ext_resource type="Script" uid="uid://di7rn5ua3w270" path="res://scenes/BattleCamera.gd" id="9_hrc4b"]
 
@@ -280,12 +280,13 @@ offset_top = 495.0
 offset_right = 815.0
 offset_bottom = 561.0
 
-[node name="TwoCutButton" type="Button" parent="UILayer/SkillsMenu"]
+[node name="SkillsDisplay" type="RichTextLabel" parent="UILayer/SkillsMenu"]
 visible = false
 layout_mode = 0
 offset_right = 165.0
-offset_bottom = 40.0
-text = "2x Cut"
+offset_bottom = 60.0
+bbcode_enabled = true
+fit_content = true
 
 [node name="BigShotButton" type="Button" parent="UILayer/SkillsMenu"]
 visible = false

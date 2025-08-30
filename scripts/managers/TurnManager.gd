@@ -58,7 +58,7 @@ const GAME_OVER_THEME = "res://assets/music/closer.wav"
 @onready var item_button := get_node_or_null("/root/BattleScene/UILayer/ActionMenu/ItemButton")
 @onready var skills_menu := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu")
 @onready var items_menu := get_node_or_null("/root/BattleScene/UILayer/ItemsMenu")
-@onready var twocut_button := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu/TwoCutButton")
+@onready var skills_display := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu/SkillsDisplay")
 @onready var bigshot_button := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu/BigShotButton")
 @onready var hp_potion_button := get_node_or_null("/root/BattleScene/UILayer/ItemsMenu/HPPotionButton")
 @onready var bgm_player := get_node("../BGMPlayer")
@@ -83,11 +83,17 @@ var player_potions: Dictionary = {
 
 # Skill resolve costs - expandable for other skills
 var skill_resolve_costs: Dictionary = {
+	# Player1 skills
 	"2x_cut": 1,
-	"big_shot": 2,  # Placeholder cost
-	"moonfall_slash": 3,  # Placeholder cost
-	"spirit_wave": 2,  # Placeholder cost  
-	"uppercut": 1  # Placeholder cost
+	"moonfall_slash": 3,
+	"spirit_wave": 2,
+	"uppercut": 1,
+	# Player2 skills
+	"big_shot": 2,
+	"scatter_shot": 1,
+	"focus": 2,  # Doubles damage, significant buff
+	"grenade": 3,
+	"bullet_rain": 3
 }
 var music_enabled: bool = true
 
@@ -296,9 +302,9 @@ func update_skills_menu_display():
 	var abilities = current_actor.get_ability_list() if current_actor.has_method("get_ability_list") else []
 	
 	if abilities.size() == 0:
-		# Fallback - hide both buttons
-		if twocut_button:
-			twocut_button.visible = false
+		# Fallback - hide display and button
+		if skills_display:
+			skills_display.visible = false
 		if bigshot_button:
 			bigshot_button.visible = false
 		return
@@ -316,7 +322,11 @@ func update_skills_menu_display():
 		# Build display text with resolve cost
 		var skill_display = display_name
 		if cost > 0:
-			skill_display += " (" + str(cost) + " resolve)"
+			skill_display += " (" + str(cost) + ")"
+		
+		# Black out unaffordable skills using BBCode
+		if not can_afford:
+			skill_display = "[color=black]" + skill_display + "[/color]"
 		
 		# Add selection indicator for current skill
 		if i == skill_selection:
@@ -324,11 +334,11 @@ func update_skills_menu_display():
 		else:
 			skills_text += "  " + skill_display + "\n"
 	
-	# Display all skills in the first button, hide the second
-	if twocut_button:
-		twocut_button.visible = true
-		twocut_button.text = skills_text.strip_edges()
-		twocut_button.grab_focus()
+	# Display all skills in the RichTextLabel with BBCode support
+	if skills_display:
+		skills_display.visible = true
+		skills_display.bbcode_enabled = true  # Ensure BBCode is enabled
+		skills_display.text = skills_text.strip_edges()
 	if bigshot_button:
 		bigshot_button.visible = false
 
@@ -336,9 +346,9 @@ func close_skills_menu():
 	in_skills_menu = false
 	if skills_menu:
 		skills_menu.visible = false
-	# Hide both skill buttons
-	if twocut_button:
-		twocut_button.visible = false
+	# Hide skills display and button
+	if skills_display:
+		skills_display.visible = false
 	if bigshot_button:
 		bigshot_button.visible = false
 	# Restore action menu and update highlighting
