@@ -26,6 +26,24 @@ var animation_library = {
 		"success_animation": "bullet rain", 
 		"fail_animation": "hitstun",
 		"spawn_offset": Vector2(0, 0) # Offset from player position
+	},
+	"drink": {
+		"scene_path": "res://testing animations.tscn",
+		"controller_node_path": "HeroRoot/Hero", # The AnimatedSprite2D to control
+		"animation_player_path": "HeroRoot/Hero/AnimationPlayer", # The AnimationPlayer
+		"windup_animation": "drink",
+		"success_animation": "drink", 
+		"fail_animation": "drink", # Same animation for all results
+		"spawn_offset": Vector2(0, 0) # Offset from player position
+	},
+	"basic_attack": {
+		"scene_path": "res://testing animations.tscn",
+		"controller_node_path": "HeroRoot/Hero", # The AnimatedSprite2D to control
+		"animation_player_path": "HeroRoot/Hero/AnimationPlayer", # The AnimationPlayer
+		"windup_animation": "attack_windup",
+		"success_animation": "attack_finish", 
+		"fail_animation": "hitstun",
+		"spawn_offset": Vector2(0, 0) # Offset from player position
 	}
 }
 

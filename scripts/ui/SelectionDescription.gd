@@ -17,7 +17,8 @@ var descriptions = {
     "jump_shot": "Aerial shot dealing 15-25 damage. Confirm Attack QTE.",
     "precision_strike": "Focused shot dealing 20-30 damage. Confirm Attack QTE.",
     # Items
-    "hp_potion": "Restores 30 HP to selected player. No QTE."
+    "hp_potion": "Restores 50 HP. Uses drink animation. One per turn.",
+    "resolve_potion": "Restores 3 Resolve. Uses drink animation. One per turn."
 }
 
 func show_description(key: String):

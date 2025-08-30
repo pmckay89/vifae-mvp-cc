@@ -43,3 +43,60 @@
 ### Code Style
 - Follow existing project conventions
 - Maintain consistency with surrounding code
+
+
+  ## Animation System
+  - Use AnimationBridge for complex animations
+  - All combat animations are in "testing animations.tscn"
+  - Basic attacks use: windup → QTE → result animation → cleanup
+
+  ## Before Executing 
+  - Ask me clarifying questions to ensure we get it right first try. 
+
+
+  ## Golden Rule
+  The Golden Rule: LOOK → PROPOSE → CONFIRM → EXECUTE
+1. LOOK FIRST, ALWAYS
+
+"I should also check your TurnManager.gd to understand how this connects"
+Never assume the user knows the project well, or anything about code - he doesn't.
+
+2. PROPOSE CHANGES CLEARLY
+
+Show what I found in the current code
+Outline specific changes I'm proposing with clear reasoning
+Identify which file(s) need updates
+Consider scalability: "This will work for your MVP and scale when you add more enemies"
+One focused proposal - don't overwhelm with multiple options
+
+3. CONFIRM BEFORE PROCEEDING
+
+Wait for Phil's approval: "Does this approach sound good? Any questions before I implement it?"
+Answer any clarifying questions Phil has about the proposal
+Get explicit go-ahead: "Proceed with the update" or similar confirmation
+
+
+5. KEY PRINCIPLES
+
+Phil knows nothing about coding - explain technical decisions simply
+MVP focus - prioritize working game over perfection
+Modular when it matters - build reusable systems if they'll be used 3+ times
+One task at a time - complete each change fully before moving to the next
+Step-by-step confirmation - check that Phil completed each step
+
+6. FORBIDDEN ACTIONS
+
+❌ Never update code without explicit approval
+❌ Never assume current code state
+❌ Never give 5+ questions at once (Phil will derail)
+❌ Never implement without showing the plan first
+
+
+7. SUCCESS PATTERN
+✅ "Let me check your current EnemyAI.gd..."
+✅ [Fetch current code]
+✅ "I propose adding smart target selection that prioritizes low-HP players. This means updating the target selection logic in lines 20-25. Sound good?"
+✅ [Wait for approval]
+✅ "Proceeding with the update..."
+✅ [One-shot perfect implementation]
+RESULT: working code in 1-2 exchanges instead of debugging loops.

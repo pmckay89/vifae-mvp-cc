@@ -113,16 +113,18 @@ func hide_attack_windup():
 	resume_breathing_animation()
 	print("[Player2] Hiding attack windup pose, resuming breathing")
 
-# STANDARDIZED ATTACK SYSTEM - Player2 Implementation
+# LEGACY ATTACK SYSTEM - Player2 Implementation
+# NOTE: Player2 now uses AnimationBridge system for basic attacks
+# These methods remain for compatibility with non-AnimationBridge abilities
 func start_attack_windup():
-	print("🔫 " + name + " starting attack windup")
+	print("🔫 " + name + " starting legacy attack windup (AnimationBridge now used for basic attacks)")
 	show_attack_windup()
 	# Small delay for windup animation
 	await get_tree().create_timer(0.3).timeout
-	print("🔫 Windup complete, ready for QTE!")
+	print("🔫 Legacy windup complete, ready for QTE!")
 
 func finish_attack_sequence(qte_result: String, target):
-	print("🔫 " + name + " finishing attack with result: " + qte_result)
+	print("🔫 " + name + " finishing legacy attack with result: " + qte_result)
 	
 	# Brief pause for attack timing
 	await get_tree().create_timer(0.2).timeout
@@ -130,7 +132,7 @@ func finish_attack_sequence(qte_result: String, target):
 	# Hide attack pose
 	hide_attack_windup()
 	
-	print("🔫 Gun Girl attack sequence complete!")
+	print("🔫 Gun Girl legacy attack sequence complete!")
 
 # LEGACY METHOD - kept for compatibility with old systems
 func attack(target):

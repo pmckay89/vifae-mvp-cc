@@ -328,6 +328,14 @@ offset_right = 165.0
 offset_bottom = 40.0
 text = "HP Potion"
 
+[node name="ResolvePotionButton" type="Button" parent="UILayer/ItemsMenu"]
+visible = false
+layout_mode = 0
+offset_top = 45.0
+offset_right = 165.0
+offset_bottom = 85.0
+text = "Resolve Potion"
+
 [node name="TurnManager" type="Node" parent="."]
 script = ExtResource("5_hrc4b")
 

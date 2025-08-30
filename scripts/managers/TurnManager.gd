@@ -49,6 +49,7 @@ var current_turn_index: int = 0
 var current_actor: Node = null
 var selected_action: String = ""
 var selected_target: Node = null
+var item_used_this_turn: bool = false
 var enemy_attack_count: int = 0
 const GAME_OVER_THEME = "res://assets/music/closer.wav"
 
@@ -63,6 +64,7 @@ const GAME_OVER_THEME = "res://assets/music/closer.wav"
 @onready var skills_display := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu/SkillsDisplay")
 @onready var bigshot_button := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu/BigShotButton")
 @onready var hp_potion_button := get_node_or_null("/root/BattleScene/UILayer/ItemsMenu/HPPotionButton")
+@onready var resolve_potion_button := get_node_or_null("/root/BattleScene/UILayer/ItemsMenu/ResolvePotionButton")
 @onready var bgm_player := get_node("../BGMPlayer")
 @onready var result_overlay := get_node_or_null("/root/BattleScene/UILayer/ResultOverlay")
 @onready var pause_overlay := get_node_or_null("/root/BattleScene/UILayer/PauseOverlay")
@@ -79,8 +81,8 @@ var item_selection: int = 0  # For cycling through items
 
 # Per-player inventory system - scalable for multiple potion types and counts
 var player_potions: Dictionary = {
-	"Player1": {"hp_potion": 1},
-	"Player2": {"hp_potion": 1}
+	"Player1": {"hp_potion": 1, "resolve_potion": 1},
+	"Player2": {"hp_potion": 1, "resolve_potion": 1}
 }
 
 # Skill resolve costs - expandable for other skills
@@ -394,23 +396,49 @@ func close_skills_menu():
 	update_menu_highlight()
 
 func handle_items_menu_input(event):
-	if event.is_action_pressed("confirm attack"):  # Z confirms
+	if event.is_action_pressed("move up"):  # W moves up in items menu
+		item_selection = max(0, item_selection - 1)
+		update_items_menu_display()
+		_safe_audio_call("play_ui_move")
+		print("MENU→ Item selection: " + str(item_selection))
+		
+	elif event.is_action_pressed("move down"):  # S moves down in items menu
+		item_selection = min(1, item_selection + 1)  # 0=HP Potion, 1=Resolve Potion
+		update_items_menu_display()
+		_safe_audio_call("play_ui_move")
+		print("MENU→ Item selection: " + str(item_selection))
+		
+	elif event.is_action_pressed("confirm attack"):  # Z confirms
 		_safe_audio_call("play_ui_confirm")
 		
+		var current_player_name = current_actor.name
+		var potion_type = ""
+		var potion_count = 0
+		
 		if item_selection == 0:  # HP Potion
-			var current_player_name = current_actor.name
-			var potion_count = get_player_potion_count(current_player_name, "hp_potion")
-			
-			if potion_count <= 0:
-				print("MENU→ " + current_player_name + " has no HP Potions left!")
-				_safe_audio_call("play_ui_error")  # Error sound
-				return
-				
-			selected_action = "hp_potion"
-			selected_target = current_actor  # Self-target
-			print("MENU→ HP Potion selected")
-			close_items_menu()
-			change_state(State.QTE_ACTIVE)
+			potion_type = "hp_potion"
+		elif item_selection == 1:  # Resolve Potion
+			potion_type = "resolve_potion"
+		
+		potion_count = get_player_potion_count(current_player_name, potion_type)
+		
+		if potion_count <= 0:
+			print("MENU→ " + current_player_name + " has no " + potion_type + " left!")
+			_safe_audio_call("play_ui_error")
+			return
+		
+		if item_used_this_turn:
+			print("MENU→ " + current_player_name + " already used an item this turn!")
+			_safe_audio_call("play_ui_error")
+			return
+		
+		# Use item immediately without QTE
+		await use_item_immediately(potion_type)
+		
+		# End turn after item usage (as requested)
+		close_items_menu()
+		end_turn()
+		return
 		
 	elif event.is_action_pressed("cancel dodge"):  # C backs out
 		print("MENU→ Backing out of Items menu")
@@ -429,14 +457,43 @@ func open_items_menu():
 
 func update_items_menu_display():
 	var current_player_name = current_actor.name
-	var potion_count = get_player_potion_count(current_player_name, "hp_potion")
-	var potion_text = "HP Potion " + str(potion_count)
+	var hp_count = get_player_potion_count(current_player_name, "hp_potion")
+	var resolve_count = get_player_potion_count(current_player_name, "resolve_potion")
 	
+	var hp_text = "HP Potion " + str(hp_count)
+	var resolve_text = "Resolve Potion " + str(resolve_count)
+	
+	# Add usage indicator if item was already used this turn
+	if item_used_this_turn:
+		hp_text += " (USED)"
+		resolve_text += " (USED)"
+	
+	# Update HP Potion button
 	if hp_potion_button:
 		hp_potion_button.visible = true
-		hp_potion_button.text = potion_text
-		hp_potion_button.disabled = (potion_count <= 0)
-		hp_potion_button.grab_focus()
+		hp_potion_button.text = hp_text
+		hp_potion_button.disabled = (hp_count <= 0 or item_used_this_turn)
+		
+		# Highlight selected item
+		if item_selection == 0:
+			hp_potion_button.grab_focus()
+	
+	# Update Resolve Potion button
+	if resolve_potion_button:
+		resolve_potion_button.visible = true
+		resolve_potion_button.text = resolve_text
+		resolve_potion_button.disabled = (resolve_count <= 0 or item_used_this_turn)
+		
+		# Highlight selected item
+		if item_selection == 1:
+			resolve_potion_button.grab_focus()
+	
+	# Show selection description
+	if selection_description:
+		if item_selection == 0:
+			selection_description.show_description("hp_potion")
+		elif item_selection == 1:
+			selection_description.show_description("resolve_potion")
 
 func close_items_menu():
 	in_items_menu = false
@@ -444,6 +501,10 @@ func close_items_menu():
 		items_menu.visible = false
 	if hp_potion_button:
 		hp_potion_button.visible = false
+	if resolve_potion_button:
+		resolve_potion_button.visible = false
+	if selection_description:
+		selection_description.hide_description()
 	if action_menu:
 		action_menu.visible = true
 	update_menu_highlight()
@@ -460,6 +521,95 @@ func use_player_potion(player_name: String, potion_type: String) -> bool:
 		player_potions[player_name][potion_type] = count - 1
 		return true
 	return false
+
+# New function for immediate item usage (no QTE, with animation)
+func use_item_immediately(item_name: String):
+	print("ITEM→ Using " + item_name + " immediately")
+	
+	# Play drink animation using AnimationBridge system (like grenade/bullet_rain)
+	if current_actor.name == "Player2":
+		print("ITEM→ Playing drink animation for Player2 via AnimationBridge")
+		
+		# Use AnimationBridge system - let animation use its natural position
+		var animation_instance = AnimationBridge.spawn_ability_animation("drink", Vector2.ZERO, current_actor)
+		if animation_instance:
+			# Play the drink animation
+			AnimationBridge.play_windup_animation("drink")
+			await AnimationBridge.animation_ready_for_qte
+			
+			# For drink, we don't need QTE result, just play success animation
+			AnimationBridge.play_result_animation("drink", "success")
+			await AnimationBridge.animation_sequence_complete
+			print("ITEM→ Drink animation completed via AnimationBridge")
+		else:
+			print("ITEM→ Failed to spawn drink animation")
+			await get_tree().create_timer(0.5).timeout
+	else:
+		print("ITEM→ No drink animation available for " + current_actor.name + " (only Player2 has drink animation)")
+		# Brief delay for feedback
+		await get_tree().create_timer(0.5).timeout
+	
+	# Handle specific items
+	match item_name:
+		"hp_potion":
+			var current_player_name = current_actor.name
+			var used_successfully = use_player_potion(current_player_name, "hp_potion")
+			
+			if used_successfully:
+				var heal_amount = 50
+				var old_hp = current_actor.hp
+				current_actor.hp = min(current_actor.hp + heal_amount, current_actor.hp_max)
+				var actual_heal = current_actor.hp - old_hp
+				
+				# Update HP bar UI
+				if current_actor.name == "Player1":
+					CombatUI.update_hp_bar("Player1", current_actor.hp, current_actor.hp_max)
+				elif current_actor.name == "Player2":
+					CombatUI.update_hp_bar("Player2", current_actor.hp, current_actor.hp_max)
+				
+				# Show green healing popup
+				var popup_scene = load("res://scenes/DamagePopup.tscn")
+				if popup_scene:
+					var popup = popup_scene.instantiate()
+					current_actor.add_child(popup)
+					popup.position = Vector2(90, -50)
+					popup.show_damage(actual_heal, "heal")
+				
+				print("HEAL→ " + current_actor.name + " healed " + str(actual_heal) + " HP (now " + str(current_actor.hp) + "/" + str(current_actor.hp_max) + ")")
+				
+				# Mark item as used this turn
+				item_used_this_turn = true
+			else:
+				print("ERROR→ " + current_player_name + " tried to use HP Potion but had none!")
+		"resolve_potion":
+			var current_player_name = current_actor.name
+			var used_successfully = use_player_potion(current_player_name, "resolve_potion")
+			
+			if used_successfully:
+				var resolve_amount = 3
+				var old_resolve = ResolveManager.get_resolve(current_player_name)
+				var max_resolve = 6  # Maximum resolve is 6 as shown in UI
+				var new_resolve = min(old_resolve + resolve_amount, max_resolve)
+				var actual_gain = new_resolve - old_resolve
+				
+				ResolveManager.set_resolve(current_player_name, new_resolve)
+				
+				# Show blue resolve popup
+				var popup_scene = load("res://scenes/DamagePopup.tscn")
+				if popup_scene:
+					var popup = popup_scene.instantiate()
+					current_actor.add_child(popup)
+					popup.position = Vector2(90, -50)
+					popup.show_damage(actual_gain, "resolve")  # Assuming DamagePopup supports resolve type
+				
+				print("RESOLVE→ " + current_actor.name + " gained " + str(actual_gain) + " Resolve (now " + str(new_resolve) + "/" + str(max_resolve) + ")")
+				
+				# Mark item as used this turn
+				item_used_this_turn = true
+			else:
+				print("ERROR→ " + current_player_name + " tried to use Resolve Potion but had none!")
+		_:
+			print("WARNING→ Unknown item: " + item_name)
 
 # Skill resolve cost helper functions
 func get_skill_resolve_cost(skill_name: String) -> int:
@@ -557,6 +707,7 @@ func show_menu():
 	in_items_menu = false
 	skill_selection = 0
 	item_selection = 0
+	item_used_this_turn = false  # Reset item usage for new turn
 	
 	# Ensure all submenus are hidden at turn start
 	if skills_menu:
@@ -662,14 +813,42 @@ func start_qte():
 		
 		# Player offense - STANDARDIZED SYSTEM for all characters
 		if selected_action == "attack":
-			# Universal pattern: windup → QTE → finish sequence
-			if current_actor.has_method("start_attack_windup") and current_actor.has_method("finish_attack_sequence"):
+			# Use AnimationBridge system for Player2, old system for others
+			if current_actor.name == "Player2":
+				print("🔫 Using AnimationBridge system for Player2 basic attack")
+				# Step 1: Spawn animation and play windup
+				var animation_instance = AnimationBridge.spawn_ability_animation("basic_attack", Vector2.ZERO, current_actor)
+				if animation_instance:
+					AnimationBridge.play_windup_animation("basic_attack")
+					await AnimationBridge.animation_ready_for_qte
+					
+					# Step 2: QTE during windup
+					if selection_description:
+						selection_description.hide_description()
+					qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!", current_actor)
+					
+					# Play sound effect immediately after QTE success
+					_play_attack_sound_effect(qte_result, current_actor)
+					
+					# Step 3: Play result animation based on QTE result
+					AnimationBridge.play_result_animation("basic_attack", qte_result)
+					await AnimationBridge.animation_sequence_complete
+					print("🔫 Player2 AnimationBridge attack sequence complete")
+				else:
+					print("❌ Failed to spawn Player2 basic attack animation")
+					qte_result = "fail"
+			# Universal pattern for other players: windup → QTE → finish sequence
+			elif current_actor.has_method("start_attack_windup") and current_actor.has_method("finish_attack_sequence"):
 				# Step 1: Play windup animation
 				await current_actor.start_attack_windup()
 				# Step 2: QTE during windup
 				if selection_description:
 					selection_description.hide_description()
 				qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!", current_actor)
+				
+				# Play sound effect immediately after QTE success
+				_play_attack_sound_effect(qte_result, current_actor)
+				
 				# Step 3: Finish attack animation based on result
 				await current_actor.finish_attack_sequence(qte_result, selected_target)
 			else:
@@ -678,15 +857,17 @@ func start_qte():
 				if selection_description:
 					selection_description.hide_description()
 				qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!", current_actor)
+				
+				# Play sound effect immediately after QTE success
+				_play_attack_sound_effect(qte_result, current_actor)
+				
 				if current_actor.has_method("attack"):
 					await current_actor.attack(selected_target)
 		else:
 			# Handle abilities (not basic attacks)
-			# Handle HP Potion - special case handled by TurnManager
-			if selected_action == "hp_potion":
-				qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!", current_actor)
+			# Note: Items are now handled immediately in the menu, not here
 			# Handle self-buff abilities that don't need a target
-			elif selected_action == "focus":
+			if selected_action == "focus":
 				await current_actor.execute_ability(selected_action, null)
 				qte_result = "handled"  # Flag that player handled it
 			# All other abilities use the player's ability system
@@ -765,61 +946,13 @@ func resolve_action():
 				target_name = selected_target.name
 			print("DMG→ Player deals " + str(damage) + " to " + target_name)
 			
-			# Play sound effects based on QTE result and player type
-			var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
-			match qte_result:
-				"crit":
-					if sfx_player:
-						if current_actor.name == "Player2":
-							sfx_player.stream = preload("res://assets/sfx/gun2.wav")  # Gun Girl crit
-						else:
-							sfx_player.stream = preload("res://assets/sfx/crit.wav")   # Sword Spirit crit
-						sfx_player.play()
-				"normal":
-					if sfx_player:
-						if current_actor.name == "Player2":
-							sfx_player.stream = preload("res://assets/sfx/gun1.wav")  # Gun Girl normal
-						else:
-							sfx_player.stream = preload("res://assets/sfx/attack.wav") # Sword Spirit normal
-						sfx_player.play()
-				"fail":
-					if sfx_player:
-						sfx_player.stream = preload("res://assets/sfx/miss.wav")  # Same miss sound for both
-						sfx_player.play()
+			# Sound effects now play immediately after QTE success (moved up for better timing)
 			
 			# Apply damage and hit effects
 			if damage > 0 and selected_target and selected_target.has_method("take_damage"):
 				selected_target.take_damage(damage)
 				# Play hit effects for successful attacks
 				VFXManager.play_hit_effects(selected_target)
-		elif selected_action == "hp_potion":
-			# HP Potion healing
-			var current_player_name = current_actor.name
-			var used_successfully = use_player_potion(current_player_name, "hp_potion")
-			
-			if used_successfully:
-				var heal_amount = 50
-				var old_hp = current_actor.hp
-				current_actor.hp = min(current_actor.hp + heal_amount, current_actor.hp_max)
-				var actual_heal = current_actor.hp - old_hp
-				
-				# Update HP bar UI
-				if current_actor.name == "Player1":
-					CombatUI.update_hp_bar("Player1", current_actor.hp, current_actor.hp_max)
-				elif current_actor.name == "Player2":
-					CombatUI.update_hp_bar("Player2", current_actor.hp, current_actor.hp_max)
-				
-				# Show green healing popup
-				var popup_scene = load("res://scenes/DamagePopup.tscn")
-				if popup_scene:
-					var popup = popup_scene.instantiate()
-					current_actor.add_child(popup)
-					popup.position = Vector2(90, -50)
-					popup.show_damage(actual_heal, "heal")
-				
-				print("HEAL→ " + current_actor.name + " healed " + str(actual_heal) + " HP (now " + str(current_actor.hp) + "/" + str(current_actor.hp_max) + ")")
-			else:
-				print("ERROR→ " + current_player_name + " tried to use HP Potion but had none!")
 		else:
 			print("WARNING→ Unhandled player action: " + selected_action)
 			
@@ -1078,6 +1211,7 @@ func reset_combat():
 	in_items_menu = false
 	skill_selection = 0  # Reset skill menu selection
 	item_selection = 0  # Reset item menu selection
+	item_used_this_turn = false  # Reset item usage flag
 	# NOTE: player_potions persist across battles - no reset here
 	enemy_attack_count = 0  # Reset enemy attack pattern
 	input_blocked = false  # Ensure input is not blocked on reset
@@ -1190,6 +1324,29 @@ func _refresh_turn_order() -> void:
 func _clear_pending_inputs() -> void:
 	Input.flush_buffered_events()
 	print("TURNMGR→ Cleared pending input events")
+
+# Play attack sound effect based on QTE result and player type
+func _play_attack_sound_effect(qte_result: String, actor: Node):
+	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+	if not sfx_player:
+		return
+		
+	match qte_result:
+		"crit":
+			if actor.name == "Player2":
+				sfx_player.stream = preload("res://assets/sfx/gun2.wav")  # Gun Girl crit
+			else:
+				sfx_player.stream = preload("res://assets/sfx/crit.wav")   # Sword Spirit crit
+			sfx_player.play()
+		"normal":
+			if actor.name == "Player2":
+				sfx_player.stream = preload("res://assets/sfx/gun1.wav")  # Gun Girl normal
+			else:
+				sfx_player.stream = preload("res://assets/sfx/attack.wav") # Sword Spirit normal
+			sfx_player.play()
+		"fail":
+			sfx_player.stream = preload("res://assets/sfx/miss.wav")  # Same miss sound for both
+			sfx_player.play()
 
 # Safe audio helper function - won't crash if AudioManager not available
 func _safe_audio_call(method_name: String) -> void:
