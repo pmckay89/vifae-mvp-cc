@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://bywrdjiurayct"]
+[gd_scene load_steps=19 format=3 uid="uid://bywrdjiurayct"]
 
 [ext_resource type="Script" uid="uid://bb1b4n2pur4i0" path="res://scripts/managers/input_listener.gd" id="1_ftvu5"]
 [ext_resource type="Texture2D" uid="uid://cjc248508locs" path="res://assets/backgrounds/arena2.png" id="1_irk3j"]
@@ -13,6 +13,7 @@
 [ext_resource type="AudioStream" uid="uid://0g2th53lt00s" path="res://assets/music/bgm2.mp3" id="7_bsu3s"]
 [ext_resource type="Script" uid="uid://rv08adbymf0w" path="res://scenes/ui/PauseOverlay.gd" id="7_l1ooa"]
 [ext_resource type="Script" uid="uid://di7rn5ua3w270" path="res://scenes/BattleCamera.gd" id="9_hrc4b"]
+[ext_resource type="Script" uid="uid://bgh85qj1p8mir" path="res://scripts/ui/SelectionDescription.gd" id="10_desc"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_irk3j"]
 bg_color = Color(0, 0, 0, 0.47451)
@@ -173,6 +174,22 @@ offset_bottom = 421.0
 text = "GUSTAVE!! PARRY IT (X)"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="SelectionDescriptionLabel" type="Label" parent="UILayer/QTEContainer"]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -80.5
+offset_top = 16.0
+offset_right = 80.5
+offset_bottom = 60.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+vertical_alignment = 1
+script = ExtResource("10_desc")
 
 [node name="QTEPressureBar" type="ProgressBar" parent="UILayer/QTEContainer"]
 visible = false

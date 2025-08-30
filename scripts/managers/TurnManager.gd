@@ -42,7 +42,9 @@ enum State {
 }
 
 var current_state: State = State.BEGIN_TURN
-var turn_order: Array = []
+var selection_description: Label
+
+var turn_order = []
 var current_turn_index: int = 0
 var current_actor: Node = null
 var selected_action: String = ""
@@ -112,6 +114,9 @@ func _ready():
 	AudioServer.set_bus_volume_db(0, -6.0)  # Force Master bus loud
 	print("STATE→ INITIALIZING TurnManager")
 	
+	# Initialize selection_description reference safely
+	selection_description = get_node_or_null("../UILayer/QTEContainer/SelectionDescriptionLabel")
+	
 	# Initialize turn order provider (default: fixed order)
 	turn_order_provider = TurnOrderProvider.FixedOrderProvider.new()
 	
@@ -139,6 +144,27 @@ func _ready():
 	
 	# Start the state machine
 	change_state(State.BEGIN_TURN)
+	
+	# Connect description updates
+	if attack_button and selection_description:
+		attack_button.focus_entered.connect(func(): selection_description.show_description("attack"))
+	if skills_button and selection_description:
+		skills_button.focus_entered.connect(func(): selection_description.hide_description())
+	if bigshot_button and selection_description:
+		bigshot_button.focus_entered.connect(func(): selection_description.show_description("big_shot"))
+	if hp_potion_button and selection_description:
+		hp_potion_button.focus_entered.connect(func(): selection_description.show_description("hp_potion"))
+	# Item button if added later
+
+func _on_menu_closed():
+	if selection_description:
+		selection_description.hide_description()
+
+func show_action_menu(show: bool):
+	if action_menu:
+		action_menu.visible = show
+		if not show:
+			_on_menu_closed()
 
 func _input(event):
 	if not event is InputEventKey:
@@ -287,9 +313,9 @@ func handle_skills_menu_input(event):
 		close_skills_menu()
 
 func open_skills_menu():
-	_safe_audio_call("play_ui_confirm")  # Play sound when opening skills menu
+	_safe_audio_call("play_ui_confirm")
 	in_skills_menu = true
-	skill_selection = 0  # Reset to first skill
+	skill_selection = 0
 	if action_menu:
 		action_menu.visible = false
 	if skills_menu:
@@ -341,6 +367,17 @@ func update_skills_menu_display():
 		skills_display.text = skills_text.strip_edges()
 	if bigshot_button:
 		bigshot_button.visible = false
+	
+	# Update description for selected skill
+	if selection_description and not is_instance_valid(selection_description):
+		selection_description = get_node_or_null("../UILayer/QTEContainer/SelectionDescriptionLabel")
+	
+	if selection_description and is_instance_valid(selection_description):
+		if abilities.size() > skill_selection:
+			var selected_ability = abilities[skill_selection]
+			selection_description.show_description(selected_ability)
+		else:
+			selection_description.hide_description()
 
 func close_skills_menu():
 	in_skills_menu = false
@@ -445,14 +482,24 @@ func spend_skill_resolve(player_name: String, skill_name: String) -> bool:
 	return false
 
 func update_menu_highlight():
+	# Check node validity before using
+	if selection_description and not is_instance_valid(selection_description):
+		selection_description = get_node_or_null("../UILayer/QTEContainer/SelectionDescriptionLabel")
+	
 	# Simple highlighting using button focus
 	if attack_button and skills_button and item_button:
 		if menu_selection == 0:
 			attack_button.grab_focus()
+			if selection_description and is_instance_valid(selection_description):
+				selection_description.show_description("attack")
 		elif menu_selection == 1:
 			skills_button.grab_focus()
+			if selection_description and is_instance_valid(selection_description):
+				selection_description.hide_description()
 		elif menu_selection == 2:
 			item_button.grab_focus()
+			if selection_description and is_instance_valid(selection_description):
+				selection_description.hide_description()
 
 func change_state(new_state: State):
 	print("STATE→ " + State.keys()[current_state] + " -> " + State.keys()[new_state])
@@ -507,6 +554,27 @@ func show_menu():
 	print("STATE→ SHOW_MENU for " + current_actor.name)
 	menu_selection = 0
 	in_skills_menu = false
+	in_items_menu = false
+	skill_selection = 0
+	item_selection = 0
+	
+	# Ensure all submenus are hidden at turn start
+	if skills_menu:
+		skills_menu.visible = false
+	if items_menu:
+		items_menu.visible = false
+	if skills_display:
+		skills_display.visible = false
+	if bigshot_button:
+		bigshot_button.visible = false
+	if hp_potion_button:
+		hp_potion_button.visible = false
+	
+	# Hide any lingering descriptions with node validation
+	if selection_description and is_instance_valid(selection_description):
+		selection_description.hide_description()
+	elif not selection_description or not is_instance_valid(selection_description):
+		selection_description = get_node_or_null("../UILayer/QTEContainer/SelectionDescriptionLabel")
 	
 	# Play turn ready sound for players only
 	if is_player(current_actor):
@@ -599,12 +667,16 @@ func start_qte():
 				# Step 1: Play windup animation
 				await current_actor.start_attack_windup()
 				# Step 2: QTE during windup
+				if selection_description:
+					selection_description.hide_description()
 				qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!", current_actor)
 				# Step 3: Finish attack animation based on result
 				await current_actor.finish_attack_sequence(qte_result, selected_target)
 			else:
 				# Fallback for characters without standardized system
 				print("⚠️ Character " + current_actor.name + " using legacy attack system")
+				if selection_description:
+					selection_description.hide_description()
 				qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!", current_actor)
 				if current_actor.has_method("attack"):
 					await current_actor.attack(selected_target)
@@ -649,6 +721,8 @@ func start_qte():
 		await get_tree().create_timer(1.0).timeout
 		
 		# Enemy attack QTE (X button for defense)
+		if selection_description:
+			selection_description.hide_description()
 		match selected_action:
 			"multishot":
 				qte_result = await QTEManager.start_qte("multishot", 5000, "PARRY THE INCOMING BOXES!", selected_target)

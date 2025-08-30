@@ -16,6 +16,7 @@
       "Read(/C:\\func start_multishot_qte\\,/**)",
       "Bash(sed:*)",
       "Bash(\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.exe\" --headless)",
+      "Bash(\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.exe\" --headless --quit-after 2)",
       "Bash(\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.exe\" --headless --quit-after 2)"
     ],
     "deny": [],
