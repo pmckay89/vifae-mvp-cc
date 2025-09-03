@@ -38,7 +38,10 @@ enum State {
 	CHECK_END,
 	VICTORY,
 	GAME_OVER,
-	RESET_COMBAT
+	RESET_COMBAT,
+	MAP_EXPLORATION,
+	SHOP,
+	UPGRADE
 }
 
 var current_state: State = State.BEGIN_TURN
@@ -67,6 +70,7 @@ const GAME_OVER_THEME = "res://assets/music/closer.wav"
 @onready var resolve_potion_button := get_node_or_null("/root/BattleScene/UILayer/ItemsMenu/ResolvePotionButton")
 @onready var bgm_player := get_node("../BGMPlayer")
 @onready var result_overlay := get_node_or_null("/root/BattleScene/UILayer/ResultOverlay")
+@onready var victory_overlay := get_node_or_null("/root/BattleScene/UILayer/VictoryOverlay")
 @onready var pause_overlay := get_node_or_null("/root/BattleScene/UILayer/PauseOverlay")
 
 # Attack announcement UI
@@ -174,15 +178,15 @@ func _input(event):
 	if not event.pressed:
 		return
 	
-	# Pause toggle (works during any state except result overlay)
+	# Pause toggle (works during any state except overlays)
 	if event.keycode == KEY_ESCAPE or event.keycode == KEY_P:
-		if result_overlay and result_overlay.visible:
-			return  # Don't allow pause during result overlay
+		if (result_overlay and result_overlay.visible) or (victory_overlay and victory_overlay.visible):
+			return  # Don't allow pause during overlays
 		toggle_pause()
 		return
 	
 	# Skip input if any overlay is showing
-	if (result_overlay and result_overlay.visible) or (pause_overlay and pause_overlay.visible):
+	if (result_overlay and result_overlay.visible) or (victory_overlay and victory_overlay.visible) or (pause_overlay and pause_overlay.visible):
 		return
 	
 	# Block input during transition periods to prevent QTE carryover
@@ -207,6 +211,18 @@ func _input(event):
 		return
 	if event.keycode == KEY_D:
 		ResolveManager.debug_decrement_resolve("Player2")
+		return
+	
+	# DEBUG: Quick enemy kill for testing (F key)
+	if event.keycode == KEY_F:
+		var enemy = get_enemy()
+		if enemy and enemy.has_method("take_damage"):
+			var damage_needed = enemy.hp - 1
+			if damage_needed > 0:
+				print("DEBUG→ Damaging enemy to 1 HP (", damage_needed, " damage)")
+				enemy.take_damage(damage_needed)
+			else:
+				print("DEBUG→ Enemy already at 1 HP or less")
 		return
 		
 	match current_state:
@@ -1132,8 +1148,8 @@ func victory():
 	if skills_menu:
 		skills_menu.visible = false
 	
-	# Show result overlay instead of auto-reset
-	show_result_overlay("victory")
+	# Show victory overlay with map exploration
+	show_victory_overlay()
 
 func game_over():
 	print("STATE→ GAME_OVER") 
@@ -1172,6 +1188,13 @@ func show_result_overlay(mode: String):
 		result_overlay.show_result(mode)
 	else:
 		print("ERROR→ ResultOverlay not found or missing show_result method")
+
+func show_victory_overlay():
+	print("TURNMGR→ Showing victory overlay")
+	if victory_overlay and victory_overlay.has_method("show_victory"):
+		victory_overlay.show_victory()
+	else:
+		print("ERROR→ VictoryOverlay not found or missing show_victory method")
 
 func reset_combat():
 	print("RESET→ Resetting combat to initial state")

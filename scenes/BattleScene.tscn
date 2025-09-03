@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://bywrdjiurayct"]
+[gd_scene load_steps=21 format=3 uid="uid://bywrdjiurayct"]
 
 [ext_resource type="Script" uid="uid://bb1b4n2pur4i0" path="res://scripts/managers/input_listener.gd" id="1_ftvu5"]
 [ext_resource type="Texture2D" uid="uid://cjc248508locs" path="res://assets/backgrounds/arena2.png" id="1_irk3j"]
@@ -8,8 +8,10 @@
 [ext_resource type="Script" uid="uid://smu7o2wlaelw" path="res://scripts/managers/TurnManager.gd" id="5_hrc4b"]
 [ext_resource type="PackedScene" uid="uid://ch4juq0gsqhm0" path="res://scenes/ui/ResultOverlay.tscn" id="6_a4ns4"]
 [ext_resource type="PackedScene" uid="uid://ct511gfryly8b" path="res://scenes/ui/PauseOverlay.tscn" id="6_irk3j"]
+[ext_resource type="PackedScene" path="res://scenes/ui/MapOverlay.tscn" id="6_map"]
 [ext_resource type="Texture2D" uid="uid://c0gjtifwjdhty" path="res://assets/ui/QTE.png" id="6_sdfhe"]
-[ext_resource type="Script" uid="uid://ceb3t4pnexfbv" path="res://scenes/ui/ResultOverlay.gd" id="7_7acxt"]
+[ext_resource type="PackedScene" path="res://scenes/ui/ShopOverlay.tscn" id="6_shop"]
+[ext_resource type="PackedScene" path="res://scenes/ui/VictoryOverlay.tscn" id="6_victory"]
 [ext_resource type="AudioStream" uid="uid://0g2th53lt00s" path="res://assets/music/bgm2.mp3" id="7_bsu3s"]
 [ext_resource type="Script" uid="uid://rv08adbymf0w" path="res://scenes/ui/PauseOverlay.gd" id="7_l1ooa"]
 [ext_resource type="Script" uid="uid://di7rn5ua3w270" path="res://scenes/BattleCamera.gd" id="9_hrc4b"]
@@ -90,14 +92,8 @@ text = "Quit"
 
 [node name="ResultOverlay" parent="UILayer" instance=ExtResource("6_a4ns4")]
 visible = false
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("7_7acxt")
 
-[node name="Panel" type="Panel" parent="UILayer/ResultOverlay"]
+[node name="Panel2" type="Panel" parent="UILayer/ResultOverlay"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -106,34 +102,20 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_irk3j")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="UILayer/ResultOverlay/Panel"]
-custom_minimum_size = Vector2(300, 200)
-layout_mode = 0
-offset_left = 406.0
-offset_top = 376.0
-offset_right = 706.0
-offset_bottom = 576.0
+[node name="MapOverlay" parent="UILayer" instance=ExtResource("6_map")]
+visible = false
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Title" type="Label" parent="UILayer/ResultOverlay/Panel/VBoxContainer"]
-layout_mode = 2
-text = "Victory!"
-horizontal_alignment = 1
+[node name="VictoryOverlay" parent="UILayer" instance=ExtResource("6_victory")]
+visible = false
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Subtitle" type="Label" parent="UILayer/ResultOverlay/Panel/VBoxContainer"]
-layout_mode = 2
-text = "You Win!"
-horizontal_alignment = 1
-
-[node name="ButtonContainer" type="VBoxContainer" parent="UILayer/ResultOverlay/Panel/VBoxContainer"]
-layout_mode = 2
-
-[node name="RetryButton" type="Button" parent="UILayer/ResultOverlay/Panel/VBoxContainer/ButtonContainer"]
-layout_mode = 2
-text = "Retry"
-
-[node name="QuitButton" type="Button" parent="UILayer/ResultOverlay/Panel/VBoxContainer/ButtonContainer"]
-layout_mode = 2
-text = "Quit"
+[node name="ShopOverlay" parent="UILayer" instance=ExtResource("6_shop")]
+visible = false
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="FlashLayer" type="ColorRect" parent="UILayer"]
 visible = false

@@ -28,6 +28,7 @@ CombatUI="*res://scripts/ui/CombatUI.gd"
 ScreenShake="*res://scripts/ui/ScreenShake.gd"
 ResolveManager="*res://ResolveManager.gd"
 AnimationBridge="*res://scripts/managers/AnimationBridge.gd"
+ProgressManager="*res://scripts/managers/ProgressManager.gd"
 
 [editor]
 
