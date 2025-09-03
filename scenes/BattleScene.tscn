@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://bywrdjiurayct"]
+[gd_scene load_steps=23 format=3 uid="uid://bywrdjiurayct"]
 
 [ext_resource type="Script" uid="uid://bb1b4n2pur4i0" path="res://scripts/managers/input_listener.gd" id="1_ftvu5"]
 [ext_resource type="Texture2D" uid="uid://cjc248508locs" path="res://assets/backgrounds/arena2.png" id="1_irk3j"]
@@ -8,11 +8,13 @@
 [ext_resource type="Script" uid="uid://smu7o2wlaelw" path="res://scripts/managers/TurnManager.gd" id="5_hrc4b"]
 [ext_resource type="PackedScene" uid="uid://ch4juq0gsqhm0" path="res://scenes/ui/ResultOverlay.tscn" id="6_a4ns4"]
 [ext_resource type="PackedScene" uid="uid://ct511gfryly8b" path="res://scenes/ui/PauseOverlay.tscn" id="6_irk3j"]
-[ext_resource type="PackedScene" path="res://scenes/ui/MapOverlay.tscn" id="6_map"]
+[ext_resource type="PackedScene" uid="uid://b4kn6x7i8pqvw" path="res://scenes/ui/MapOverlay.tscn" id="6_map"]
 [ext_resource type="Texture2D" uid="uid://c0gjtifwjdhty" path="res://assets/ui/QTE.png" id="6_sdfhe"]
-[ext_resource type="PackedScene" path="res://scenes/ui/ShopOverlay.tscn" id="6_shop"]
-[ext_resource type="PackedScene" path="res://scenes/ui/VictoryOverlay.tscn" id="6_victory"]
+[ext_resource type="PackedScene" uid="uid://b8pfi788v3d1y" path="res://scenes/ui/ShopOverlay.tscn" id="6_shop"]
+[ext_resource type="PackedScene" path="res://scenes/ui/UpgradeOverlay.tscn" id="6_upgrade"]
+[ext_resource type="PackedScene" uid="uid://bvic6x7i8pqvw" path="res://scenes/ui/VictoryOverlay.tscn" id="6_victory"]
 [ext_resource type="AudioStream" uid="uid://0g2th53lt00s" path="res://assets/music/bgm2.mp3" id="7_bsu3s"]
+[ext_resource type="Texture2D" uid="uid://dh46lb38hhalo" path="res://assets/ui/coin.png" id="7_coin"]
 [ext_resource type="Script" uid="uid://rv08adbymf0w" path="res://scenes/ui/PauseOverlay.gd" id="7_l1ooa"]
 [ext_resource type="Script" uid="uid://di7rn5ua3w270" path="res://scenes/BattleCamera.gd" id="9_hrc4b"]
 [ext_resource type="Script" uid="uid://bgh85qj1p8mir" path="res://scripts/ui/SelectionDescription.gd" id="10_desc"]
@@ -59,6 +61,30 @@ position = Vector2(121, 389)
 position = Vector2(939, 199)
 
 [node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="CoinDisplay" type="HBoxContainer" parent="UILayer"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -100.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 60.0
+
+[node name="CoinIcon" type="TextureRect" parent="UILayer/CoinDisplay"]
+layout_mode = 2
+texture = ExtResource("7_coin")
+expand_mode = 2
+stretch_mode = 4
+
+[node name="CoinLabel" type="Label" parent="UILayer/CoinDisplay"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 24
+text = "0"
+vertical_alignment = 1
 
 [node name="PauseOverlay" parent="UILayer" instance=ExtResource("6_irk3j")]
 visible = false
@@ -113,6 +139,11 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="ShopOverlay" parent="UILayer" instance=ExtResource("6_shop")]
+visible = false
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="UpgradeOverlay" parent="UILayer" instance=ExtResource("6_upgrade")]
 visible = false
 grow_horizontal = 2
 grow_vertical = 2

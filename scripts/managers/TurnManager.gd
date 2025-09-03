@@ -72,6 +72,7 @@ const GAME_OVER_THEME = "res://assets/music/closer.wav"
 @onready var result_overlay := get_node_or_null("/root/BattleScene/UILayer/ResultOverlay")
 @onready var victory_overlay := get_node_or_null("/root/BattleScene/UILayer/VictoryOverlay")
 @onready var pause_overlay := get_node_or_null("/root/BattleScene/UILayer/PauseOverlay")
+@onready var coin_label := get_node_or_null("/root/BattleScene/UILayer/CoinDisplay/CoinLabel")
 
 # Attack announcement UI
 var attack_announcement_label: Label
@@ -83,11 +84,7 @@ var in_items_menu: bool = false
 var skill_selection: int = 0  # For cycling through skills
 var item_selection: int = 0  # For cycling through items
 
-# Per-player inventory system - scalable for multiple potion types and counts
-var player_potions: Dictionary = {
-	"Player1": {"hp_potion": 1, "resolve_potion": 1},
-	"Player2": {"hp_potion": 1, "resolve_potion": 1}
-}
+# Inventory now managed by ProgressManager (shared party inventory)
 
 # Skill resolve costs - expandable for other skills
 var skill_resolve_costs: Dictionary = {
@@ -147,6 +144,11 @@ func _ready():
 	
 	# Initialize Resolve system
 	ResolveManager.reset_all_resolve()
+	ProgressManager.apply_battle_buffs()  # Apply buffs after resolve reset
+	
+	# Initialize coin display and connect to updates
+	update_coin_display()
+	ProgressManager.coins_changed.connect(_on_coins_changed)
 	
 	# Start the state machine
 	change_state(State.BEGIN_TURN)
@@ -525,18 +527,14 @@ func close_items_menu():
 		action_menu.visible = true
 	update_menu_highlight()
 
-# Inventory helper functions
+# Inventory helper functions - now use shared ProgressManager inventory
 func get_player_potion_count(player_name: String, potion_type: String) -> int:
-	if player_name in player_potions and potion_type in player_potions[player_name]:
-		return player_potions[player_name][potion_type]
-	return 0
+	# All players share the same party inventory
+	return ProgressManager.get_party_item_count(potion_type)
 
 func use_player_potion(player_name: String, potion_type: String) -> bool:
-	var count = get_player_potion_count(player_name, potion_type)
-	if count > 0:
-		player_potions[player_name][potion_type] = count - 1
-		return true
-	return false
+	# Use from shared party inventory
+	return ProgressManager.use_party_item(potion_type)
 
 # New function for immediate item usage (no QTE, with animation)
 func use_item_immediately(item_name: String):
@@ -981,6 +979,12 @@ func resolve_action():
 			"phase_slam": base_damage = 70  # Heavy attack - timing-based parry
 			"mirror_strike": base_damage = 30  # Sequence defense - binary (perfect/fail)
 			
+		# Apply battle progression damage scaling
+		var damage_multiplier = ProgressManager.get_enemy_damage_multiplier()
+		base_damage = int(base_damage * damage_multiplier)
+		var battle_number = ProgressManager.get_current_battle_number()
+		print("ENEMY→ Battle ", battle_number, " damage: ", base_damage, " (", int(damage_multiplier * 100), "% of base)")
+			
 		# Show enemy attack animation (sound handled by QTE Manager)
 		if current_actor.has_method("attack_animation"):
 			current_actor.attack_animation(selected_target, selected_action, false)
@@ -1148,6 +1152,9 @@ func victory():
 	if skills_menu:
 		skills_menu.visible = false
 	
+	# Award coins for victory
+	ProgressManager.complete_battle()
+	
 	# Show victory overlay with map exploration
 	show_victory_overlay()
 
@@ -1223,6 +1230,7 @@ func reset_combat():
 	
 	# Reset Resolve system
 	ResolveManager.reset_all_resolve()
+	ProgressManager.apply_battle_buffs()  # Apply buffs after resolve reset
 	
 	# Reset turn state
 	current_turn_index = 0
@@ -1235,7 +1243,7 @@ func reset_combat():
 	skill_selection = 0  # Reset skill menu selection
 	item_selection = 0  # Reset item menu selection
 	item_used_this_turn = false  # Reset item usage flag
-	# NOTE: player_potions persist across battles - no reset here
+# NOTE: party_inventory managed by ProgressManager - persists across battles
 	enemy_attack_count = 0  # Reset enemy attack pattern
 	input_blocked = false  # Ensure input is not blocked on reset
 	
@@ -1455,3 +1463,15 @@ func show_attack_announcement(attack_name: String):
 	await get_tree().create_timer(2.0).timeout
 	attack_announcement_label.visible = false
 	print("UI→ Attack announcement hidden")
+
+# Update coin display
+func update_coin_display():
+	if coin_label:
+		coin_label.text = str(ProgressManager.player_coins)
+		print("UI→ Coin display updated: ", ProgressManager.player_coins)
+	else:
+		print("ERROR→ Coin label not found")
+
+# Signal handler for coin changes
+func _on_coins_changed(new_amount: int):
+	update_coin_display()

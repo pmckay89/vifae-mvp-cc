@@ -5,6 +5,8 @@ extends Control
 @onready var path_a_button := $Panel/VBoxContainer/ChoiceContainer/PathAButton
 @onready var path_b_button := $Panel/VBoxContainer/ChoiceContainer/PathBButton
 @onready var close_button := $Panel/VBoxContainer/CloseButton
+@onready var restart_button := $Panel/VBoxContainer/RestartButton
+@onready var quit_button := $Panel/VBoxContainer/QuitButton
 @onready var panel := $Panel
 
 func _ready():
@@ -19,6 +21,10 @@ func _ready():
 		path_b_button.pressed.connect(_on_path_b_pressed)
 	if close_button and not close_button.pressed.is_connected(_on_close_pressed):
 		close_button.pressed.connect(_on_close_pressed)
+	if restart_button and not restart_button.pressed.is_connected(_on_restart_pressed):
+		restart_button.pressed.connect(_on_restart_pressed)
+	if quit_button and not quit_button.pressed.is_connected(_on_quit_pressed):
+		quit_button.pressed.connect(_on_quit_pressed)
 
 func show_map():
 	print("MAP→ Showing map overlay")
@@ -48,22 +54,36 @@ func _update_display():
 	# Update coins display
 	coins_label.text = "Coins: " + str(ProgressManager.player_coins)
 	
-	# Get available choices from ProgressManager
-	var choices = ProgressManager.get_available_choices()
+	# Check if there are more battles/choices ahead
+	var has_choices = ProgressManager.has_choices_available()
+	var current_pos = ProgressManager.current_position
+	print("MAP→ Debug: current_position=", current_pos, " has_choices=", has_choices)
 	
-	if choices.size() >= 2:
+	if has_choices:
+		# Get available choices from ProgressManager
+		var choices = ProgressManager.get_available_choices()
 		# Update button texts with choice types
 		path_a_button.text = "Path A: " + choices[0].name
 		path_b_button.text = "Path B: " + choices[1].name
 		
-		# Show buttons
+		# Show path buttons, hide end game buttons
 		path_a_button.visible = true
 		path_b_button.visible = true
+		close_button.visible = true
+		restart_button.visible = false
+		quit_button.visible = false
 	else:
-		# No choices available (end of map?)
+		# No choices available - journey complete!
 		path_a_button.visible = false
 		path_b_button.visible = false
+		close_button.visible = false  # Hide close button
+		
+		# Show end game options
+		restart_button.visible = true
+		quit_button.visible = true
+		
 		title_label.text = "Journey Complete!"
+		coins_label.text = "Final Coins: " + str(ProgressManager.player_coins)
 
 func _on_path_a_pressed():
 	print("MAP→ Path A selected")
@@ -112,10 +132,42 @@ func _show_shop():
 	
 func _show_upgrade():
 	print("MAP→ Opening upgrades...")
-	# TODO: Create and connect UpgradeOverlay
-	print("MAP→ Upgrade overlay not implemented yet")
+	var upgrade_overlay = get_node_or_null("/root/BattleScene/UILayer/UpgradeOverlay")
+	if upgrade_overlay and upgrade_overlay.has_method("show_upgrade"):
+		upgrade_overlay.show_upgrade()
+	else:
+		print("ERROR→ UpgradeOverlay not found!")
 
 func _on_close_pressed():
 	print("MAP→ Close button pressed")
 	hide_map()
 	# TODO: Return to previous state (probably combat or victory screen)
+
+func _on_restart_pressed():
+	print("MAP→ Restart run pressed")
+	hide_map()
+	
+	# Reset all progression
+	ProgressManager.reset_progress()
+	
+	# Start new run with fresh battle
+	await get_tree().create_timer(0.4).timeout  # Wait for fade out
+	_start_new_run()
+
+func _on_quit_pressed():
+	print("MAP→ Quit game pressed")
+	get_tree().quit()
+
+func _start_new_run():
+	print("MAP→ Starting new run")
+	
+	# Get TurnManager and reset everything for new run
+	var turn_manager = get_node_or_null("/root/BattleScene/TurnManager")
+	if turn_manager:
+		# Reset combat completely
+		turn_manager.reset_combat()
+		# Start fresh battle
+		turn_manager.change_state(turn_manager.State.BEGIN_TURN)
+		print("MAP→ New run started successfully")
+	else:
+		print("ERROR→ Could not find TurnManager to start new run")

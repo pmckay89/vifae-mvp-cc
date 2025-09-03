@@ -31,8 +31,6 @@ func show_victory():
 
 func _on_map_pressed():
 	print("VICTORY→ Explore Map pressed")
-	# Tell ProgressManager we completed a battle
-	ProgressManager.complete_battle()
 	
 	# Get reference to MapOverlay and show it
 	var map_overlay = get_node_or_null("/root/BattleScene/UILayer/MapOverlay")

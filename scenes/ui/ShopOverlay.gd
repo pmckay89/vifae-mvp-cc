@@ -6,7 +6,6 @@ extends Control
 @onready var resolve_potion_button := $Panel/VBoxContainer/ScrollContainer/ItemsContainer/ResolvePotionButton
 @onready var power_boost_button := $Panel/VBoxContainer/ScrollContainer/ItemsContainer/PowerBoostButton
 @onready var quick_reflexes_button := $Panel/VBoxContainer/ScrollContainer/ItemsContainer/QuickReflexesButton
-@onready var iron_will_button := $Panel/VBoxContainer/ScrollContainer/ItemsContainer/IronWillButton
 @onready var close_button := $Panel/VBoxContainer/CloseButton
 @onready var panel := $Panel
 
@@ -24,8 +23,6 @@ func _ready():
 		power_boost_button.pressed.connect(_on_power_boost_pressed)
 	if quick_reflexes_button and not quick_reflexes_button.pressed.is_connected(_on_quick_reflexes_pressed):
 		quick_reflexes_button.pressed.connect(_on_quick_reflexes_pressed)
-	if iron_will_button and not iron_will_button.pressed.is_connected(_on_iron_will_pressed):
-		iron_will_button.pressed.connect(_on_iron_will_pressed)
 	if close_button and not close_button.pressed.is_connected(_on_close_pressed):
 		close_button.pressed.connect(_on_close_pressed)
 
@@ -67,15 +64,13 @@ func _update_display():
 	# Show buff status
 	power_boost_button.text = "Power Boost (1 coin) - 2x damage next battle" + _get_buff_status("power_boost")
 	quick_reflexes_button.text = "Quick Reflexes (1 coin) - Slower QTE windows" + _get_buff_status("quick_reflexes")
-	iron_will_button.text = "Iron Will (1 coin) - +2 resolve next battle" + _get_buff_status("iron_will")
 	
 	# Disable buttons if not enough coins
 	var can_afford = ProgressManager.player_coins >= 1
 	hp_potion_button.disabled = not can_afford
 	resolve_potion_button.disabled = not can_afford
 	power_boost_button.disabled = not can_afford or ProgressManager.active_buffs.power_boost
-	quick_reflexes_button.disabled = not can_afford or ProgressManager.active_buffs.quick_reflexes  
-	iron_will_button.disabled = not can_afford or ProgressManager.active_buffs.iron_will
+	quick_reflexes_button.disabled = not can_afford or ProgressManager.active_buffs.quick_reflexes
 
 func _get_buff_status(buff_name: String) -> String:
 	if ProgressManager.active_buffs[buff_name]:
@@ -101,10 +96,24 @@ func _on_power_boost_pressed():
 func _on_quick_reflexes_pressed():
 	_buy_item("quick_reflexes")
 
-func _on_iron_will_pressed():
-	_buy_item("iron_will")
 
 func _on_close_pressed():
 	print("SHOP→ Leaving shop")
 	hide_shop()
-	# TODO: Return to map or continue to next battle
+	
+	# Advance progression and start next battle
+	_start_next_battle()
+
+func _start_next_battle():
+	print("SHOP→ Starting next battle")
+	
+	# Get TurnManager and start new combat
+	var turn_manager = get_node_or_null("/root/BattleScene/TurnManager")
+	if turn_manager:
+		# Reset combat for next battle
+		turn_manager.reset_combat()
+		# Start new turn cycle
+		turn_manager.change_state(turn_manager.State.BEGIN_TURN)
+		print("SHOP→ Next battle started successfully")
+	else:
+		print("ERROR→ Could not find TurnManager to start next battle")

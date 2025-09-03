@@ -1,13 +1,18 @@
 extends Node2D
 
 # Enemy stats only - no turn management
-var hp_max: int = 300
+var base_hp_max: int = 300  # Base HP for Battle 1
+var hp_max: int = base_hp_max  # Will be scaled based on progression
 var hp: int = hp_max
 var is_defeated: bool = false
 var rng := RandomNumberGenerator.new()
 
 func _ready():
 	rng.randomize()
+	
+	# Scale HP based on current battle progression
+	_scale_for_current_battle()
+	
 	_update_idle_animation()
 	
 	# Initialize HP bar color to full health (green)
@@ -219,43 +224,6 @@ func take_damage(amount: int) -> void:
 		is_defeated = true
 		print(name, "has been defeated!")
 
-# Reset method for combat reset
-func reset_for_new_combat():
-	hp = hp_max
-	is_defeated = false
-	
-	# Update HP displays to full health
-	var bar: ProgressBar = get_node_or_null("/root/BattleScene/UILayer/EnemyHUD/EnemyHPBar")
-	if bar:
-		bar.min_value = 0
-		bar.max_value = hp_max
-		bar.value = hp
-	
-	var label: Label = get_node_or_null("/root/BattleScene/UILayer/EnemyHUD/EnemyHPLabel")
-	if label:
-		label.text = "BOSS HP: " + str(hp) + "/" + str(hp_max)
-	
-	# Reset head health bar
-	var head_bar: ProgressBar = get_node_or_null("HealthBar")
-	if head_bar:
-		head_bar.min_value = 0
-		head_bar.max_value = hp_max
-		head_bar.value = hp
-	
-	# Make sure idle sprite is visible
-	var enemy_idle_sprite = get_node_or_null("Sprite2D")
-	if enemy_idle_sprite:
-		enemy_idle_sprite.visible = true
-		
-	# Hide attack sprites
-	var e_block1 = get_node_or_null("e-block")
-	var e_block2 = get_node_or_null("e-block2")
-	if e_block1:
-		e_block1.visible = false
-	if e_block2:
-		e_block2.visible = false
-		
-	print("RESET→ Enemy reset to initial state")
 
 # Flinch animation when taking damage
 func show_flinch_animation() -> void:
@@ -329,3 +297,52 @@ func _update_hp_bar_color(bar: ProgressBar):
 	bar.add_theme_stylebox_override("fill", style_box)
 	
 	print("HP Bar color updated: ", int(hp_percentage * 100), "% -> ", fill_color)
+
+# Scale enemy stats based on battle progression
+func _scale_for_current_battle():
+	var hp_multiplier = ProgressManager.get_enemy_hp_multiplier()
+	hp_max = int(base_hp_max * hp_multiplier)
+	hp = hp_max  # Set current HP to new max
+	
+	var battle_number = ProgressManager.get_current_battle_number()
+	print("ENEMY→ Battle ", battle_number, ": Scaled to ", hp_max, " HP (", int(hp_multiplier * 100), "% of base)")
+
+# Reset enemy for new combat (called by TurnManager)
+func reset_for_new_combat():
+	is_defeated = false
+	_scale_for_current_battle()  # Re-scale for current battle (sets hp = hp_max)
+	
+	# Update HP displays to match new scaled values
+	var bar: ProgressBar = get_node_or_null("/root/BattleScene/UILayer/EnemyHUD/EnemyHPBar")
+	if bar:
+		bar.min_value = 0
+		bar.max_value = hp_max
+		bar.value = hp
+		_update_hp_bar_color(bar)
+	
+	var label: Label = get_node_or_null("/root/BattleScene/UILayer/EnemyHUD/EnemyHPLabel")
+	if label:
+		label.text = "BOSS HP: " + str(hp) + "/" + str(hp_max)
+	
+	# Reset head health bar  
+	var head_bar: ProgressBar = get_node_or_null("HealthBar")
+	if head_bar:
+		head_bar.min_value = 0
+		head_bar.max_value = hp_max
+		head_bar.value = hp
+		head_bar.visible = false  # Keep it hidden
+	
+	# Make sure idle sprite is visible and attack sprites are hidden
+	var enemy_idle_sprite = get_node_or_null("Sprite2D")
+	if enemy_idle_sprite:
+		enemy_idle_sprite.visible = true
+	
+	var e_block1 = get_node_or_null("e-block")
+	var e_block2 = get_node_or_null("e-block2")
+	if e_block1:
+		e_block1.visible = false
+	if e_block2:
+		e_block2.visible = false
+	
+	_update_idle_animation()
+	print("ENEMY→ Reset for new combat - HP: ", hp, "/", hp_max)

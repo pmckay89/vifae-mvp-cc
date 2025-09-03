@@ -4,6 +4,7 @@ extends Node
 # Tracks player's journey through linear A/B fork system
 
 signal node_changed(new_position)
+signal coins_changed(new_amount)
 
 enum NodeType {
 	BATTLE,
@@ -45,6 +46,7 @@ func _ready():
 func complete_battle():
 	var coins_earned = 25  # Placeholder - could vary by battle difficulty
 	player_coins += coins_earned
+	coins_changed.emit(player_coins)  # Emit signal for UI update
 	print("PROGRESS→ Battle completed! Earned ", coins_earned, " coins (total: ", player_coins, ")")
 	
 	# Check if there are more battles/choices ahead
@@ -76,6 +78,7 @@ func advance_position():
 func spend_coins(amount: int) -> bool:
 	if player_coins >= amount:
 		player_coins -= amount
+		coins_changed.emit(player_coins)  # Emit signal for UI update
 		print("PROGRESS→ Spent ", amount, " coins (remaining: ", player_coins, ")")
 		return true
 	else:
@@ -84,6 +87,7 @@ func spend_coins(amount: int) -> bool:
 
 func add_coins(amount: int):
 	player_coins += amount
+	coins_changed.emit(player_coins)  # Emit signal for UI update
 	print("PROGRESS→ Added ", amount, " coins (total: ", player_coins, ")")
 
 # Getters
@@ -105,7 +109,7 @@ func get_available_choices() -> Array:
 func has_choices_available() -> bool:
 	return current_position < map_structure.size() - 1
 
-# Shop functions
+# Shop functions (consumables and temporary buffs only)
 func buy_item(item_name: String) -> bool:
 	var cost = 1  # All items cost 1 coin
 	
@@ -114,6 +118,7 @@ func buy_item(item_name: String) -> bool:
 		return false
 	
 	player_coins -= cost
+	coins_changed.emit(player_coins)  # Emit signal for UI update
 	
 	match item_name:
 		"hp_potion":
@@ -128,11 +133,30 @@ func buy_item(item_name: String) -> bool:
 		"quick_reflexes":
 			active_buffs.quick_reflexes = true
 			print("SHOP→ Bought Quick Reflexes (slower QTE windows next battle)")
-		"iron_will":
-			active_buffs.iron_will = true
-			print("SHOP→ Bought Iron Will (+2 resolve start next battle)")
 		_:
 			print("ERROR→ Unknown shop item: ", item_name)
+			player_coins += cost  # Refund
+			return false
+	
+	return true
+
+# Upgrade functions (permanent improvements only)
+func buy_upgrade(upgrade_name: String) -> bool:
+	var cost = 1  # All upgrades cost 1 coin
+	
+	if player_coins < cost:
+		print("UPGRADE→ Not enough coins for ", upgrade_name)
+		return false
+	
+	player_coins -= cost
+	coins_changed.emit(player_coins)  # Emit signal for UI update
+	
+	match upgrade_name:
+		"iron_will":
+			active_buffs.iron_will = true
+			print("UPGRADE→ Bought Iron Will (permanent +2 starting resolve)")
+		_:
+			print("ERROR→ Unknown upgrade: ", upgrade_name)
 			player_coins += cost  # Refund
 			return false
 	
@@ -153,14 +177,46 @@ func use_party_item(item_name: String) -> bool:
 # Apply and clear battle buffs
 func apply_battle_buffs():
 	print("PROGRESS→ Applying battle buffs...")
-	# Buffs are read by other systems (TurnManager, QTEManager, etc.)
-	# This is called at battle start
+	
+	# Apply Iron Will: +2 starting resolve for both players
+	if active_buffs.iron_will:
+		var player1_resolve = ResolveManager.get_resolve("Player1")
+		var player2_resolve = ResolveManager.get_resolve("Player2")
+		
+		ResolveManager.set_resolve("Player1", player1_resolve + 2)
+		ResolveManager.set_resolve("Player2", player2_resolve + 2)
+		
+		print("PROGRESS→ Iron Will applied: +2 resolve to both players")
+	
+	# Future buffs can be added here:
+	# if active_buffs.power_boost:
+	#     print("PROGRESS→ Power Boost applied: 2x damage this battle")
+	# if active_buffs.quick_reflexes:
+	#     print("PROGRESS→ Quick Reflexes applied: slower QTE windows")
 
 func clear_battle_buffs():
 	print("PROGRESS→ Clearing used battle buffs...")
 	active_buffs.power_boost = false
 	active_buffs.quick_reflexes = false
 	active_buffs.iron_will = false
+
+# Enemy scaling based on battle progression
+func get_enemy_hp_multiplier() -> float:
+	match current_position:
+		0: return 1.0    # Battle 1: 300 HP (100%)
+		1: return 1.5    # Battle 2: 450 HP (150%) 
+		2: return 2.0    # Battle 3: 600 HP (200%)
+		_: return 2.0 + (current_position - 2) * 0.5  # Battle 4+: +50% each
+
+func get_enemy_damage_multiplier() -> float:
+	match current_position:
+		0: return 1.0    # Battle 1: baseline damage (100%)
+		1: return 1.5    # Battle 2: +50% damage (150%)
+		2: return 2.0    # Battle 3: +100% damage (200%)
+		_: return 2.0 + (current_position - 2) * 0.5  # Battle 4+: +50% each
+
+func get_current_battle_number() -> int:
+	return current_position + 1  # Convert 0-indexed to 1-indexed for display
 
 # Reset for new game
 func reset_progress():
@@ -169,4 +225,5 @@ func reset_progress():
 	selected_path = ""
 	party_inventory = {"hp_potion": 2, "resolve_potion": 2}
 	active_buffs = {"power_boost": false, "quick_reflexes": false, "iron_will": false}
+	coins_changed.emit(player_coins)  # Emit signal for UI update
 	print("PROGRESS→ Progress reset to start")
