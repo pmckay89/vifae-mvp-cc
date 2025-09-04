@@ -827,8 +827,31 @@ func start_qte():
 		
 		# Player offense - STANDARDIZED SYSTEM for all characters
 		if selected_action == "attack":
-			# Use AnimationBridge system for Player2, old system for others
-			if current_actor.name == "Player2":
+			# Use AnimationBridge system for both players
+			if current_actor.name == "Player1":
+				print("🥷 Using AnimationBridge system for Player1 basic attack")
+				# Step 1: Spawn animation and play windup
+				var animation_instance = AnimationBridge.spawn_ability_animation("basic_attack_p1", Vector2.ZERO, current_actor)
+				if animation_instance:
+					AnimationBridge.play_windup_animation("basic_attack_p1")
+					await AnimationBridge.animation_ready_for_qte
+					
+					# Step 2: QTE during windup
+					if selection_description:
+						selection_description.hide_description()
+					qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!", current_actor)
+					
+					# Play sound effect immediately after QTE success
+					_play_attack_sound_effect(qte_result, current_actor)
+					
+					# Step 3: Play result animation based on QTE result
+					AnimationBridge.play_result_animation("basic_attack_p1", qte_result)
+					await AnimationBridge.animation_sequence_complete
+					print("🥷 Player1 AnimationBridge attack sequence complete")
+				else:
+					print("❌ Failed to spawn Player1 basic attack animation")
+					qte_result = "fail"
+			elif current_actor.name == "Player2":
 				print("🔫 Using AnimationBridge system for Player2 basic attack")
 				# Step 1: Spawn animation and play windup
 				var animation_instance = AnimationBridge.spawn_ability_animation("basic_attack", Vector2.ZERO, current_actor)
@@ -851,7 +874,7 @@ func start_qte():
 				else:
 					print("❌ Failed to spawn Player2 basic attack animation")
 					qte_result = "fail"
-			# Universal pattern for other players: windup → QTE → finish sequence
+			# Fallback for any other players using old system
 			elif current_actor.has_method("start_attack_windup") and current_actor.has_method("finish_attack_sequence"):
 				# Step 1: Play windup animation
 				await current_actor.start_attack_windup()

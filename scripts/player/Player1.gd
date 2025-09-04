@@ -11,8 +11,8 @@ func _ready():
 	rng.randomize()
 	add_to_group("players")
 	
-	# Hide main sprite - only use idle animation for breathing
-	$Sprite2D.visible = false
+	# Hide main sprite - using idle_p1 animation through AnimationBridge now
+	# $Sprite2D.visible = false  # COMMENTED OUT - AnimationBridge handles this now
 	
 	ScreenShake.shake(5.0, 0.3)
 

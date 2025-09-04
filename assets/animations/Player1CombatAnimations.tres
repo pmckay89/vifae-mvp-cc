@@ -1,11 +1,10 @@
-[gd_resource type="SpriteFrames" load_steps=53 format=3 uid="uid://ck2k8v0ckgny"]
+[gd_resource type="SpriteFrames" load_steps=52 format=3 uid="uid://ck2k8v0ckgny"]
 
 [ext_resource type="Texture2D" uid="uid://2xfm8s1l2gne" path="res://assets/animations/uppercut3.png" id="1_uppercut"]
 [ext_resource type="Texture2D" uid="uid://c0yn7po8dhux0" path="res://assets/animations/walkingp3.png" id="2_walking"]
 [ext_resource type="Texture2D" uid="uid://bbpmvf25s1mo1" path="res://assets/animations/ninja_attackwindup.png" id="3_attackwindup"]
 [ext_resource type="Texture2D" uid="uid://k0kk5b4ij74g" path="res://assets/animations/ninja_attack.png" id="4_attack"]
 [ext_resource type="Texture2D" uid="uid://2xnrdf4v3ach" path="res://assets/animations/ninja_jumpback.png" id="5_jumpback"]
-[ext_resource type="Texture2D" uid="uid://da0h8siqhwipv" path="res://assets/animations/ninja_2xwindup.png" id="6_2xwindup"]
 [ext_resource type="Texture2D" uid="uid://b8bd2udfvi8uv" path="res://assets/animations/ninja_2x.png" id="7_2x"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2x_1"]
@@ -49,31 +48,24 @@ atlas = ExtResource("7_2x")
 region = Rect2(1134, 0, 126, 126)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2xwindup_1"]
-atlas = ExtResource("6_2xwindup")
 region = Rect2(0, 0, 126, 126)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2xwindup_2"]
-atlas = ExtResource("6_2xwindup")
 region = Rect2(126, 0, 126, 126)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2xwindup_3"]
-atlas = ExtResource("6_2xwindup")
 region = Rect2(252, 0, 126, 126)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2xwindup_4"]
-atlas = ExtResource("6_2xwindup")
 region = Rect2(378, 0, 126, 126)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2xwindup_5"]
-atlas = ExtResource("6_2xwindup")
 region = Rect2(504, 0, 126, 126)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2xwindup_6"]
-atlas = ExtResource("6_2xwindup")
 region = Rect2(630, 0, 126, 126)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2xwindup_7"]
-atlas = ExtResource("6_2xwindup")
 region = Rect2(756, 0, 126, 126)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_attack_1"]

@@ -44,6 +44,15 @@ var animation_library = {
 		"success_animation": "attack_finish", 
 		"fail_animation": "hitstun",
 		"spawn_offset": Vector2(0, 0) # Offset from player position
+	},
+	"basic_attack_p1": {
+		"scene_path": "res://testing animations.tscn",
+		"controller_node_path": "HeroRoot/Hero", # The AnimatedSprite2D to control
+		"animation_player_path": "HeroRoot/Hero/AnimationPlayer", # The AnimationPlayer
+		"windup_animation": "attack_windup_p1",
+		"success_animation": "attack_finish_p1", 
+		"fail_animation": "hitstun",
+		"spawn_offset": Vector2(-200, 0) # Left side positioning
 	}
 }
 
@@ -95,11 +104,20 @@ func spawn_ability_animation(ability_name: String, spawn_position: Vector2, play
 	print("🔍 [AnimationBridge] Scene tree structure:")
 	_debug_print_children(animation_instance, "", 0)
 	
-	# Hide player's idle animation during grenade attack
-	var player_idle_sprite = player_node.get_node_or_null("IdleAnimatedSprite")
-	if player_idle_sprite:
-		player_idle_sprite.visible = false
-		print("🎬 [AnimationBridge] Hidden player idle animation")
+	# Hide player's idle animation during attack
+	var player_idle_sprite = null
+	if ability_name == "basic_attack_p1":
+		# For Player1 basic attack, hide the idle sprite in Player1.tscn
+		player_idle_sprite = player_node.get_node_or_null("idle")
+		if player_idle_sprite:
+			player_idle_sprite.visible = false
+			print("🎬 [AnimationBridge] Hidden Player1 idle animation")
+	else:
+		# For other abilities, look for standard idle sprite
+		player_idle_sprite = player_node.get_node_or_null("IdleAnimatedSprite")
+		if player_idle_sprite:
+			player_idle_sprite.visible = false
+			print("🎬 [AnimationBridge] Hidden player idle animation")
 	
 	# Store reference
 	active_animations[ability_name] = {
@@ -190,6 +208,17 @@ func play_result_animation(ability_name: String, qte_result: String):
 	# Wait for result animation to finish
 	await animation_player.animation_finished
 	print("🎬 [AnimationBridge] Result animation complete")
+	
+	# Return to appropriate idle animation
+	if ability_name == "basic_attack_p1":
+		# Player1 returns to idle_p1 animation
+		animation_player.play("idle_p1")
+		print("🎬 [AnimationBridge] Player1 returning to idle_p1")
+	elif ability_name == "basic_attack":
+		# Player2 returns to appropriate idle - check if idle animation exists
+		if animation_player.has_animation("idle"):
+			animation_player.play("idle")
+			print("🎬 [AnimationBridge] Player2 returning to idle")
 	
 	# Clean up
 	cleanup_animation(ability_name)

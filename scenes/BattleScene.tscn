@@ -52,7 +52,7 @@ texture = ExtResource("1_irk3j")
 script = ExtResource("1_ftvu5")
 
 [node name="Player1" parent="." instance=ExtResource("2_0yex5")]
-position = Vector2(134, 233)
+position = Vector2(77, 233)
 
 [node name="Player2" parent="." instance=ExtResource("3_bsu3s")]
 position = Vector2(121, 389)
@@ -63,6 +63,7 @@ position = Vector2(939, 199)
 [node name="UILayer" type="CanvasLayer" parent="."]
 
 [node name="CoinDisplay" type="HBoxContainer" parent="UILayer"]
+visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -157,6 +158,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="QTEContainer" type="Control" parent="UILayer"]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -335,14 +337,12 @@ offset_right = 815.0
 offset_bottom = 561.0
 
 [node name="HPPotionButton" type="Button" parent="UILayer/ItemsMenu"]
-visible = false
 layout_mode = 0
 offset_right = 165.0
 offset_bottom = 40.0
 text = "HP Potion"
 
 [node name="ResolvePotionButton" type="Button" parent="UILayer/ItemsMenu"]
-visible = false
 layout_mode = 0
 offset_top = 45.0
 offset_right = 165.0
