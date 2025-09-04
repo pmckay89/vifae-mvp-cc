@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://da0h8siqhwipv"
-path="res://.godot/imported/ninja_2xwindup.png-357307f957dd6668bb7ddcf82692233a.ctex"
+uid="uid://cy38fgmo5meuh"
+path="res://.godot/imported/resolve.png-5c4c89f09774ae4b620d82ff4dca8924.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/animations/ninja_2xwindup.png"
-dest_files=["res://.godot/imported/ninja_2xwindup.png-357307f957dd6668bb7ddcf82692233a.ctex"]
+source_file="res://assets/ui/resolve.png"
+dest_files=["res://.godot/imported/resolve.png-5c4c89f09774ae4b620d82ff4dca8924.ctex"]
 
 [params]
 

@@ -1,0 +1,116 @@
+[gd_scene load_steps=19 format=3 uid="uid://b55wbmfbve30-player1"]
+
+[ext_resource type="Texture2D" uid="uid://cwr4rn6e6cl4r" path="res://assets/animations/individual pngs/vifae-idle00.png" id="1_idle00"]
+[ext_resource type="Texture2D" uid="uid://dy38cvt3istbt" path="res://assets/animations/individual pngs/vifae-idle01.png" id="2_idle01"]
+[ext_resource type="Texture2D" uid="uid://bm1v1jypv2ts1" path="res://assets/animations/individual pngs/vifae-idle02.png" id="3_idle02"]
+[ext_resource type="Texture2D" uid="uid://c4irisncbgrks" path="res://assets/animations/individual pngs/vifae-idle03.png" id="4_idle03"]
+[ext_resource type="Texture2D" uid="uid://bov1f4c3fokio" path="res://assets/animations/individual pngs/Vifae_atk_f1.png" id="5_atk_f1"]
+[ext_resource type="Texture2D" uid="uid://b72q82nvok226" path="res://assets/animations/individual pngs/Vifae_atk_f2.png" id="6_atk_f2"]
+[ext_resource type="Texture2D" uid="uid://dkgwjqlp1t63m" path="res://assets/animations/individual pngs/Vifae_atk_f3.png" id="7_atk_f3"]
+[ext_resource type="Texture2D" uid="uid://d1xbbqywtfudk" path="res://assets/animations/individual pngs/Vifae_atk_f4.png" id="8_atk_f4"]
+[ext_resource type="Texture2D" uid="uid://dri8n161o40jr" path="res://assets/animations/individual pngs/Vifae_atk_f5.png" id="9_atk_f5"]
+[ext_resource type="Texture2D" uid="uid://djvka3jnqxq2l" path="res://assets/animations/individual pngs/Vifae_atk_w1.png" id="10_atk_w1"]
+[ext_resource type="Texture2D" uid="uid://bsdvpim4ayhun" path="res://assets/animations/individual pngs/Vifae_atk_w2.png" id="11_atk_w2"]
+[ext_resource type="Texture2D" uid="uid://dx51ucdp85y5c" path="res://assets/animations/individual pngs/Vifae_atk_w3.png" id="12_atk_w3"]
+[ext_resource type="Texture2D" uid="uid://15a4gai4rvok" path="res://assets/animations/individual pngs/Vifae_hitstun1.png" id="13_hitstun1"]
+[ext_resource type="Texture2D" uid="uid://bg1l3gor20jso" path="res://assets/animations/individual pngs/Vifae_hitstun2.png" id="14_hitstun2"]
+[ext_resource type="Texture2D" uid="uid://ylbfp84yj073" path="res://assets/animations/individual pngs/Vifae_hitstun3.png" id="15_hitstun3"]
+[ext_resource type="Texture2D" uid="uid://bx0f63otqvyno" path="res://assets/animations/individual pngs/Vifae_hitstun4.png" id="16_hitstun4"]
+[ext_resource type="Texture2D" uid="uid://fue27vlf5k3p" path="res://assets/animations/individual pngs/Vifae_hitstun5.png" id="17_hitstun5"]
+[ext_resource type="Texture2D" uid="uid://bjx53h0rkioll" path="res://assets/animations/individual pngs/Vifae_hitstun6.png" id="18_hitstun6"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_idle"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_idle00")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_idle01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_idle02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_idle03")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("5_atk_f1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_atk_f2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_atk_f3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_atk_f4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_atk_f5")
+}],
+"loop": false,
+"name": &"attack_finish",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("10_atk_w1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_atk_w2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_atk_w3")
+}],
+"loop": false,
+"name": &"attack_windup",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("13_hitstun1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_hitstun2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_hitstun3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_hitstun4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_hitstun5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_hitstun6")
+}],
+"loop": true,
+"name": &"hitstun",
+"speed": 8.0
+}]
+
+[node name="Node2D" type="Node2D"]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(576, 324)
+
+[node name="HeroRoot" type="Node2D" parent="."]
+position = Vector2(85, 464)
+scale = Vector2(1.08, 1)
+
+[node name="Hero" type="AnimatedSprite2D" parent="HeroRoot"]
+position = Vector2(121, 36)
+scale = Vector2(1.79167, 1.79167)
+sprite_frames = SubResource("SpriteFrames_idle")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="SFXPlayer" type="AudioStreamPlayer2D" parent="HeroRoot/Hero"]
+volume_db = 6.506

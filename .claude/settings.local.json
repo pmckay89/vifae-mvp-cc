@@ -17,7 +17,11 @@
       "Bash(sed:*)",
       "Bash(\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.exe\" --headless)",
       "Bash(\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.exe\" --headless --quit-after 2)",
-      "Bash(\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.exe\" --headless --quit-after 2)"
+      "Bash(\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.exe\" --headless --quit-after 2)",
+      "Read(/C:\\Users\\yow_g\\Documents\\vifae mvp\\vifae-mvp-cc\\scripts\\managers/**)",
+      "Read(/C:\\Users\\yow_g\\Documents\\vifae mvp\\vifae-mvp-cc/**)",
+      "Read(/C:\\Users\\yow_g\\Documents\\vifae mvp\\vifae-mvp-cc/**)",
+      "Read(/C:\\Users\\yow_g\\Documents\\vifae mvp\\vifae-mvp-cc/**)"
     ],
     "deny": [],
     "ask": [],

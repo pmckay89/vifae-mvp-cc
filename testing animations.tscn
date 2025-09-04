@@ -1,4 +1,4 @@
-[gd_scene load_steps=105 format=3 uid="uid://b55wbmfbve30"]
+[gd_scene load_steps=111 format=3 uid="uid://b55wbmfbve30"]
 
 [ext_resource type="Texture2D" uid="uid://h62ecpojvn1h" path="res://assets/characters/enemy-XT.png" id="1_84ipl"]
 [ext_resource type="Texture2D" uid="uid://cwr4rn6e6cl4r" path="res://assets/animations/individual pngs/vifae-idle00.png" id="2_8k0kx"]
@@ -35,6 +35,7 @@
 [ext_resource type="Texture2D" uid="uid://cow503nhcvg0k" path="res://assets/animations/individual pngs/Vifae_throw4.png" id="15_jk2j7"]
 [ext_resource type="Texture2D" uid="uid://bvl4mgp00fsuo" path="res://assets/animations/individual pngs/Vifae_throw5.png" id="16_mqsde"]
 [ext_resource type="Texture2D" uid="uid://d37uieoyssu64" path="res://assets/animations/individual pngs/Vifae_kick1.png" id="16_qydkt"]
+[ext_resource type="Texture2D" uid="uid://bbpmvf25s1mo1" path="res://assets/animations/ninja_attackwindup.png" id="16_wl5n0"]
 [ext_resource type="Texture2D" uid="uid://c1ybw8g22oqnm" path="res://assets/animations/individual pngs/Vifae_kick2.png" id="17_l3pi7"]
 [ext_resource type="Texture2D" uid="uid://emdpwxnubhnv" path="res://assets/animations/individual pngs/Vifae_throw6.png" id="17_wseta"]
 [ext_resource type="Texture2D" uid="uid://r4kmqynjqj7g" path="res://assets/animations/individual pngs/Vifae_kick3.png" id="18_6ud4g"]
@@ -135,6 +136,22 @@ animations = [{
 "speed": 5.0
 }]
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_oiab6"]
+atlas = ExtResource("16_wl5n0")
+region = Rect2(0, 0, 126, 126)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_t5bq5"]
+atlas = ExtResource("16_wl5n0")
+region = Rect2(126, 0, 126, 126)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s1ybc"]
+atlas = ExtResource("16_wl5n0")
+region = Rect2(252, 0, 126, 126)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_06gww"]
+atlas = ExtResource("16_wl5n0")
+region = Rect2(378, 0, 126, 126)
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_j41j0"]
 animations = [{
 "frames": [{
@@ -169,6 +186,23 @@ animations = [{
 }],
 "loop": false,
 "name": &"attack_windup",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_oiab6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_t5bq5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s1ybc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_06gww")
+}],
+"loop": true,
+"name": &"attack_windup_p1",
 "speed": 5.0
 }, {
 "frames": [{
@@ -1231,11 +1265,52 @@ tracks/0/keys = {
 "values": [&"idle", &"idle", &"idle", &"idle", &"run"]
 }
 
+[sub_resource type="Animation" id="Animation_p6fbl"]
+resource_name = "attack_windup_p1"
+step = 0.0833333
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("HeroRoot/Hero:animation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(),
+"transitions": PackedFloat32Array(),
+"update": 1,
+"values": []
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("HeroRoot/Hero:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(),
+"transitions": PackedFloat32Array(),
+"update": 1,
+"values": []
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("HeroRoot/Hero:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(),
+"transitions": PackedFloat32Array(),
+"update": 0,
+"values": []
+}
+
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_racpi"]
 _data = {
 &"RESET": SubResource("Animation_qevt4"),
 &"attack_finish": SubResource("Animation_yepev"),
 &"attack_windup": SubResource("Animation_hfxt2"),
+&"attack_windup_p1": SubResource("Animation_p6fbl"),
 &"bullet rain": SubResource("Animation_7niih"),
 &"drink": SubResource("Animation_fov7j"),
 &"explosion": SubResource("Animation_lteku"),
