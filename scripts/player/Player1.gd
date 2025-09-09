@@ -288,7 +288,7 @@ func reset_for_new_combat():
 	print("RESET→ " + name + " fully restored")
 
 func get_ability_list() -> Array:
-	return ["2x_cut", "moonfall_slash", "spirit_wave", "uppercut"]
+	return ["2x_cut", "moonfall_slash", "spirit_wave", "whirlwind"]
 
 func get_ability_display_name(ability_name: String) -> String:
 	match ability_name:
@@ -298,8 +298,8 @@ func get_ability_display_name(ability_name: String) -> String:
 			return "Moonfall Slash"
 		"spirit_wave":
 			return "Spirit Wave"
-		"uppercut":
-			return "Uppercut"
+		"whirlwind":
+			return "Whirlwind"
 		_:
 			return ability_name
 
@@ -313,6 +313,9 @@ func execute_ability(ability_name: String, target):
 	# Handle special abilities with custom animations (new contract: return damage info)
 	if ability_name == "2x_cut":
 		var result = await execute_2x_cut_dual_qte(target)
+		return result
+	elif ability_name == "whirlwind":
+		var result = await execute_whirlwind_sequence(target)
 		return result
 	elif ability_name == "uppercut":
 		await execute_uppercut_sequence(target)
@@ -382,6 +385,43 @@ func execute_2x_cut_dual_qte(target):
 	return {
 		"damage": total_damage,
 		"qte_results": [result1, result2],
+		"success": total_damage > 0
+	}
+
+func execute_whirlwind_sequence(target):
+	print("🌪️ " + name + " begins Whirlwind sequence via AnimationBridge!")
+	
+	# Step 1: Spawn animation and play windup
+	var animation_instance = AnimationBridge.spawn_ability_animation("whirlwind", Vector2.ZERO, self)
+	if not animation_instance:
+		print("❌ Failed to spawn whirlwind animation")
+		return {"damage": 0, "qte_result": "fail"}
+	
+	AnimationBridge.play_windup_animation("whirlwind")
+	await AnimationBridge.animation_ready_for_qte
+	
+	# Step 2: Single QTE (basic attack QTE)  
+	print("🌪️ Whirlwind strike incoming...")
+	var result = await QTEManager.start_qte("confirm attack", 600, "Press Z to unleash!")
+	
+	# Play sound effect for QTE result
+	_play_whirlwind_sound_effect(result)
+	
+	# Step 3: Play result animation
+	AnimationBridge.play_result_animation("whirlwind", result)
+	await AnimationBridge.animation_sequence_complete
+	
+	# Step 4: Calculate damage based on QTE result and SkillsRegistry
+	var total_damage = 0
+	if result in ["crit", "normal"]:
+		total_damage = 30 if result == "crit" else 25  # Crit gets 1.5x multiplier from base 25
+	
+	print("🌪️ Whirlwind complete - returning damage info: ", total_damage)
+	
+	# Return damage info for TurnManager to apply consistently
+	return {
+		"damage": total_damage,
+		"qte_result": result,
 		"success": total_damage > 0
 	}
 
@@ -684,6 +724,23 @@ func on_qte_result(result: String, target):
 
 # Sound effect helper for 2x_cut modular system
 func _play_2x_cut_sound_effect(qte_result: String):
+	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+	if not sfx_player:
+		return
+		
+	match qte_result:
+		"crit":
+			sfx_player.stream = preload("res://assets/sfx/crit.wav")
+			sfx_player.play()
+		"normal":
+			sfx_player.stream = preload("res://assets/sfx/attack.wav")
+			sfx_player.play()
+		"fail":
+			sfx_player.stream = preload("res://assets/sfx/miss.wav")
+			sfx_player.play()
+
+# Sound effect helper for whirlwind modular system
+func _play_whirlwind_sound_effect(qte_result: String):
 	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
 	if not sfx_player:
 		return

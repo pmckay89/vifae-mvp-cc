@@ -61,7 +61,18 @@ var animation_library = {
 		"windup_animation": "2x_windup",
 		"success_animation": "2x_finish", 
 		"fail_animation": "idle_p1", # Return to idle on fail
-		"spawn_offset": Vector2(-200, 0) # Left side positioning
+		"spawn_offset": Vector2(-200, 0), # Left side positioning
+		"sprite_scale": Vector2(2.25, 2.25) # Custom scale for this ability
+	},
+	"whirlwind": {
+		"scene_path": "res://testing animations.tscn",
+		"controller_node_path": "HeroRoot/Hero", # The AnimatedSprite2D to control
+		"animation_player_path": "HeroRoot/Hero/AnimationPlayer", # The AnimationPlayer
+		"windup_animation": "ninja_ww_windup",
+		"success_animation": "ninja_ww_attack", 
+		"fail_animation": "idle_p1", # Return to idle on fail
+		"spawn_offset": Vector2(-200, 0), # Left side positioning
+		"sprite_scale": Vector2(2.25, 2.25) # Custom scale for this ability
 	}
 }
 
@@ -97,6 +108,13 @@ func spawn_ability_animation(ability_name: String, spawn_position: Vector2, play
 	if hero_root:
 		print("🎬 [AnimationBridge] Using original HeroRoot position: ", hero_root.position)
 	
+	# Apply custom sprite scale if specified
+	if config.has("sprite_scale"):
+		var hero_sprite = animation_instance.get_node_or_null(config.controller_node_path)
+		if hero_sprite:
+			hero_sprite.scale = config.sprite_scale
+			print("🎬 [AnimationBridge] Applied custom scale: ", config.sprite_scale)
+	
 	# Hide the camera and enemy dummy from the testing scene
 	var camera = animation_instance.get_node_or_null("Camera2D")
 	if camera:
@@ -113,27 +131,18 @@ func spawn_ability_animation(ability_name: String, spawn_position: Vector2, play
 	print("🔍 [AnimationBridge] Scene tree structure:")
 	_debug_print_children(animation_instance, "", 0)
 	
-	# Hide player's idle animation during attack
-	var player_idle_sprite = null
-	if ability_name == "basic_attack_p1":
-		# For Player1 basic attack, hide the idle sprite in Player1.tscn
-		player_idle_sprite = player_node.get_node_or_null("idle")
-		if player_idle_sprite:
-			player_idle_sprite.visible = false
-			print("🎬 [AnimationBridge] Hidden Player1 idle animation")
-	else:
-		# For other abilities, look for standard idle sprite
-		player_idle_sprite = player_node.get_node_or_null("IdleAnimatedSprite")
-		if player_idle_sprite:
-			player_idle_sprite.visible = false
-			print("🎬 [AnimationBridge] Hidden player idle animation")
+	# Hide player's idle animation during attack (universal system)
+	var player_idle_sprites = []
+	if not config.get("skip_idle_hiding", false):
+		player_idle_sprites = hide_player_idle_sprites(player_node)
+		print("🎬 [AnimationBridge] Hidden ", player_idle_sprites.size(), " idle sprite(s)")
 	
 	# Store reference
 	active_animations[ability_name] = {
 		"instance": animation_instance,
 		"config": config,
 		"player_node": player_node,
-		"player_idle_sprite": player_idle_sprite
+		"player_idle_sprites": player_idle_sprites
 	}
 	
 	return animation_instance
@@ -241,10 +250,13 @@ func cleanup_animation(ability_name: String):
 	
 	var anim_data = active_animations.get(ability_name)
 	if anim_data:
-		# Restore player idle animation
-		if anim_data.get("player_idle_sprite") and anim_data.player_idle_sprite:
-			anim_data.player_idle_sprite.visible = true
-			print("🎬 [AnimationBridge] Restored player idle animation")
+		# Restore player idle animations
+		var idle_sprites = anim_data.get("player_idle_sprites", [])
+		for sprite in idle_sprites:
+			if sprite and is_instance_valid(sprite):
+				sprite.visible = true
+		if idle_sprites.size() > 0:
+			print("🎬 [AnimationBridge] Restored ", idle_sprites.size(), " idle sprite(s)")
 		
 		# Clean up animation instance
 		if anim_data.instance:
@@ -257,6 +269,22 @@ func cleanup_animation(ability_name: String):
 func register_ability_animation(ability_name: String, config: Dictionary):
 	animation_library[ability_name] = config
 	print("🎬 [AnimationBridge] Registered animation for: ", ability_name)
+
+# Universal idle sprite hiding system
+func hide_player_idle_sprites(player_node: Node2D) -> Array:
+	var hidden_sprites = []
+	
+	# Common idle sprite node names to check
+	var idle_node_names = ["idle", "IdleAnimatedSprite", "Idle", "idle_sprite"]
+	
+	for node_name in idle_node_names:
+		var idle_sprite = player_node.get_node_or_null(node_name)
+		if idle_sprite and idle_sprite.visible:
+			idle_sprite.visible = false
+			hidden_sprites.append(idle_sprite)
+			print("🎬 [AnimationBridge] Hidden idle sprite: ", node_name)
+	
+	return hidden_sprites
 
 # Debug helper to print scene tree
 func _debug_print_children(node: Node, prefix: String, depth: int):
