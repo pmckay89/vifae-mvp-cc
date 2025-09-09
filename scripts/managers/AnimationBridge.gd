@@ -53,6 +53,15 @@ var animation_library = {
 		"success_animation": "attack_finish_p1", 
 		"fail_animation": "hitstun",
 		"spawn_offset": Vector2(-200, 0) # Left side positioning
+	},
+	"2x_cut": {
+		"scene_path": "res://testing animations.tscn",
+		"controller_node_path": "HeroRoot/Hero", # The AnimatedSprite2D to control
+		"animation_player_path": "HeroRoot/Hero/AnimationPlayer", # The AnimationPlayer
+		"windup_animation": "2x_windup",
+		"success_animation": "2x_finish", 
+		"fail_animation": "idle_p1", # Return to idle on fail
+		"spawn_offset": Vector2(-200, 0) # Left side positioning
 	}
 }
 
@@ -161,6 +170,9 @@ func play_windup_animation(ability_name: String):
 		print("🎬 [AnimationBridge] Hero sprite scale: ", hero_sprite.scale)
 		print("🎬 [AnimationBridge] Hero sprite visible: ", hero_sprite.visible)
 	
+	# Debug AnimationPlayer animations
+	print("🎬 [AnimationBridge] AnimationPlayer available animations: ", animation_player.get_animation_list())
+	
 	# Play windup animation
 	animation_player.play(config.windup_animation)
 	print("🎬 [AnimationBridge] Playing: ", config.windup_animation)
@@ -210,7 +222,7 @@ func play_result_animation(ability_name: String, qte_result: String):
 	print("🎬 [AnimationBridge] Result animation complete")
 	
 	# Return to appropriate idle animation
-	if ability_name == "basic_attack_p1":
+	if ability_name == "basic_attack_p1" or ability_name == "2x_cut":
 		# Player1 returns to idle_p1 animation
 		animation_player.play("idle_p1")
 		print("🎬 [AnimationBridge] Player1 returning to idle_p1")

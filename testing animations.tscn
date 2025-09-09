@@ -1,4 +1,4 @@
-[gd_scene load_steps=139 format=3 uid="uid://b55wbmfbve30"]
+[gd_scene load_steps=167 format=3 uid="uid://b55wbmfbve30"]
 
 [ext_resource type="Texture2D" uid="uid://h62ecpojvn1h" path="res://assets/characters/enemy-XT.png" id="1_84ipl"]
 [ext_resource type="Texture2D" uid="uid://cwr4rn6e6cl4r" path="res://assets/animations/individual pngs/vifae-idle00.png" id="2_8k0kx"]
@@ -16,47 +16,73 @@
 [ext_resource type="Texture2D" uid="uid://ddldhar40xtwc" path="res://assets/animations/individual pngs/vifae-run02.png" id="8_13bab"]
 [ext_resource type="Texture2D" uid="uid://bov1f4c3fokio" path="res://assets/animations/individual pngs/Vifae_atk_f1.png" id="8_51d2m"]
 [ext_resource type="Texture2D" uid="uid://ylbfp84yj073" path="res://assets/animations/individual pngs/Vifae_hitstun3.png" id="8_ec6wc"]
+[ext_resource type="Texture2D" uid="uid://bfcniva8h8g1b" path="res://assets/animations/individual pngs/ninja_tele1.png" id="8_qjf6u"]
+[ext_resource type="Texture2D" uid="uid://ci1xviec7ic0v" path="res://assets/animations/individual pngs/ninja_tele2.png" id="9_8l34w"]
 [ext_resource type="Texture2D" uid="uid://bx0f63otqvyno" path="res://assets/animations/individual pngs/Vifae_hitstun4.png" id="9_ov8xa"]
 [ext_resource type="Texture2D" uid="uid://bm73rxafjkory" path="res://assets/animations/individual pngs/vifae-run03.png" id="9_uajox"]
 [ext_resource type="Texture2D" uid="uid://b72q82nvok226" path="res://assets/animations/individual pngs/Vifae_atk_f2.png" id="9_wl5n0"]
 [ext_resource type="Texture2D" uid="uid://dkgwjqlp1t63m" path="res://assets/animations/individual pngs/Vifae_atk_f3.png" id="10_oiab6"]
 [ext_resource type="Texture2D" uid="uid://mmmcpme0736y" path="res://assets/animations/individual pngs/vifae-run04.png" id="10_qveeu"]
 [ext_resource type="Texture2D" uid="uid://fue27vlf5k3p" path="res://assets/animations/individual pngs/Vifae_hitstun5.png" id="10_swtcx"]
+[ext_resource type="Texture2D" uid="uid://bc5rhtywq0gyn" path="res://assets/animations/individual pngs/ninja_tele3.png" id="10_x2f17"]
 [ext_resource type="Texture2D" uid="uid://bjx53h0rkioll" path="res://assets/animations/individual pngs/Vifae_hitstun6.png" id="11_bsygo"]
 [ext_resource type="Texture2D" uid="uid://cwhb3yk538m4j" path="res://assets/animations/individual pngs/vifae-run05.png" id="11_coxcj"]
+[ext_resource type="Texture2D" uid="uid://bof3xk62p04ms" path="res://assets/animations/individual pngs/ninja_2x_windup1.png" id="11_pkvvc"]
 [ext_resource type="Texture2D" uid="uid://1retv1r3a0xi" path="res://assets/animations/individual pngs/Vifae_atk_f4.png" id="11_t5bq5"]
 [ext_resource type="Texture2D" uid="uid://b43pwxoujai2i" path="res://assets/animations/individual pngs/Vifae_throw1.png" id="12_d2rb4"]
+[ext_resource type="Texture2D" uid="uid://cp8iykxn3okjc" path="res://assets/animations/individual pngs/ninja_2x_windup2.png" id="12_j25xf"]
 [ext_resource type="Texture2D" uid="uid://dri8n161o40jr" path="res://assets/animations/individual pngs/Vifae_atk_f5.png" id="12_s1ybc"]
 [ext_resource type="Texture2D" uid="uid://djvka3jnqxq2l" path="res://assets/animations/individual pngs/Vifae_atk_w1.png" id="13_06gww"]
+[ext_resource type="Texture2D" uid="uid://mj4sri7ej1fe" path="res://assets/animations/individual pngs/ninja_2x_windup3.png" id="13_bllib"]
 [ext_resource type="Texture2D" uid="uid://cj788nlurrf6a" path="res://assets/animations/individual pngs/Vifae_throw2.png" id="13_m3rx5"]
 [ext_resource type="Texture2D" uid="uid://k0kk5b4ij74g" path="res://assets/animations/ninja_attack.png" id="13_s1ybc"]
 [ext_resource type="Texture2D" uid="uid://2xnrdf4v3ach" path="res://assets/animations/ninja_jumpback.png" id="14_06gww"]
 [ext_resource type="Texture2D" uid="uid://c0qaf0shd776l" path="res://assets/animations/individual pngs/Vifae_throw3.png" id="14_6o376"]
 [ext_resource type="Texture2D" uid="uid://bsdvpim4ayhun" path="res://assets/animations/individual pngs/Vifae_atk_w2.png" id="14_p6fbl"]
+[ext_resource type="Texture2D" uid="uid://cm5hbqetvniuk" path="res://assets/animations/individual pngs/ninja_2x_windup4.png" id="14_tk42i"]
+[ext_resource type="Texture2D" uid="uid://bpyu6pnxdn3ti" path="res://assets/animations/individual pngs/ninja_2x_windup5.png" id="15_2hwmn"]
 [ext_resource type="Texture2D" uid="uid://dx51ucdp85y5c" path="res://assets/animations/individual pngs/Vifae_atk_w3.png" id="15_fpemf"]
 [ext_resource type="Texture2D" uid="uid://cow503nhcvg0k" path="res://assets/animations/individual pngs/Vifae_throw4.png" id="15_jk2j7"]
 [ext_resource type="Texture2D" uid="uid://bvl4mgp00fsuo" path="res://assets/animations/individual pngs/Vifae_throw5.png" id="16_mqsde"]
+[ext_resource type="Texture2D" uid="uid://cppf18ht73at8" path="res://assets/animations/individual pngs/ninja_2x_windup6.png" id="16_nhey6"]
 [ext_resource type="Texture2D" uid="uid://d37uieoyssu64" path="res://assets/animations/individual pngs/Vifae_kick1.png" id="16_qydkt"]
 [ext_resource type="Texture2D" uid="uid://bbpmvf25s1mo1" path="res://assets/animations/ninja_attackwindup.png" id="16_wl5n0"]
+[ext_resource type="Texture2D" uid="uid://shjq16851cmv" path="res://assets/animations/individual pngs/ninja_jumpback1.png" id="17_2hwmn"]
+[ext_resource type="Texture2D" uid="uid://iqac8fgdu4mc" path="res://assets/animations/individual pngs/ninja_2x_windup7.png" id="17_fpf1i"]
 [ext_resource type="Texture2D" uid="uid://c1ybw8g22oqnm" path="res://assets/animations/individual pngs/Vifae_kick2.png" id="17_l3pi7"]
 [ext_resource type="Texture2D" uid="uid://emdpwxnubhnv" path="res://assets/animations/individual pngs/Vifae_throw6.png" id="17_wseta"]
 [ext_resource type="Texture2D" uid="uid://r4kmqynjqj7g" path="res://assets/animations/individual pngs/Vifae_kick3.png" id="18_6ud4g"]
 [ext_resource type="Texture2D" uid="uid://b0niugted5mqr" path="res://assets/animations/individual pngs/Vifae_throw7.png" id="18_45tey"]
+[ext_resource type="Texture2D" uid="uid://us5nm60xwxwf" path="res://assets/animations/individual pngs/ninja_2x_finish1.png" id="18_hwg2r"]
+[ext_resource type="Texture2D" uid="uid://6lr1136ugxql" path="res://assets/animations/individual pngs/ninja_jumpback2.png" id="18_nhey6"]
+[ext_resource type="Texture2D" uid="uid://b35c6ld6do38c" path="res://assets/animations/individual pngs/ninja_2x_finish2.png" id="19_1wyro"]
+[ext_resource type="Texture2D" uid="uid://cggm7ch57eylh" path="res://assets/animations/individual pngs/ninja_jumpback3.png" id="19_fpf1i"]
 [ext_resource type="Texture2D" uid="uid://drgubch1pum43" path="res://assets/animations/individual pngs/Vifae_backflip1.png" id="19_jvcih"]
 [ext_resource type="Texture2D" uid="uid://4jslr2p7co8d" path="res://assets/animations/individual pngs/Vifae_kick4.png" id="19_thh4a"]
 [ext_resource type="Texture2D" uid="uid://btrywwv1esjqc" path="res://assets/animations/individual pngs/Vifae_backflip2.png" id="20_8ipib"]
 [ext_resource type="Texture2D" uid="uid://th3yy0souim2" path="res://assets/animations/individual pngs/Vifae_kick5.png" id="20_ax48w"]
+[ext_resource type="Texture2D" uid="uid://cbrsl1s6x0j6k" path="res://assets/animations/individual pngs/ninja_2x_finish3.png" id="20_caexa"]
+[ext_resource type="Texture2D" uid="uid://dqiw0iavqjis2" path="res://assets/animations/individual pngs/ninja_jumpback4.png" id="20_hwg2r"]
+[ext_resource type="Texture2D" uid="uid://ctvpa7aj2hyvw" path="res://assets/animations/individual pngs/ninja_jumpback5.png" id="21_1wyro"]
+[ext_resource type="Texture2D" uid="uid://bjk4eojijcytj" path="res://assets/animations/individual pngs/ninja_2x_finish4.png" id="21_52y35"]
 [ext_resource type="Texture2D" uid="uid://b5ce1wu7oqfyg" path="res://assets/animations/individual pngs/Vifae_backflip3.png" id="21_bkjk3"]
 [ext_resource type="Texture2D" uid="uid://dwpt4m0reqqo8" path="res://assets/animations/individual pngs/Vifae_jab1.png" id="21_ue20i"]
+[ext_resource type="Texture2D" uid="uid://buk3i2bs3frls" path="res://assets/animations/individual pngs/ninja_2x_finish5.png" id="22_65hek"]
 [ext_resource type="Texture2D" uid="uid://vanh6j63j7k4" path="res://assets/animations/individual pngs/Vifae_backflip4.png" id="22_b7qjs"]
+[ext_resource type="Texture2D" uid="uid://bxe1vsr78sc6m" path="res://assets/animations/individual pngs/ninja_jumpback6.png" id="22_caexa"]
 [ext_resource type="Texture2D" uid="uid://csgjvxdei04tt" path="res://assets/animations/individual pngs/Vifae_jab2.png" id="22_rucd6"]
 [ext_resource type="Texture2D" uid="uid://cuggu7lw73ybi" path="res://assets/animations/individual pngs/Vifae_jab3.png" id="23_0xi0f"]
+[ext_resource type="Texture2D" uid="uid://csx1ahnq1a3vu" path="res://assets/animations/individual pngs/ninja_jumpback7.png" id="23_52y35"]
 [ext_resource type="Texture2D" uid="uid://ba2iv3bvdegip" path="res://assets/animations/individual pngs/Vifae_backflip5.png" id="23_qe48y"]
+[ext_resource type="Texture2D" uid="uid://cvmhcjda6ijoi" path="res://assets/animations/individual pngs/ninja_2x_finish6.png" id="23_vi4cq"]
 [ext_resource type="Texture2D" uid="uid://d0r0r6jcv2vn5" path="res://assets/animations/individual pngs/Vifae_backflip6.png" id="24_ah32m"]
+[ext_resource type="Texture2D" uid="uid://diel57k3xcile" path="res://assets/animations/individual pngs/ninja_2x_finish7.png" id="24_qu3mm"]
 [ext_resource type="Texture2D" uid="uid://cg10lw4xfinpn" path="res://assets/animations/individual pngs/Vifae_cross1.png" id="24_ytce2"]
 [ext_resource type="Texture2D" uid="uid://dcxn067ijms8p" path="res://assets/animations/individual pngs/Vifae_backflip7.png" id="25_2d1xl"]
 [ext_resource type="Texture2D" uid="uid://djbcy5j34wgac" path="res://assets/animations/individual pngs/Vifae_cross2.png" id="25_hcqvi"]
+[ext_resource type="Texture2D" uid="uid://cort1vthuagan" path="res://assets/animations/individual pngs/ninja_2x_finish8.png" id="25_htu5n"]
 [ext_resource type="Texture2D" uid="uid://byq3qmmxxmjj2" path="res://assets/animations/individual pngs/Vifae_backflip8.png" id="26_8e5ig"]
+[ext_resource type="Texture2D" uid="uid://cod7vjgqecoyj" path="res://assets/animations/individual pngs/ninja_2x_finish9.png" id="26_bkf8x"]
 [ext_resource type="Texture2D" uid="uid://drhxlbes6yy1l" path="res://assets/animations/individual pngs/Vifae_cross3.png" id="26_wjmqx"]
 [ext_resource type="Texture2D" uid="uid://csevmhqi1o10r" path="res://assets/animations/individual pngs/Vifae_backflip9.png" id="27_ec6wc"]
 [ext_resource type="Texture2D" uid="uid://e18u68axv5b2" path="res://assets/animations/individual pngs/Vifae_cross4.png" id="27_epb0c"]
@@ -249,6 +275,94 @@ region = Rect2(768, 0, 96, 96)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_j41j0"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("18_hwg2r")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_1wyro")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_caexa")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_52y35")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_65hek")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_vi4cq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_qu3mm")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_htu5n")
+}, {
+"duration": 1.0,
+"texture": ExtResource("26_bkf8x")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_2hwmn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_nhey6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_fpf1i")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_hwg2r")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_1wyro")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_caexa")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_52y35")
+}],
+"loop": true,
+"name": &"2x cut finish",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("8_qjf6u")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_8l34w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_x2f17")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_pkvvc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_j25xf")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_bllib")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_tk42i")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_2hwmn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_nhey6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_fpf1i")
+}],
+"loop": true,
+"name": &"2x cut windup",
+"speed": 5.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": ExtResource("8_51d2m")
@@ -1611,8 +1725,92 @@ tracks/0/keys = {
 "values": [&"idle", &"idle", &"idle", &"idle", &"run"]
 }
 
+[sub_resource type="Animation" id="Animation_rhebt"]
+resource_name = "2x_windup"
+length = 0.750008
+step = 0.0833333
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("HeroRoot/Hero:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.0957737, 0.166667, 0.25, 0.333333, 0.416667, 0.5, 0.583333, 0.666667, 0.75),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 0, 2, 3, 4, 5, 6, 7, 8, 9]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("HeroRoot/Hero:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(750, 58)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("HeroRoot/Hero:animation")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [&"2x cut windup"]
+}
+
+[sub_resource type="Animation" id="Animation_65hek"]
+resource_name = "2x_finish"
+length = 1.66668
+step = 0.0833333
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("HeroRoot/Hero:animation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [&"2x cut finish"]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("HeroRoot/Hero:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.0833333, 0.166667, 0.25, 0.333333, 0.416667, 0.5, 0.583333, 0.666667, 0.758208, 0.833333, 0.920492, 1.41266, 1.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("HeroRoot/Hero:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.843341, 1, 1.25, 1.41667),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(750, 36), Vector2(750, 36), Vector2(610.259, 10.3931), Vector2(368, -34), Vector2(105, -7.99999)]
+}
+
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_racpi"]
 _data = {
+&"2x_finish": SubResource("Animation_65hek"),
+&"2x_windup": SubResource("Animation_rhebt"),
 &"RESET": SubResource("Animation_qevt4"),
 &"attack_finish": SubResource("Animation_yepev"),
 &"attack_finish_p1": SubResource("Animation_2hwmn"),

@@ -310,84 +310,80 @@ func execute_ability(ability_name: String, target):
 	# Small delay for dramatic effect
 	await get_tree().create_timer(0.5).timeout
 	
-	# Handle special abilities with custom animations
+	# Handle special abilities with custom animations (new contract: return damage info)
 	if ability_name == "2x_cut":
-		await execute_2x_cut_dual_qte(target)
+		var result = await execute_2x_cut_dual_qte(target)
+		return result
 	elif ability_name == "uppercut":
 		await execute_uppercut_sequence(target)
+		return null  # TODO: Convert uppercut to new contract
 	else:
-		# Call QTEManager to start the QTE for this ability
+		# Call QTEManager to start the QTE for this ability (old system)
 		await QTEManager.start_qte_for_ability(self, ability_name, target)
+		return null  # Old system handles damage directly
 
 func execute_2x_cut_dual_qte(target):
-	print("⚔️ " + name + " begins ninja 2x Cut sequence!")
+	print("⚔️ " + name + " begins ninja 2x Cut sequence via AnimationBridge!")
 	
-	# Get references to animation nodes
-	var idle_animation = get_node_or_null("idle")
-	var combat_animation = get_node_or_null("CombatAnimations")
+	# Step 1: Spawn animation and play windup
+	var animation_instance = AnimationBridge.spawn_ability_animation("2x_cut", Vector2.ZERO, self)
+	if not animation_instance:
+		print("❌ Failed to spawn 2x_cut animation")
+		return {"damage": 0, "qte_results": ["fail", "fail"]}
 	
-	if not combat_animation:
-		print("❌ CombatAnimations node not found!")
-		return
+	AnimationBridge.play_windup_animation("2x_cut")
+	await AnimationBridge.animation_ready_for_qte
 	
-	# Step 1: Move sprite right toward enemy
-	var original_pos = global_position
-	var attack_pos = Vector2(original_pos.x + 80, original_pos.y)
-	
-	# Hide idle animation
-	if idle_animation:
-		idle_animation.visible = false
-	
-	# Show combat animation node and move right  
-	combat_animation.visible = true
-	var tween = create_tween()
-	tween.tween_property(self, "global_position", attack_pos, 0.3)
-	await tween.finished
-	
-	# Step 2: Play 2x wind-up animation
-	print("⚔️ 2x Wind-up phase...")
-	combat_animation.play("2xwindup")
-	await get_tree().create_timer(0.7).timeout  # 7 frames at 10 fps = 0.7 seconds
-	
-	# Step 3: First QTE
+	# Step 2: First QTE
 	print("⚔️ First strike incoming...")
 	var result1 = await QTEManager.start_qte("confirm attack", 500, "Press Z for 1st Cut!")
 	
-	# Brief pause between QTEs so player can see the second one
+	# Play sound effect for first QTE result
+	_play_2x_cut_sound_effect(result1)
+	
+	# Check if first QTE succeeded - if so, start finish animation immediately
+	var first_success = result1 in ["crit", "normal"]
+	if first_success:
+		print("⚔️ First QTE success - starting finish animation!")
+		AnimationBridge.play_result_animation("2x_cut", "normal")
+	
+	# Brief pause between QTEs
 	await get_tree().create_timer(0.3).timeout
 	
-	# Step 4: Second QTE
+	# Step 3: Second QTE (still happens even if first succeeded)
 	print("⚔️ Second strike incoming...")
 	var result2 = await QTEManager.start_qte("confirm attack", 500, "Press Z for 2nd Cut!")
 	
-	# Step 5: After both QTEs, play 2x attack animation
-	print("⚔️ Unleashing 2x Cut!")
-	combat_animation.play("2x")
-	await get_tree().create_timer(0.71).timeout
+	# Play sound effect for second QTE result
+	_play_2x_cut_sound_effect(result2)
 	
-	# Process both results
-	process_2x_cut_result(result1, target, 1)
-	process_2x_cut_result(result2, target, 2)
+	# Step 4: If first failed but second succeeded, start animation now
+	var second_success = result2 in ["crit", "normal"]
+	if not first_success and second_success:
+		print("⚔️ Second QTE success - starting finish animation!")
+		AnimationBridge.play_result_animation("2x_cut", "normal")
+	elif not first_success and not second_success:
+		print("⚔️ Both QTEs failed - returning to idle")
+		AnimationBridge.play_result_animation("2x_cut", "fail")
 	
-	# Step 6: Play jumpback animation
-	print("⚔️ Jumping back...")
-	combat_animation.play("jumpback")
-	await get_tree().create_timer(0.7).timeout
+	# Wait for animation to complete
+	await AnimationBridge.animation_sequence_complete
 	
-	# Step 7: Return to original position and restore idle
-	tween = create_tween()
-	tween.tween_property(self, "global_position", original_pos, 0.3)
-	await tween.finished
+	# Step 5: Calculate damage and return info for TurnManager to apply
+	var total_damage = 0
+	if result1 in ["crit", "normal"]:
+		total_damage += 6 if result1 == "crit" else 4  # First strike damage
+	if result2 in ["crit", "normal"]:
+		total_damage += 6 if result2 == "crit" else 4  # Second strike damage
 	
-	# Hide combat animations and restore idle breathing
-	combat_animation.visible = false
-	combat_animation.stop()
+	print("⚔️ 2x Cut complete - returning damage info: ", total_damage)
 	
-	if idle_animation:
-		idle_animation.visible = true
-		idle_animation.play("idle")
-	
-	print("⚔️ Ninja 2x Cut sequence complete!")
+	# Return damage info for TurnManager to apply consistently
+	return {
+		"damage": total_damage,
+		"qte_results": [result1, result2],
+		"success": total_damage > 0
+	}
 
 func execute_uppercut_sequence(target):
 	print("👊 " + name + " begins Uppercut sequence!")
@@ -685,3 +681,20 @@ func on_qte_result(result: String, target):
 		
 		_:
 			print("⚠️ Unknown ability: " + selected_ability)
+
+# Sound effect helper for 2x_cut modular system
+func _play_2x_cut_sound_effect(qte_result: String):
+	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+	if not sfx_player:
+		return
+		
+	match qte_result:
+		"crit":
+			sfx_player.stream = preload("res://assets/sfx/crit.wav")
+			sfx_player.play()
+		"normal":
+			sfx_player.stream = preload("res://assets/sfx/attack.wav")
+			sfx_player.play()
+		"fail":
+			sfx_player.stream = preload("res://assets/sfx/miss.wav")
+			sfx_player.play()

@@ -913,8 +913,17 @@ func start_qte():
 				var current_player_name = current_actor.name
 				spend_skill_resolve(current_player_name, selected_action)
 				
-				await current_actor.execute_ability(selected_action, selected_target)
-				qte_result = "handled"  # Flag that player handled it
+				var ability_result = await current_actor.execute_ability(selected_action, selected_target)
+				
+				# Handle new modular ability contract (returns damage info)
+				if ability_result != null and typeof(ability_result) == TYPE_DICTIONARY:
+					# New system: Player returns damage info, TurnManager applies it
+					print("🎯 [TurnManager] Ability returned damage info: ", ability_result)
+					set_meta("ability_damage_info", ability_result)
+					qte_result = "ability_damage"  # New flag for modular abilities
+				else:
+					# Old system: Player handled everything
+					qte_result = "handled"  # Flag that player handled it
 			else:
 				# Fallback
 				qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!", current_actor)
@@ -970,6 +979,28 @@ func resolve_action():
 		if qte_result == "handled":
 			# Player already handled damage through their ability system
 			print("DMG→ Player ability " + selected_action + " handled by player system")
+		elif qte_result == "ability_damage":
+			# New modular system: Player returned damage info, TurnManager applies it
+			var ability_info = get_meta("ability_damage_info", {})
+			damage = ability_info.get("damage", 0)
+			var success = ability_info.get("success", false)
+			
+			print("DMG→ Modular ability " + selected_action + " deals " + str(damage) + " damage")
+			print("DEBUG→ ability_info: ", ability_info)
+			print("DEBUG→ selected_target: ", selected_target)
+			
+			# Apply damage consistently through TurnManager
+			if damage > 0 and selected_target and selected_target.has_method("take_damage"):
+				print("DEBUG→ Applying damage to ", selected_target.name)
+				selected_target.take_damage(damage)
+				VFXManager.play_hit_effects(selected_target)
+				
+				# Award resolve for successful abilities
+				if success:
+					ResolveManager.set_resolve(current_actor.name, ResolveManager.get_resolve(current_actor.name) + 1)
+					print("RESOLVE→ " + current_actor.name + " gains +1 resolve for successful " + selected_action)
+			else:
+				print("DEBUG→ No damage applied - damage: ", damage, " target: ", selected_target)
 		elif selected_action == "attack":
 			# Only basic attack uses TurnManager damage calculation - binary result
 			match qte_result:

@@ -88,6 +88,7 @@ position = Vector2(140, 140)
 scale = Vector2(2.5, 2.5)
 sprite_frames = SubResource("SpriteFrames_der4s")
 animation = &"idle"
+frame_progress = 0.538721
 script = ExtResource("5_obn67")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
@@ -117,4 +118,4 @@ z_index = 15
 position = Vector2(141, 140)
 scale = Vector2(2.5, 2.5)
 sprite_frames = ExtResource("7_combat")
-animation = &"attack"
+animation = &"2x windup"
