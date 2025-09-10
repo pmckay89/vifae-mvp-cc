@@ -185,9 +185,17 @@ func attack(target: Node) -> void:
 func take_damage(amount: int) -> void:
 	if is_defeated:
 		return
-
-	hp = max(hp - amount, 0)
-	print(name, "takes", amount, "damage. HP:", hp)
+	
+	# Check for mark effect and apply double damage if marked
+	var final_damage = amount
+	if status_effects and status_effects.has_effect("mark") and amount > 0:
+		final_damage = amount * 2
+		print("🎯 [Enemy] Mark triggered! Damage doubled: ", amount, " → ", final_damage)
+		# Remove mark effect after it's consumed
+		status_effects.remove_effect("mark")
+	
+	hp = max(hp - final_damage, 0)
+	print(name, "takes", final_damage, "damage. HP:", hp)
 
 	# Update enemy HP bar with color gradient
 	var bar: ProgressBar = get_node_or_null("/root/BattleScene/UILayer/EnemyHUD/EnemyHPBar")
@@ -215,11 +223,11 @@ func take_damage(amount: int) -> void:
 	else:
 		push_warning("Enemy head HealthBar not found")
 
-	# Show damage popup
-	CombatUI.show_damage_popup(self, amount)
+	# Show damage popup with final damage amount
+	CombatUI.show_damage_popup(self, final_damage)
 	
 	# Show flinch animation when taking damage
-	if amount > 0:
+	if final_damage > 0:
 		show_flinch_animation()
 
 	# Check if we need to switch idle animations based on new HP

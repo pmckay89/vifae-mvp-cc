@@ -68,5 +68,29 @@ func get_skills() -> Dictionary:
 			"crit_mult": 1.5,
 			"sfx": null,
 			"vfx": "poison_strike"
+		},
+		"burn_strike": {
+			"qte": "tap",
+			"window_ms": 600,
+			"damage": 12,
+			"crit_mult": 1.7,
+			"sfx": null,
+			"vfx": "burn_effect"
+		},
+		"shield_boost": {
+			"qte": "tap",
+			"window_ms": 700,
+			"damage": 0,
+			"crit_mult": 1.5,
+			"sfx": null,
+			"vfx": "shield_effect"
+		},
+		"mark_target": {
+			"qte": "tap",
+			"window_ms": 500,
+			"damage": 5,
+			"crit_mult": 1.6,
+			"sfx": null,
+			"vfx": "mark_effect"
 		}
 	}

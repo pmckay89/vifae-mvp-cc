@@ -23,6 +23,9 @@ func apply_effect(effect_data: Dictionary):
 		# Add new effect
 		active_effects.append(effect_data.duplicate())
 		print("🧪 [StatusEffectManager] Added new effect: ", effect_type)
+		
+		# Show persistent status icon
+		CombatUI.show_status_icon(effect_type)
 	
 	_debug_print_effects()
 
@@ -47,11 +50,21 @@ func remove_effect(effect_type: String):
 		if active_effects[i].get("type") == effect_type:
 			print("🧪 [StatusEffectManager] Removed effect: ", effect_type)
 			active_effects.remove_at(i)
+			
+			# Hide persistent status icon
+			CombatUI.hide_status_icon(effect_type)
 			return
 
 # Clear all effects
 func clear_effects():
 	print("🧪 [StatusEffectManager] Cleared all effects")
+	
+	# Hide all persistent status icons
+	for effect in active_effects:
+		var effect_type = effect.get("type")
+		if effect_type:
+			CombatUI.hide_status_icon(effect_type)
+	
 	active_effects.clear()
 
 # Process turn-based effects (called by TurnManager)
@@ -70,11 +83,35 @@ func _handle_existing_effect(existing_effect: Dictionary, new_effect: Dictionary
 	var effect_type = existing_effect.get("type")
 	
 	match effect_type:
-		"poison":
-			# Poison: refresh duration, increase stacks
-			existing_effect["duration"] = new_effect.get("duration", 5)
+		# DOT effects: stack damage, refresh duration
+		"poison", "burn", "bleed":
+			existing_effect["duration"] = new_effect.get("duration", existing_effect.get("duration", 5))
 			existing_effect["stacks"] = existing_effect.get("stacks", 1) + new_effect.get("stacks", 1)
-			print("🧪 [StatusEffectManager] Poison refreshed - stacks: ", existing_effect["stacks"], " duration: ", existing_effect["duration"])
+			print("🧪 [StatusEffectManager] ", effect_type.capitalize(), " stacked - stacks: ", existing_effect["stacks"], " duration: ", existing_effect["duration"])
+		
+		# Charge-based effects: add charges
+		"damage_boost", "critical_boost", "reflect", "focus":
+			existing_effect["charges"] = existing_effect.get("charges", 1) + new_effect.get("charges", 1)
+			print("🧪 [StatusEffectManager] ", effect_type.capitalize(), " charges added - total: ", existing_effect["charges"])
+		
+		# Shield: add shield HP
+		"shield":
+			existing_effect["shield_hp"] = existing_effect.get("shield_hp", 0) + new_effect.get("shield_hp", 50)
+			print("🧪 [StatusEffectManager] Shield HP added - total: ", existing_effect["shield_hp"])
+		
+		# Duration-based effects: refresh duration, keep strongest values
+		"vulnerable", "armor_up", "stun", "confusion", "regeneration", "resolve_gain":
+			existing_effect["duration"] = new_effect.get("duration", existing_effect.get("duration", 3))
+			# Keep the stronger effect values
+			for key in new_effect.keys():
+				if key != "duration" and key != "type":
+					existing_effect[key] = max(existing_effect.get(key, 0), new_effect.get(key, 0))
+			print("🧪 [StatusEffectManager] ", effect_type.capitalize(), " refreshed - duration: ", existing_effect["duration"])
+		
+		# Mark: doesn't stack, just refresh
+		"mark":
+			print("🧪 [StatusEffectManager] Mark already active - no change")
+		
 		_:
 			# Default: refresh duration, update values
 			for key in new_effect.keys():
@@ -91,8 +128,48 @@ func _process_single_effect(effect: Dictionary, current_actor: Node, effect_inde
 		return
 	
 	match effect_type:
+		# Damage Over Time
 		"poison":
 			_process_poison_effect(effect, effect_index)
+		"burn":
+			_process_burn_effect(effect, effect_index)
+		"bleed":
+			_process_bleed_effect(effect, effect_index)
+		
+		# Damage Modifiers
+		"vulnerable":
+			_process_vulnerable_effect(effect, effect_index)
+		"damage_boost":
+			_process_damage_boost_effect(effect, effect_index)
+		"critical_boost":
+			_process_critical_boost_effect(effect, effect_index)
+		
+		# Defense/Mitigation
+		"shield":
+			_process_shield_effect(effect, effect_index)
+		"armor_up":
+			_process_armor_up_effect(effect, effect_index)
+		"reflect":
+			_process_reflect_effect(effect, effect_index)
+		
+		# Turn Control
+		"stun":
+			_process_stun_effect(effect, effect_index)
+		"confusion":
+			_process_confusion_effect(effect, effect_index)
+		"focus":
+			_process_focus_effect(effect, effect_index)
+		
+		# Healing/Recovery
+		"regeneration":
+			_process_regeneration_effect(effect, effect_index)
+		"resolve_gain":
+			_process_resolve_gain_effect(effect, effect_index)
+		
+		# Unique Effects
+		"mark":
+			_process_mark_effect(effect, effect_index)
+		
 		_:
 			print("🧪 [StatusEffectManager] Unknown effect type: ", effect_type)
 
@@ -125,6 +202,221 @@ func _process_poison_effect(effect: Dictionary, effect_index: int):
 	if effect["duration"] <= 0:
 		print("☠️ [StatusEffectManager] Poison expired")
 		active_effects.remove_at(effect_index)
+
+# Process burn DOT effect (fire-based)
+func _process_burn_effect(effect: Dictionary, effect_index: int):
+	var target = effect.get("target")
+	var stacks = effect.get("stacks", 1)
+	var damage_per_stack = effect.get("damage_per_stack", 12) # Slightly less than poison
+	var duration = effect.get("duration", 4)
+	
+	if not target or target.is_defeated:
+		active_effects.remove_at(effect_index)
+		return
+	
+	var total_damage = stacks * damage_per_stack
+	print("🔥 [StatusEffectManager] Burn deals ", total_damage, " damage (", stacks, " stacks)")
+	
+	target.take_damage(total_damage)
+	# Show burn popup visual
+	CombatUI.show_burn_popup(target, total_damage)
+	
+	effect["duration"] = duration - 1
+	if effect["duration"] <= 0:
+		print("🔥 [StatusEffectManager] Burn expired")
+		active_effects.remove_at(effect_index)
+		CombatUI.hide_status_icon("burn")
+
+# Process bleed DOT effect (physical)
+func _process_bleed_effect(effect: Dictionary, effect_index: int):
+	var target = effect.get("target")
+	var stacks = effect.get("stacks", 1)
+	var damage_per_stack = effect.get("damage_per_stack", 10) # Weakest DOT
+	var duration = effect.get("duration", 6) # But lasts longer
+	
+	if not target or target.is_defeated:
+		active_effects.remove_at(effect_index)
+		return
+	
+	var total_damage = stacks * damage_per_stack
+	print("🩸 [StatusEffectManager] Bleed deals ", total_damage, " damage (", stacks, " stacks)")
+	
+	target.take_damage(total_damage)
+	
+	# Show bleed popup visual
+	CombatUI.show_bleed_popup(target, total_damage)
+	
+	effect["duration"] = duration - 1
+	if effect["duration"] <= 0:
+		print("🩸 [StatusEffectManager] Bleed expired")
+		active_effects.remove_at(effect_index)
+
+# Process vulnerable effect (takes +50% damage)
+func _process_vulnerable_effect(effect: Dictionary, effect_index: int):
+	var duration = effect.get("duration", 3)
+	
+	# This is a passive effect - it modifies incoming damage
+	# The actual damage modification happens in take_damage() methods
+	
+	effect["duration"] = duration - 1
+	if effect["duration"] <= 0:
+		print("🎯 [StatusEffectManager] Vulnerable expired")
+		active_effects.remove_at(effect_index)
+
+# Process damage boost effect (next N attacks +100% damage)
+func _process_damage_boost_effect(effect: Dictionary, effect_index: int):
+	var charges = effect.get("charges", 3)
+	
+	# This is a passive effect - it modifies outgoing damage
+	# Charges are consumed when attacks are made
+	
+	# No duration reduction - this effect expires by charge consumption
+	print("💪 [StatusEffectManager] Damage boost active (", charges, " charges remaining)")
+
+# Process critical boost effect (next N attacks guaranteed crit)
+func _process_critical_boost_effect(effect: Dictionary, effect_index: int):
+	var charges = effect.get("charges", 2)
+	
+	# This is a passive effect - it modifies crit chance
+	# Charges are consumed when attacks are made
+	
+	print("✨ [StatusEffectManager] Critical boost active (", charges, " charges remaining)")
+
+# Process shield effect (absorbs X damage)
+func _process_shield_effect(effect: Dictionary, effect_index: int):
+	var shield_hp = effect.get("shield_hp", 50)
+	
+	# This is a passive effect - it absorbs damage
+	# Shield HP is reduced when damage is taken
+	
+	print("🛡️ [StatusEffectManager] Shield active (", shield_hp, " HP remaining)")
+	if shield_hp <= 0:
+		print("🛡️ [StatusEffectManager] Shield broken")
+		active_effects.remove_at(effect_index)
+
+# Process armor up effect (reduces all damage by X points)
+func _process_armor_up_effect(effect: Dictionary, effect_index: int):
+	var duration = effect.get("duration", 5)
+	var armor_value = effect.get("armor_value", 5)
+	
+	# This is a passive effect - it reduces incoming damage
+	
+	effect["duration"] = duration - 1
+	if effect["duration"] <= 0:
+		print("⚔️ [StatusEffectManager] Armor up expired")
+		active_effects.remove_at(effect_index)
+	else:
+		print("⚔️ [StatusEffectManager] Armor up active (", armor_value, " reduction, ", effect["duration"], " turns)")
+
+# Process reflect effect (next N attacks bounce 50% damage)
+func _process_reflect_effect(effect: Dictionary, effect_index: int):
+	var charges = effect.get("charges", 2)
+	var reflect_percent = effect.get("reflect_percent", 50)
+	
+	# This is a passive effect - it reflects damage back to attacker
+	# Charges are consumed when attacks are reflected
+	
+	print("🪞 [StatusEffectManager] Reflect active (", charges, " charges, ", reflect_percent, "% damage)")
+
+# Process stun effect (skip turn)
+func _process_stun_effect(effect: Dictionary, effect_index: int):
+	var target = effect.get("target")
+	var duration = effect.get("duration", 1)
+	
+	if not target or target.is_defeated:
+		active_effects.remove_at(effect_index)
+		return
+	
+	# Stun prevents the target from acting
+	# This will be handled by TurnManager checking for stun before allowing actions
+	
+	effect["duration"] = duration - 1
+	if effect["duration"] <= 0:
+		print("😵 [StatusEffectManager] Stun expired")
+		active_effects.remove_at(effect_index)
+	else:
+		print("😵 [StatusEffectManager] ", target.name, " is stunned (", effect["duration"], " turns)")
+
+# Process confusion effect (50% chance to attack random target)
+func _process_confusion_effect(effect: Dictionary, effect_index: int):
+	var target = effect.get("target")
+	var duration = effect.get("duration", 2)
+	
+	if not target or target.is_defeated:
+		active_effects.remove_at(effect_index)
+		return
+	
+	# Confusion affects target selection
+	# This will be handled by TurnManager during target selection
+	
+	effect["duration"] = duration - 1
+	if effect["duration"] <= 0:
+		print("🌀 [StatusEffectManager] Confusion expired")
+		active_effects.remove_at(effect_index)
+	else:
+		print("🌀 [StatusEffectManager] ", target.name, " is confused (", effect["duration"], " turns)")
+
+# Process focus effect (next ability costs -1 resolve)
+func _process_focus_effect(effect: Dictionary, effect_index: int):
+	var charges = effect.get("charges", 1)
+	
+	# This is a passive effect - it reduces resolve costs
+	# Charges are consumed when abilities are used
+	
+	print("🎯 [StatusEffectManager] Focus active (", charges, " charges remaining)")
+
+# Process regeneration effect (heals X HP per turn)
+func _process_regeneration_effect(effect: Dictionary, effect_index: int):
+	var target = effect.get("target")
+	var heal_per_turn = effect.get("heal_per_turn", 15)
+	var duration = effect.get("duration", 4)
+	
+	if not target or target.is_defeated:
+		active_effects.remove_at(effect_index)
+		return
+	
+	# Heal the target
+	if target.has_method("heal"):
+		target.heal(heal_per_turn)
+		print("💚 [StatusEffectManager] Regeneration heals ", target.name, " for ", heal_per_turn, " HP")
+	
+	effect["duration"] = duration - 1
+	if effect["duration"] <= 0:
+		print("💚 [StatusEffectManager] Regeneration expired")
+		active_effects.remove_at(effect_index)
+
+# Process resolve gain effect (+1 resolve per turn)
+func _process_resolve_gain_effect(effect: Dictionary, effect_index: int):
+	var target = effect.get("target")
+	var resolve_per_turn = effect.get("resolve_per_turn", 1)
+	var duration = effect.get("duration", 3)
+	
+	if not target or target.is_defeated:
+		active_effects.remove_at(effect_index)
+		return
+	
+	# Grant resolve to the target
+	if target.has_method("gain_resolve"):
+		target.gain_resolve(resolve_per_turn)
+		print("🔋 [StatusEffectManager] Resolve gain grants ", target.name, " +", resolve_per_turn, " resolve")
+	
+	effect["duration"] = duration - 1
+	if effect["duration"] <= 0:
+		print("🔋 [StatusEffectManager] Resolve gain expired")
+		active_effects.remove_at(effect_index)
+
+# Process mark effect (next attack deals double damage, then expires)
+func _process_mark_effect(effect: Dictionary, effect_index: int):
+	var target = effect.get("target")
+	
+	if not target or target.is_defeated:
+		active_effects.remove_at(effect_index)
+		return
+	
+	# Mark is a passive effect that doubles the next attack damage
+	# It expires when an attack hits the marked target
+	
+	print("🎯 [StatusEffectManager] ", target.name, " is marked (next attack deals double damage)")
 
 # Debug helper
 func _debug_print_effects():

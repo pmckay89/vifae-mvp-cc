@@ -82,6 +82,8 @@ var menu_selection: int = 0
 var in_skills_menu: bool = false
 var in_items_menu: bool = false
 var skill_selection: int = 0  # For cycling through skills
+var skill_scroll_offset: int = 0  # For scrolling window
+const SKILLS_VISIBLE_COUNT: int = 4  # How many skills to show at once
 var item_selection: int = 0  # For cycling through items
 
 # Inventory now managed by ProgressManager (shared party inventory)
@@ -93,6 +95,12 @@ var skill_resolve_costs: Dictionary = {
 	"moonfall_slash": 3,
 	"spirit_wave": 2,
 	"uppercut": 1,
+	"poison": 1,
+	"whirlwind": 2,
+	# New status effect abilities
+	"burn_strike": 1,
+	"shield_boost": 2,
+	"mark_target": 1,
 	# Player2 skills
 	"big_shot": 2,
 	"scatter_shot": 1,
@@ -283,17 +291,19 @@ func handle_skills_menu_input(event):
 		var abilities = current_actor.get_ability_list() if current_actor.has_method("get_ability_list") else []
 		if abilities.size() > 1:
 			skill_selection = (skill_selection - 1 + abilities.size()) % abilities.size()
+			_update_scroll_window()
 			update_skills_menu_display()
 			_safe_audio_call("play_ui_move")
-			print("MENU→ Skill selection: " + str(skill_selection))
+			print("MENU→ Skill selection: " + str(skill_selection) + ", scroll_offset: " + str(skill_scroll_offset))
 		
 	elif event.is_action_pressed("move down"):
 		var abilities = current_actor.get_ability_list() if current_actor.has_method("get_ability_list") else []
 		if abilities.size() > 1:
 			skill_selection = (skill_selection + 1) % abilities.size()
+			_update_scroll_window()
 			update_skills_menu_display()
 			_safe_audio_call("play_ui_move")
-			print("MENU→ Skill selection: " + str(skill_selection))
+			print("MENU→ Skill selection: " + str(skill_selection) + ", scroll_offset: " + str(skill_scroll_offset))
 		
 	elif event.is_action_pressed("confirm attack"):  # Z confirms skill selection
 		_safe_audio_call("play_ui_confirm")
@@ -336,6 +346,7 @@ func open_skills_menu():
 	_safe_audio_call("play_ui_confirm")
 	in_skills_menu = true
 	skill_selection = 0
+	skill_scroll_offset = 0  # Reset scroll to top
 	if action_menu:
 		action_menu.visible = false
 	if skills_menu:
@@ -355,11 +366,20 @@ func update_skills_menu_display():
 			bigshot_button.visible = false
 		return
 	
-	# Clear existing text and setup for list display
+	# Clear existing text and setup for scrolling list display
 	var skills_text = ""
 	var current_player_name = current_actor.name
 	
-	for i in range(abilities.size()):
+	# Calculate visible range based on scroll offset
+	var start_index = skill_scroll_offset
+	var end_index = min(skill_scroll_offset + SKILLS_VISIBLE_COUNT, abilities.size())
+	
+	# Show scroll indicators if needed
+	if skill_scroll_offset > 0:
+		skills_text += "[center]↑[/center]\n"
+	
+	# Display visible skills only
+	for i in range(start_index, end_index):
 		var ability = abilities[i]
 		var display_name = current_actor.get_ability_display_name(ability) if current_actor.has_method("get_ability_display_name") else ability
 		var cost = get_skill_resolve_cost(ability)
@@ -380,7 +400,11 @@ func update_skills_menu_display():
 		else:
 			skills_text += "  " + skill_display + "\n"
 	
-	# Display all skills in the RichTextLabel with BBCode support
+	# Show scroll indicator for more below
+	if end_index < abilities.size():
+		skills_text += "[center]↓[/center]\n"
+	
+	# Display scrolled skills in the RichTextLabel with BBCode support
 	if skills_display:
 		skills_display.visible = true
 		skills_display.bbcode_enabled = true  # Ensure BBCode is enabled
@@ -996,23 +1020,31 @@ func resolve_action():
 			var ability_info = get_meta("ability_damage_info", {})
 			damage = ability_info.get("damage", 0)
 			var success = ability_info.get("success", false)
+			var handled_damage = ability_info.get("handled_damage", false)  # NEW: Check if ability handled its own damage
 			
 			print("DMG→ Modular ability " + selected_action + " deals " + str(damage) + " damage")
 			print("DEBUG→ ability_info: ", ability_info)
-			print("DEBUG→ selected_target: ", selected_target)
+			print("DEBUG→ handled_damage: ", handled_damage)
 			
-			# Apply damage consistently through TurnManager
-			if damage > 0 and selected_target and selected_target.has_method("take_damage"):
-				print("DEBUG→ Applying damage to ", selected_target.name)
-				selected_target.take_damage(damage)
-				VFXManager.play_hit_effects(selected_target)
-				
-				# Award resolve for successful abilities
-				if success:
+			if handled_damage:
+				# Ability already applied damage itself, just award resolve
+				print("DMG→ " + selected_action + " handled its own damage, skipping TurnManager damage application")
+				if success and damage > 0:
 					ResolveManager.set_resolve(current_actor.name, ResolveManager.get_resolve(current_actor.name) + 1)
 					print("RESOLVE→ " + current_actor.name + " gains +1 resolve for successful " + selected_action)
 			else:
-				print("DEBUG→ No damage applied - damage: ", damage, " target: ", selected_target)
+				# TurnManager applies damage (old system compatibility)
+				if damage > 0 and selected_target and selected_target.has_method("take_damage"):
+					print("DEBUG→ TurnManager applying damage to ", selected_target.name)
+					selected_target.take_damage(damage)
+					VFXManager.play_hit_effects(selected_target)
+					
+					# Award resolve for successful abilities
+					if success:
+						ResolveManager.set_resolve(current_actor.name, ResolveManager.get_resolve(current_actor.name) + 1)
+						print("RESOLVE→ " + current_actor.name + " gains +1 resolve for successful " + selected_action)
+				else:
+					print("DEBUG→ No damage applied - damage: ", damage, " target: ", selected_target)
 		elif selected_action == "attack":
 			# Only basic attack uses TurnManager damage calculation - binary result
 			match qte_result:
@@ -1541,3 +1573,24 @@ func update_coin_display():
 # Signal handler for coin changes
 func _on_coins_changed(new_amount: int):
 	update_coin_display()
+
+# Update scroll window to keep selected skill visible
+func _update_scroll_window():
+	var abilities = current_actor.get_ability_list() if current_actor.has_method("get_ability_list") else []
+	if abilities.size() <= SKILLS_VISIBLE_COUNT:
+		# No scrolling needed if all abilities fit
+		skill_scroll_offset = 0
+		return
+	
+	# Adjust scroll offset to keep selected skill visible
+	if skill_selection < skill_scroll_offset:
+		# Selected skill is above visible window - scroll up
+		skill_scroll_offset = skill_selection
+	elif skill_selection >= skill_scroll_offset + SKILLS_VISIBLE_COUNT:
+		# Selected skill is below visible window - scroll down
+		skill_scroll_offset = skill_selection - SKILLS_VISIBLE_COUNT + 1
+	
+	# Ensure scroll offset stays within bounds
+	skill_scroll_offset = max(0, min(skill_scroll_offset, abilities.size() - SKILLS_VISIBLE_COUNT))
+	
+	print("SCROLL→ skill_selection: ", skill_selection, ", scroll_offset: ", skill_scroll_offset, ", abilities: ", abilities.size())

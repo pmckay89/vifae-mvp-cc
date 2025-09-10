@@ -185,9 +185,17 @@ func attack_critical(target):
 func take_damage(amount):
 	if is_defeated:
 		return
+	
+	# Check for mark effect and apply double damage if marked
+	var final_damage = amount
+	if status_effects and status_effects.has_effect("mark") and amount > 0:
+		final_damage = amount * 2
+		print("🎯 [Player2] Mark triggered! Damage doubled: ", amount, " → ", final_damage)
+		# Remove mark effect after it's consumed
+		status_effects.remove_effect("mark")
 
-	hp -= amount
-	print(name, "takes", amount, "damage. HP:", hp)
+	hp -= final_damage
+	print(name, "takes", final_damage, "damage. HP:", hp)
 
 	CombatUI.update_hp_bar("Player2", hp, hp_max)  # Use hp_max instead of 100
 
@@ -197,7 +205,7 @@ func take_damage(amount):
 		print(name, "has been defeated!")
 		show_death_sprite()
 
-	CombatUI.show_damage_popup(self, amount)
+	CombatUI.show_damage_popup(self, final_damage)
 
 func reset_for_new_combat():
 	# Called by TurnManager when combat resets

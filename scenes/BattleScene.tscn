@@ -307,15 +307,15 @@ text = "RESOLVE: 0/6"
 [node name="SkillsMenu" type="Control" parent="UILayer"]
 layout_mode = 3
 anchors_preset = 0
-offset_left = 650.0
+offset_left = 600.0
 offset_top = 495.0
-offset_right = 815.0
+offset_right = 850.0
 offset_bottom = 561.0
 
 [node name="SkillsDisplay" type="RichTextLabel" parent="UILayer/SkillsMenu"]
 visible = false
 layout_mode = 0
-offset_right = 165.0
+offset_right = 250.0
 offset_bottom = 60.0
 bbcode_enabled = true
 fit_content = true
@@ -324,7 +324,7 @@ fit_content = true
 visible = false
 layout_mode = 0
 offset_top = 20.0
-offset_right = 165.0
+offset_right = 250.0
 offset_bottom = 60.0
 text = "BigShot"
 

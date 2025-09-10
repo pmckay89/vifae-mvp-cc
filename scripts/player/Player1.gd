@@ -271,9 +271,17 @@ func attack_critical(target):
 func take_damage(amount):
 	if is_defeated:
 		return
+	
+	# Check for mark effect and apply double damage if marked
+	var final_damage = amount
+	if status_effects and status_effects.has_effect("mark") and amount > 0:
+		final_damage = amount * 2
+		print("🎯 [Player1] Mark triggered! Damage doubled: ", amount, " → ", final_damage)
+		# Remove mark effect after it's consumed
+		status_effects.remove_effect("mark")
 
-	hp -= amount
-	print(name, "takes", amount, "damage. HP:", hp)
+	hp -= final_damage
+	print(name, "takes", final_damage, "damage. HP:", hp)
 
 	CombatUI.update_hp_bar("Player1", hp, hp_max)  # Use hp_max instead of 100
 
@@ -283,7 +291,7 @@ func take_damage(amount):
 		print(name, "has been defeated!")
 		show_death_sprite()
 
-	CombatUI.show_damage_popup(self, amount)
+	CombatUI.show_damage_popup(self, final_damage)
 
 func reset_for_new_combat():
 	# Called by TurnManager when combat resets
@@ -293,7 +301,7 @@ func reset_for_new_combat():
 	print("RESET→ " + name + " fully restored")
 
 func get_ability_list() -> Array:
-	return ["2x_cut", "moonfall_slash", "spirit_wave", "whirlwind", "poison"]
+	return ["2x_cut", "moonfall_slash", "spirit_wave", "whirlwind", "poison", "burn_strike", "shield_boost", "mark_target"]
 
 func get_ability_display_name(ability_name: String) -> String:
 	match ability_name:
@@ -307,6 +315,12 @@ func get_ability_display_name(ability_name: String) -> String:
 			return "Whirlwind"
 		"poison":
 			return "Poison"
+		"burn_strike":
+			return "Burn Strike"
+		"shield_boost":
+			return "Shield Boost"
+		"mark_target":
+			return "Mark Target"
 		_:
 			return ability_name
 
@@ -326,6 +340,15 @@ func execute_ability(ability_name: String, target):
 		return result
 	elif ability_name == "poison":
 		var result = await execute_poison_sequence(target)
+		return result
+	elif ability_name == "burn_strike":
+		var result = await execute_burn_strike_sequence(target)
+		return result
+	elif ability_name == "shield_boost":
+		var result = await execute_shield_boost_sequence(target)
+		return result
+	elif ability_name == "mark_target":
+		var result = await execute_mark_target_sequence(target)
 		return result
 	elif ability_name == "uppercut":
 		await execute_uppercut_sequence(target)
@@ -586,6 +609,148 @@ func execute_ninja_attack_sequence(target):
 		idle_animation.play("idle")
 	
 	print("🥷 Ninja attack sequence complete!")
+
+# TEST STATUS EFFECTS - Burn Strike (DOT)
+func execute_burn_strike_sequence(target):
+	print("🔥 " + name + " begins Burn Strike sequence!")
+	
+	# Step 1: Spawn and play windup animation (uses basic_attack placeholder)
+	var instance = AnimationBridge.spawn_ability_animation("basic_attack_p1", Vector2.ZERO, self)
+	AnimationBridge.play_windup_animation("basic_attack_p1")
+	await AnimationBridge.animation_ready_for_qte
+	
+	# Step 2: QTE
+	print("🔥 Burn strike incoming...")
+	var result = await QTEManager.start_qte("confirm attack", 600, "Press Z to ignite!")
+	
+	# Step 3: Play result animation
+	AnimationBridge.play_result_animation("basic_attack_p1", result)
+	await AnimationBridge.animation_sequence_complete
+	
+	# Step 4: Calculate damage and apply burn effect
+	var total_damage = 0
+	if result in ["crit", "normal"]:
+		total_damage = 20 if result == "crit" else 12
+		
+		# Apply burn effect to target
+		var burn_effect = {
+			"type": "burn",
+			"target": target,
+			"caster": self,
+			"stacks": 1,
+			"duration": 4,
+			"damage_per_stack": 12
+		}
+		target.status_effects.apply_effect(burn_effect)
+		print("🔥 Applied burn effect to ", target.name)
+		
+		# Show status applied popup
+		CombatUI.show_status_applied_popup(target, "burn")
+	else:
+		total_damage = 4
+		print("🔥 Burn QTE failed - weak strike for ", total_damage, " damage")
+	
+	print("🔥 Burn strike complete - returning damage info: ", total_damage)
+	
+	return {
+		"damage": total_damage,
+		"qte_result": result,
+		"success": true
+	}
+
+# TEST STATUS EFFECTS - Shield Boost (Self-buff)
+func execute_shield_boost_sequence(target):
+	print("🛡️ " + name + " begins Shield Boost sequence!")
+	
+	# Step 1: Spawn and play windup animation (uses basic_attack placeholder)
+	var instance = AnimationBridge.spawn_ability_animation("basic_attack_p1", Vector2.ZERO, self)
+	AnimationBridge.play_windup_animation("basic_attack_p1")
+	await AnimationBridge.animation_ready_for_qte
+	
+	# Step 2: QTE
+	print("🛡️ Shield boost incoming...")
+	var result = await QTEManager.start_qte("confirm attack", 700, "Press Z to shield!")
+	
+	# Step 3: Play result animation
+	AnimationBridge.play_result_animation("basic_attack_p1", result)
+	await AnimationBridge.animation_sequence_complete
+	
+	# Step 4: Apply shield effect to self
+	var total_damage = 0
+	if result in ["crit", "normal"]:
+		var shield_hp = 75 if result == "crit" else 50
+		
+		# Apply shield effect to self
+		var shield_effect = {
+			"type": "shield",
+			"target": self,
+			"caster": self,
+			"shield_hp": shield_hp
+		}
+		self.status_effects.apply_effect(shield_effect)
+		print("🛡️ Applied shield (", shield_hp, " HP) to ", self.name)
+		
+		# Show status applied popup
+		CombatUI.show_status_applied_popup(self, "shield")
+		
+		# Shield abilities deal no damage but are successful
+		total_damage = 0
+	else:
+		print("🛡️ Shield QTE failed - no shield granted")
+		total_damage = 0
+	
+	print("🛡️ Shield boost complete - returning damage info: ", total_damage)
+	
+	return {
+		"damage": total_damage,
+		"qte_result": result,
+		"success": true,
+	}
+
+# TEST STATUS EFFECTS - Mark Target (Utility debuff)
+func execute_mark_target_sequence(target):
+	print("🎯 " + name + " begins Mark Target sequence!")
+	
+	# Step 1: Spawn and play windup animation (uses basic_attack placeholder)
+	var instance = AnimationBridge.spawn_ability_animation("basic_attack_p1", Vector2.ZERO, self)
+	AnimationBridge.play_windup_animation("basic_attack_p1")
+	await AnimationBridge.animation_ready_for_qte
+	
+	# Step 2: QTE
+	print("🎯 Mark target incoming...")
+	var result = await QTEManager.start_qte("confirm attack", 500, "Press Z to mark!")
+	
+	# Step 3: Play result animation
+	AnimationBridge.play_result_animation("basic_attack_p1", result)
+	await AnimationBridge.animation_sequence_complete
+	
+	# Step 4: Apply mark effect and small damage
+	var total_damage = 0
+	if result in ["crit", "normal"]:
+		total_damage = 8 if result == "crit" else 5  # Small damage
+		
+		# Apply mark effect to target
+		var mark_effect = {
+			"type": "mark",
+			"target": target,
+			"caster": self
+		}
+		target.status_effects.apply_effect(mark_effect)
+		print("🎯 Applied mark to ", target.name, " - next attack deals double damage!")
+		
+		# Show status applied popup
+		CombatUI.show_status_applied_popup(target, "mark")
+	else:
+		total_damage = 2
+		print("🎯 Mark QTE failed - weak strike for ", total_damage, " damage")
+	
+	print("🎯 Mark target complete - returning damage info: ", total_damage)
+	
+	return {
+		"damage": total_damage,
+		"qte_result": result,
+		"success": true
+	}
 
 func process_ninja_attack_result(result: String, target):
 	var damage = 0

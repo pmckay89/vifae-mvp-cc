@@ -1907,9 +1907,8 @@ tracks/0/keys = {
 "values": [&"idle", &"idle", &"idle", &"idle", &"run"]
 }
 
-[sub_resource type="Animation" id="Animation_w5w0q"]
-resource_name = "ninja_ww_windup"
-length = 1.00001
+[sub_resource type="Animation" id="Animation_f1kmb"]
+resource_name = "ninja_hitstun"
 step = 0.0833333
 tracks/0/type = "value"
 tracks/0/imported = false
@@ -1921,7 +1920,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [&"ninja_ww_windup"]
+"values": [&"ninja_hitstun"]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -1930,22 +1929,10 @@ tracks/1/path = NodePath("HeroRoot/Hero:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.0833333, 0.166667, 0.416667, 0.5, 0.583333, 0.666667, 0.75, 0.833333, 0.916667),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.0833333, 0.166667, 0.25),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
 "update": 1,
-"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-}
-tracks/2/type = "value"
-tracks/2/imported = false
-tracks/2/enabled = true
-tracks/2/path = NodePath("HeroRoot/Hero:position")
-tracks/2/interp = 1
-tracks/2/loop_wrap = true
-tracks/2/keys = {
-"times": PackedFloat32Array(0, 0.833333, 1.00001),
-"transitions": PackedFloat32Array(1, 1, 1),
-"update": 0,
-"values": [Vector2(121, 36), Vector2(121, 36), Vector2(634, -124)]
+"values": [0, 1, 2, 3]
 }
 
 [sub_resource type="Animation" id="Animation_dd8ro"]
@@ -1989,8 +1976,9 @@ tracks/2/keys = {
 "values": [Vector2(750, 36), Vector2(750, 36), Vector2(434, -55), Vector2(92, -71)]
 }
 
-[sub_resource type="Animation" id="Animation_f1kmb"]
-resource_name = "ninja_hitstun"
+[sub_resource type="Animation" id="Animation_w5w0q"]
+resource_name = "ninja_ww_windup"
+length = 1.00001
 step = 0.0833333
 tracks/0/type = "value"
 tracks/0/imported = false
@@ -2002,7 +1990,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [&"ninja_hitstun"]
+"values": [&"ninja_ww_windup"]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -2011,10 +1999,22 @@ tracks/1/path = NodePath("HeroRoot/Hero:frame")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.0833333, 0.166667, 0.25),
-"transitions": PackedFloat32Array(1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.0833333, 0.166667, 0.416667, 0.5, 0.583333, 0.666667, 0.75, 0.833333, 0.916667),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [0, 1, 2, 3]
+"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("HeroRoot/Hero:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.833333, 1.00001),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(121, 36), Vector2(121, 36), Vector2(634, -124)]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_racpi"]
