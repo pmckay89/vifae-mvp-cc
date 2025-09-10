@@ -6,9 +6,14 @@ var hp_max: int = base_hp_max  # Will be scaled based on progression
 var hp: int = hp_max
 var is_defeated: bool = false
 var rng := RandomNumberGenerator.new()
+@onready var status_effects := StatusEffectManager.new()
 
 func _ready():
 	rng.randomize()
+	
+	# Add StatusEffectManager as child
+	add_child(status_effects)
+	status_effects.name = "StatusEffects"
 	
 	# Scale HP based on current battle progression
 	_scale_for_current_battle()

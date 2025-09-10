@@ -700,6 +700,18 @@ func begin_turn():
 		print("STATE→ Actor defeated, skipping")
 		end_turn()
 		return
+	
+	# Process status effects on all entities at start of current actor's turn
+	# This allows effects like poison to trigger when the caster's turn starts
+	for entity in turn_order:
+		if entity.has_method("get") and entity.get("status_effects"):
+			entity.status_effects.process_turn_effects(current_actor)
+			
+			# Check if any entity was defeated by status effects
+			if entity.get("is_defeated") and entity == current_actor:
+				print("STATE→ Current actor defeated by status effects, skipping")
+				end_turn()
+				return
 		
 	change_state(State.ACTOR_READY)
 

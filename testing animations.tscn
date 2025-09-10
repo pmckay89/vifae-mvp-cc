@@ -1,4 +1,4 @@
-[gd_scene load_steps=186 format=3 uid="uid://b55wbmfbve30"]
+[gd_scene load_steps=191 format=3 uid="uid://b55wbmfbve30"]
 
 [ext_resource type="Texture2D" uid="uid://h62ecpojvn1h" path="res://assets/characters/enemy-XT.png" id="1_84ipl"]
 [ext_resource type="Texture2D" uid="uid://cwr4rn6e6cl4r" path="res://assets/animations/individual pngs/vifae-idle00.png" id="2_8k0kx"]
@@ -119,9 +119,13 @@
 [ext_resource type="AudioStream" uid="uid://ba0gm3rq1y35g" path="res://assets/sfx/gun3.wav" id="74_l3pi7"]
 [ext_resource type="Texture2D" uid="uid://bifaklda4opla" path="res://assets/animations/ninja_idle.png" id="90_p6fbl"]
 [ext_resource type="Texture2D" uid="uid://clpsk42av51m1" path="res://assets/animations/individual pngs/ninja_ww_attack1.png" id="117_esvvd"]
+[ext_resource type="Texture2D" uid="uid://c50e6at8bdk34" path="res://assets/animations/individual pngs/ninja_hitstun1.png" id="117_j5607"]
+[ext_resource type="Texture2D" uid="uid://dmm4yenvnk07j" path="res://assets/animations/individual pngs/ninja_hitstun2.png" id="118_7xvpr"]
 [ext_resource type="Texture2D" uid="uid://b4x7hk4ydak5u" path="res://assets/animations/individual pngs/ninja_ww_attack2.png" id="118_kc7ar"]
+[ext_resource type="Texture2D" uid="uid://6lga8bvfsotc" path="res://assets/animations/individual pngs/ninja_hitstun3.png" id="119_d30q7"]
 [ext_resource type="Texture2D" uid="uid://cwor7qrb8hp2f" path="res://assets/animations/individual pngs/ninja_ww_attack4.png" id="119_o5c8g"]
 [ext_resource type="Texture2D" uid="uid://dfgl1s65ant8q" path="res://assets/animations/individual pngs/ninja_ww_attack5.png" id="120_1i1ow"]
+[ext_resource type="Texture2D" uid="uid://mtoq8uk546d5" path="res://assets/animations/individual pngs/ninja_hitstun4.png" id="120_4e6u0"]
 [ext_resource type="Texture2D" uid="uid://v5fj8l1gvi8t" path="res://assets/animations/individual pngs/ninja_ww_attack6.png" id="121_j5607"]
 [ext_resource type="Texture2D" uid="uid://doa43e58w01lg" path="res://assets/animations/individual pngs/ninja_ww_attack7.png" id="122_7xvpr"]
 [ext_resource type="Texture2D" uid="uid://nhhhbo5vovwe" path="res://assets/animations/individual pngs/ninja_ww_attack8.png" id="123_d30q7"]
@@ -831,6 +835,23 @@ animations = [{
 }],
 "loop": true,
 "name": &"idle_p1",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("117_j5607")
+}, {
+"duration": 1.0,
+"texture": ExtResource("118_7xvpr")
+}, {
+"duration": 1.0,
+"texture": ExtResource("119_d30q7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("120_4e6u0")
+}],
+"loop": true,
+"name": &"ninja_hitstun",
 "speed": 12.0
 }, {
 "frames": [{
@@ -1968,6 +1989,34 @@ tracks/2/keys = {
 "values": [Vector2(750, 36), Vector2(750, 36), Vector2(434, -55), Vector2(92, -71)]
 }
 
+[sub_resource type="Animation" id="Animation_f1kmb"]
+resource_name = "ninja_hitstun"
+step = 0.0833333
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("HeroRoot/Hero:animation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [&"ninja_hitstun"]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("HeroRoot/Hero:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.0833333, 0.166667, 0.25),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3]
+}
+
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_racpi"]
 _data = {
 &"2x_finish": SubResource("Animation_65hek"),
@@ -1987,6 +2036,7 @@ _data = {
 &"idle": SubResource("Animation_wcysq"),
 &"idle_p1": SubResource("Animation_nhey6"),
 &"idle_run": SubResource("Animation_1r6xd"),
+&"ninja_hitstun": SubResource("Animation_f1kmb"),
 &"ninja_ww_attack": SubResource("Animation_dd8ro"),
 &"ninja_ww_windup": SubResource("Animation_w5w0q")
 }

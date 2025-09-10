@@ -6,6 +6,7 @@ var is_defeated: bool = false
 var selected_ability = ""
 
 @onready var rng := RandomNumberGenerator.new()
+@onready var status_effects := StatusEffectManager.new()
 
 func _ready():
 	rng.randomize()
@@ -13,6 +14,10 @@ func _ready():
 	
 	# Hide main sprite - using idle_p1 animation through AnimationBridge now
 	# $Sprite2D.visible = false  # COMMENTED OUT - AnimationBridge handles this now
+	
+	# Add StatusEffectManager as child
+	add_child(status_effects)
+	status_effects.name = "StatusEffects"
 	
 	ScreenShake.shake(5.0, 0.3)
 
@@ -288,7 +293,7 @@ func reset_for_new_combat():
 	print("RESET→ " + name + " fully restored")
 
 func get_ability_list() -> Array:
-	return ["2x_cut", "moonfall_slash", "spirit_wave", "whirlwind"]
+	return ["2x_cut", "moonfall_slash", "spirit_wave", "whirlwind", "poison"]
 
 func get_ability_display_name(ability_name: String) -> String:
 	match ability_name:
@@ -300,6 +305,8 @@ func get_ability_display_name(ability_name: String) -> String:
 			return "Spirit Wave"
 		"whirlwind":
 			return "Whirlwind"
+		"poison":
+			return "Poison"
 		_:
 			return ability_name
 
@@ -316,6 +323,9 @@ func execute_ability(ability_name: String, target):
 		return result
 	elif ability_name == "whirlwind":
 		var result = await execute_whirlwind_sequence(target)
+		return result
+	elif ability_name == "poison":
+		var result = await execute_poison_sequence(target)
 		return result
 	elif ability_name == "uppercut":
 		await execute_uppercut_sequence(target)
@@ -423,6 +433,59 @@ func execute_whirlwind_sequence(target):
 		"damage": total_damage,
 		"qte_result": result,
 		"success": total_damage > 0
+	}
+
+func execute_poison_sequence(target):
+	print("☠️ " + name + " begins Poison sequence via AnimationBridge!")
+	
+	# Step 1: Spawn animation and play windup
+	var animation_instance = AnimationBridge.spawn_ability_animation("poison", Vector2.ZERO, self)
+	if not animation_instance:
+		print("❌ Failed to spawn poison animation")
+		return {"damage": 0, "qte_result": "fail"}
+	
+	AnimationBridge.play_windup_animation("poison")
+	await AnimationBridge.animation_ready_for_qte
+	
+	# Step 2: Single QTE (basic attack QTE)
+	print("☠️ Poison strike incoming...")
+	var result = await QTEManager.start_qte("confirm attack", 500, "Press Z for Poison!")
+	
+	# Play sound effect for QTE result
+	_play_poison_sound_effect(result)
+	
+	# Step 3: Play result animation
+	AnimationBridge.play_result_animation("poison", result)
+	await AnimationBridge.animation_sequence_complete
+	
+	# Step 4: Calculate damage based on QTE result and SkillsRegistry
+	var total_damage = 0
+	if result in ["crit", "normal"]:
+		total_damage = 23 if result == "crit" else 15  # Crit gets 1.5x multiplier from base 15
+		
+		# Apply poison effect to target
+		var poison_effect = {
+			"type": "poison",
+			"target": target,
+			"caster": self,
+			"stacks": 1,
+			"duration": 5,
+			"damage_per_stack": 15
+		}
+		target.status_effects.apply_effect(poison_effect)
+		print("☠️ Applied poison effect to ", target.name)
+	else:
+		# Failed QTE - still deal minimal damage like other abilities
+		total_damage = 5
+		print("☠️ Poison QTE failed - weak strike for ", total_damage, " damage")
+	
+	print("☠️ Poison complete - returning damage info: ", total_damage)
+	
+	# Return damage info for TurnManager to apply consistently
+	return {
+		"damage": total_damage,
+		"qte_result": result,
+		"success": true  # Always true since ability was attempted (prevents turn loop)
 	}
 
 func execute_uppercut_sequence(target):
@@ -741,6 +804,23 @@ func _play_2x_cut_sound_effect(qte_result: String):
 
 # Sound effect helper for whirlwind modular system
 func _play_whirlwind_sound_effect(qte_result: String):
+	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+	if not sfx_player:
+		return
+		
+	match qte_result:
+		"crit":
+			sfx_player.stream = preload("res://assets/sfx/crit.wav")
+			sfx_player.play()
+		"normal":
+			sfx_player.stream = preload("res://assets/sfx/attack.wav")
+			sfx_player.play()
+		"fail":
+			sfx_player.stream = preload("res://assets/sfx/miss.wav")
+			sfx_player.play()
+
+# Sound effect helper for poison modular system
+func _play_poison_sound_effect(qte_result: String):
 	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
 	if not sfx_player:
 		return

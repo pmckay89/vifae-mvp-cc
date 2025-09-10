@@ -60,5 +60,13 @@ func get_skills() -> Dictionary:
 			"crit_mult": 1.5,
 			"sfx": null,
 			"vfx": "whirlwind_strike"
+		},
+		"Poison": {
+			"qte": "tap",
+			"window_ms": 500,
+			"damage": 15,
+			"crit_mult": 1.5,
+			"sfx": null,
+			"vfx": "poison_strike"
 		}
 	}

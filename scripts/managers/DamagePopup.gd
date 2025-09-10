@@ -15,6 +15,7 @@ const COL_DAMAGE := Color(1, 1, 1, 1.0)
 const COL_CRIT   := Color(1, 0.2, 0.2, 1.0)
 const COL_HEAL   := Color(0.2, 1, 0.2, 1.0)
 const COL_MISS   := Color(0.7, 0.7, 0.7, 0.6)
+const COL_POISON := Color(0.2, 0.8, 0.2, 1.0)  # Green poison color
 
 @onready var label: Label = $Label
 
@@ -37,6 +38,9 @@ func show_damage(value: int, label_type: String = "damage"):
 		"miss":
 			label.text = "MISS"
 			label.modulate = COL_MISS
+		"poison":
+			label.text = "☠️ " + str(value)
+			label.modulate = COL_POISON
 		_:
 			label.text = str(value)
 			label.modulate = COL_DAMAGE
@@ -46,6 +50,9 @@ func show_damage(value: int, label_type: String = "damage"):
 	
 	# Start popup animation
 	call_deferred("_start_animation", label_type)
+
+func show_poison_damage(value: int):
+	show_damage(value, "poison")
 
 func _apply_overlap_control():
 	# Random X drift

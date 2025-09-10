@@ -51,7 +51,7 @@ var animation_library = {
 		"animation_player_path": "HeroRoot/Hero/AnimationPlayer", # The AnimationPlayer
 		"windup_animation": "attack_windup_p1",
 		"success_animation": "attack_finish_p1", 
-		"fail_animation": "hitstun",
+		"fail_animation": "ninja_hitstun", # Use ninja hitstun for Player1
 		"spawn_offset": Vector2(-200, 0) # Left side positioning
 	},
 	"2x_cut": {
@@ -60,7 +60,7 @@ var animation_library = {
 		"animation_player_path": "HeroRoot/Hero/AnimationPlayer", # The AnimationPlayer
 		"windup_animation": "2x_windup",
 		"success_animation": "2x_finish", 
-		"fail_animation": "idle_p1", # Return to idle on fail
+		"fail_animation": "ninja_hitstun", # Use ninja hitstun for Player1
 		"spawn_offset": Vector2(-200, 0), # Left side positioning
 		"sprite_scale": Vector2(2.25, 2.25) # Custom scale for this ability
 	},
@@ -70,7 +70,17 @@ var animation_library = {
 		"animation_player_path": "HeroRoot/Hero/AnimationPlayer", # The AnimationPlayer
 		"windup_animation": "ninja_ww_windup",
 		"success_animation": "ninja_ww_attack", 
-		"fail_animation": "idle_p1", # Return to idle on fail
+		"fail_animation": "ninja_hitstun", # Use ninja hitstun for Player1
+		"spawn_offset": Vector2(-200, 0), # Left side positioning
+		"sprite_scale": Vector2(2.25, 2.25) # Custom scale for this ability
+	},
+	"poison": {
+		"scene_path": "res://testing animations.tscn",
+		"controller_node_path": "HeroRoot/Hero", # The AnimatedSprite2D to control
+		"animation_player_path": "HeroRoot/Hero/AnimationPlayer", # The AnimationPlayer
+		"windup_animation": "attack_windup_p1", # Use basic attack windup
+		"success_animation": "attack_finish_p1", # Use basic attack finish
+		"fail_animation": "ninja_hitstun", # Use ninja hitstun for Player1
 		"spawn_offset": Vector2(-200, 0), # Left side positioning
 		"sprite_scale": Vector2(2.25, 2.25) # Custom scale for this ability
 	}
@@ -231,7 +241,7 @@ func play_result_animation(ability_name: String, qte_result: String):
 	print("🎬 [AnimationBridge] Result animation complete")
 	
 	# Return to appropriate idle animation
-	if ability_name == "basic_attack_p1" or ability_name == "2x_cut":
+	if ability_name in ["basic_attack_p1", "2x_cut", "whirlwind", "poison"]:
 		# Player1 returns to idle_p1 animation
 		animation_player.play("idle_p1")
 		print("🎬 [AnimationBridge] Player1 returning to idle_p1")

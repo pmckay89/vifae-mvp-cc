@@ -6,6 +6,7 @@ var is_defeated = false
 var selected_ability = ""
 
 @onready var rng := RandomNumberGenerator.new()
+@onready var status_effects := StatusEffectManager.new()
 
 # Breathing animation variables - sprite swapping system
 var breathing_tween: Tween
@@ -23,6 +24,11 @@ var focus_stacks: int = 0
 func _ready():
 	rng.randomize()
 	add_to_group("players")
+	
+	# Add StatusEffectManager as child
+	add_child(status_effects)
+	status_effects.name = "StatusEffects"
+	
 	_setup_muzzle_flash()
 	_ensure_buff_animation_hidden()
 	_setup_new_idle_animation()

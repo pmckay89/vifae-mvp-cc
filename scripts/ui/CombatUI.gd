@@ -38,3 +38,23 @@ func show_damage_popup(target_node: Node, amount: int):
 	target_node.add_child(popup)
 	popup.position = Vector2(90, -50)
 	popup.show_damage(amount)
+
+func show_poison_popup(target_node: Node, amount: int):
+	if target_node == null:
+		print("⚠️ Cannot show poison popup on null target")
+		return
+	
+	var popup_scene = load("res://scenes/DamagePopup.tscn")
+	if popup_scene == null:
+		print("⚠️ Could not load DamagePopup.tscn for poison")
+		return
+	
+	var popup = popup_scene.instantiate()
+	target_node.add_child(popup)
+	popup.position = Vector2(90, -80)  # Slightly different position than normal damage
+	
+	# Show poison damage with different styling if possible
+	if popup.has_method("show_poison_damage"):
+		popup.show_poison_damage(amount)
+	else:
+		popup.show_damage(amount)  # Fallback to normal damage display
