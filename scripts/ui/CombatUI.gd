@@ -234,6 +234,9 @@ func show_status_icon(effect_type: String):
 	print("🔍 [DEBUG] Container position: ", status_icon_container.position)
 	print("🔍 [DEBUG] Icon local position: ", icon_label.position)
 	print("🔍 [DEBUG] Icon text: '", icon_data.icon, "' color: ", icon_data.color)
+	print("🔍 [DEBUG] Container visible: ", status_icon_container.visible)
+	print("🔍 [DEBUG] Icon visible: ", icon_label.visible)
+	print("🔍 [DEBUG] Container children count: ", status_icon_container.get_child_count())
 	
 	status_icon_container.add_child(icon_label)
 	status_icon_labels[effect_type] = icon_label

@@ -189,7 +189,7 @@ func _process_poison_effect(effect: Dictionary, effect_index: int):
 	var total_damage = stacks * damage_per_stack
 	print("☠️ [StatusEffectManager] Poison deals ", total_damage, " damage (", stacks, " stacks)")
 	
-	# Apply damage to target
+	# Apply damage to target (uses centralized calculation)
 	target.take_damage(total_damage)
 	
 	# Show poison popup visual
@@ -217,7 +217,9 @@ func _process_burn_effect(effect: Dictionary, effect_index: int):
 	var total_damage = stacks * damage_per_stack
 	print("🔥 [StatusEffectManager] Burn deals ", total_damage, " damage (", stacks, " stacks)")
 	
+	# Apply damage to target (uses centralized calculation)
 	target.take_damage(total_damage)
+	
 	# Show burn popup visual
 	CombatUI.show_burn_popup(target, total_damage)
 	
@@ -241,6 +243,7 @@ func _process_bleed_effect(effect: Dictionary, effect_index: int):
 	var total_damage = stacks * damage_per_stack
 	print("🩸 [StatusEffectManager] Bleed deals ", total_damage, " damage (", stacks, " stacks)")
 	
+	# Apply damage to target (uses centralized calculation)
 	target.take_damage(total_damage)
 	
 	# Show bleed popup visual
@@ -417,6 +420,75 @@ func _process_mark_effect(effect: Dictionary, effect_index: int):
 	# It expires when an attack hits the marked target
 	
 	print("🎯 [StatusEffectManager] ", target.name, " is marked (next attack deals double damage)")
+
+# Centralized damage calculation system
+func calculate_final_damage(attacker: Node, target: Node, base_damage: int) -> Dictionary:
+	var result = {
+		"final_damage": base_damage,
+		"absorbed": 0,
+		"effects_triggered": []
+	}
+	
+	if base_damage <= 0:
+		return result
+	
+	var working_damage = float(base_damage)
+	var attacker_name = "unknown" if attacker == null else attacker.name
+	var target_name = "unknown" if target == null else target.name
+	print("🧮 [StatusEffectManager] Calculating damage: ", base_damage, " from ", attacker_name, " to ", target_name)
+	
+	# Apply defensive multiplicative effects on target (mark, vulnerable)
+	for i in range(active_effects.size() - 1, -1, -1):
+		var effect = active_effects[i]
+		if effect.get("target") == target:
+			match effect.get("type"):
+				"mark":
+					working_damage *= 2.0
+					result.effects_triggered.append("mark")
+					print("🎯 [StatusEffectManager] Mark triggered! Damage: ", base_damage, " → ", working_damage)
+					# Remove mark effect after consumption
+					active_effects.remove_at(i)
+					CombatUI.hide_status_icon("mark")
+				"vulnerable":
+					working_damage *= 1.5
+					result.effects_triggered.append("vulnerable")
+					print("🎯 [StatusEffectManager] Vulnerable triggered! +50% damage")
+	
+	# Apply flat damage reductions on target (armor_up)
+	for effect in active_effects:
+		if effect.get("target") == target and effect.get("type") == "armor_up":
+			var armor_value = effect.get("armor_value", 5)
+			working_damage = max(0, working_damage - armor_value)
+			result.effects_triggered.append("armor_up")
+			print("⚔️ [StatusEffectManager] Armor reduced damage by ", armor_value, " points")
+	
+	# Apply absorption effects on target (shield)
+	for i in range(active_effects.size() - 1, -1, -1):
+		var effect = active_effects[i]
+		if effect.get("target") == target and effect.get("type") == "shield":
+			var shield_hp = effect.get("shield_hp", 0)
+			var absorbed = min(working_damage, shield_hp)
+			working_damage -= absorbed
+			result.absorbed += absorbed
+			
+			# Update shield HP
+			effect["shield_hp"] = shield_hp - absorbed
+			
+			if effect["shield_hp"] <= 0:
+				# Shield broken, remove effect
+				active_effects.remove_at(i)
+				CombatUI.hide_status_icon("shield")
+				print("🛡️ [StatusEffectManager] Shield absorbed ", absorbed, " damage and broke!")
+				result.effects_triggered.append("shield_broken")
+			else:
+				print("🛡️ [StatusEffectManager] Shield absorbed ", absorbed, " damage (", effect["shield_hp"], " HP remaining)")
+				result.effects_triggered.append("shield")
+			break  # Only one shield effect per target
+	
+	result.final_damage = int(working_damage)
+	print("🧮 [StatusEffectManager] Final damage: ", result.final_damage, " (absorbed: ", result.absorbed, ")")
+	
+	return result
 
 # Debug helper
 func _debug_print_effects():

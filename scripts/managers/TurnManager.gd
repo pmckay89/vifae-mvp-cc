@@ -732,10 +732,16 @@ func begin_turn():
 			entity.status_effects.process_turn_effects(current_actor)
 			
 			# Check if any entity was defeated by status effects
-			if entity.get("is_defeated") and entity == current_actor:
-				print("STATE→ Current actor defeated by status effects, skipping")
-				end_turn()
-				return
+			if entity.get("is_defeated"):
+				if entity == current_actor:
+					print("STATE→ Current actor defeated by status effects, skipping")
+					end_turn()
+					return
+				else:
+					print("STATE→ " + entity.name + " defeated by status effects, checking victory conditions")
+					# Check victory/defeat conditions immediately
+					change_state(State.CHECK_END)
+					return
 		
 	change_state(State.ACTOR_READY)
 
@@ -880,6 +886,9 @@ func start_qte():
 					# Play sound effect immediately after QTE success
 					_play_attack_sound_effect(qte_result, current_actor)
 					
+					# IMMEDIATE DAMAGE APPLICATION - Apply damage right after QTE resolves
+					_apply_basic_attack_damage(qte_result, selected_target, current_actor)
+					
 					# Step 3: Play result animation based on QTE result
 					AnimationBridge.play_result_animation("basic_attack_p1", qte_result)
 					await AnimationBridge.animation_sequence_complete
@@ -902,6 +911,9 @@ func start_qte():
 					
 					# Play sound effect immediately after QTE success
 					_play_attack_sound_effect(qte_result, current_actor)
+					
+					# IMMEDIATE DAMAGE APPLICATION - Apply damage right after QTE resolves
+					_apply_basic_attack_damage(qte_result, selected_target, current_actor)
 					
 					# Step 3: Play result animation based on QTE result
 					AnimationBridge.play_result_animation("basic_attack", qte_result)
@@ -1046,25 +1058,31 @@ func resolve_action():
 				else:
 					print("DEBUG→ No damage applied - damage: ", damage, " target: ", selected_target)
 		elif selected_action == "attack":
-			# Only basic attack uses TurnManager damage calculation - binary result
-			match qte_result:
-				"crit", "normal": 
-					damage = 8  # Success = consistent damage
-					# Award resolve for successful attack
-					ResolveManager.set_resolve(current_actor.name, ResolveManager.get_resolve(current_actor.name) + 1)
-				"fail": damage = 0            # Fail = no damage
-			var target_name = "null target"
-			if selected_target:
-				target_name = selected_target.name
-			print("DMG→ Player deals " + str(damage) + " to " + target_name)
-			
-			# Sound effects now play immediately after QTE success (moved up for better timing)
-			
-			# Apply damage and hit effects
-			if damage > 0 and selected_target and selected_target.has_method("take_damage"):
-				selected_target.take_damage(damage)
-				# Play hit effects for successful attacks
-				VFXManager.play_hit_effects(selected_target)
+			# Check if damage was already applied immediately after QTE
+			var damage_already_applied = get_meta("basic_attack_damage_applied", false)
+			if damage_already_applied:
+				print("DMG→ Basic attack damage already applied immediately after QTE - skipping duplicate")
+				# Clear the flag for next turn
+				remove_meta("basic_attack_damage_applied")
+			else:
+				# Fallback: apply damage here (for compatibility with any old attack system)
+				print("DMG→ Applying basic attack damage in resolve_action (fallback)")
+				match qte_result:
+					"crit", "normal": 
+						damage = 8  # Success = consistent damage
+						# Award resolve for successful attack
+						ResolveManager.set_resolve(current_actor.name, ResolveManager.get_resolve(current_actor.name) + 1)
+					"fail": damage = 0            # Fail = no damage
+				var target_name = "null target"
+				if selected_target:
+					target_name = selected_target.name
+				print("DMG→ Player deals " + str(damage) + " to " + target_name)
+				
+				# Apply damage and hit effects
+				if damage > 0 and selected_target and selected_target.has_method("take_damage"):
+					selected_target.take_damage(damage)
+					# Play hit effects for successful attacks
+					VFXManager.play_hit_effects(selected_target)
 		else:
 			print("WARNING→ Unhandled player action: " + selected_action)
 			
@@ -1476,6 +1494,33 @@ func _play_attack_sound_effect(qte_result: String, actor: Node):
 		"fail":
 			sfx_player.stream = preload("res://assets/sfx/miss.wav")  # Same miss sound for both
 			sfx_player.play()
+
+# Apply basic attack damage immediately after QTE resolves
+func _apply_basic_attack_damage(qte_result: String, target: Node, attacker: Node) -> void:
+	if not target or not target.has_method("take_damage"):
+		print("DMG→ No valid target for immediate damage")
+		return
+	
+	var damage = 0
+	match qte_result:
+		"crit", "normal": 
+			damage = 8  # Success = consistent damage
+			# Award resolve for successful attack
+			ResolveManager.set_resolve(attacker.name, ResolveManager.get_resolve(attacker.name) + 1)
+			print("RESOLVE→ " + attacker.name + " gains +1 resolve for successful attack")
+		"fail": 
+			damage = 0  # Fail = no damage
+	
+	print("DMG→ IMMEDIATE: " + attacker.name + " deals " + str(damage) + " to " + target.name + " (QTE: " + qte_result + ")")
+	
+	# Apply damage and hit effects immediately
+	if damage > 0:
+		target.take_damage(damage)
+		VFXManager.play_hit_effects(target)
+		print("DMG→ Applied " + str(damage) + " damage immediately after QTE")
+	
+	# Set flag to prevent duplicate damage in resolve_action
+	set_meta("basic_attack_damage_applied", true)
 
 # Safe audio helper function - won't crash if AudioManager not available
 func _safe_audio_call(method_name: String) -> void:

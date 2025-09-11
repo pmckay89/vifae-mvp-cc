@@ -186,13 +186,13 @@ func take_damage(amount):
 	if is_defeated:
 		return
 	
-	# Check for mark effect and apply double damage if marked
-	var final_damage = amount
-	if status_effects and status_effects.has_effect("mark") and amount > 0:
-		final_damage = amount * 2
-		print("🎯 [Player2] Mark triggered! Damage doubled: ", amount, " → ", final_damage)
-		# Remove mark effect after it's consumed
-		status_effects.remove_effect("mark")
+	# Use centralized damage calculation system
+	var damage_result = status_effects.calculate_final_damage(null, self, amount)
+	var final_damage = damage_result.final_damage
+	
+	# Show effects that triggered
+	for effect in damage_result.effects_triggered:
+		print("🎯 [", name, "] ", effect, " effect triggered!")
 
 	hp -= final_damage
 	print(name, "takes", final_damage, "damage. HP:", hp)

@@ -272,13 +272,13 @@ func take_damage(amount):
 	if is_defeated:
 		return
 	
-	# Check for mark effect and apply double damage if marked
-	var final_damage = amount
-	if status_effects and status_effects.has_effect("mark") and amount > 0:
-		final_damage = amount * 2
-		print("🎯 [Player1] Mark triggered! Damage doubled: ", amount, " → ", final_damage)
-		# Remove mark effect after it's consumed
-		status_effects.remove_effect("mark")
+	# Use centralized damage calculation system
+	var damage_result = status_effects.calculate_final_damage(null, self, amount)
+	var final_damage = damage_result.final_damage
+	
+	# Show effects that triggered
+	for effect in damage_result.effects_triggered:
+		print("🎯 [", name, "] ", effect, " effect triggered!")
 
 	hp -= final_damage
 	print(name, "takes", final_damage, "damage. HP:", hp)
@@ -377,6 +377,14 @@ func execute_2x_cut_dual_qte(target):
 	# Play sound effect for first QTE result
 	_play_2x_cut_sound_effect(result1)
 	
+	# IMMEDIATE DAMAGE - Apply first strike damage right after QTE
+	var first_damage = 0
+	if result1 in ["crit", "normal"]:
+		first_damage = 6 if result1 == "crit" else 4
+		target.take_damage(first_damage)
+		VFXManager.play_hit_effects(target)
+		print("⚔️ IMMEDIATE: First strike deals " + str(first_damage) + " damage")
+	
 	# Check if first QTE succeeded - if so, start finish animation immediately
 	var first_success = result1 in ["crit", "normal"]
 	if first_success:
@@ -393,6 +401,14 @@ func execute_2x_cut_dual_qte(target):
 	# Play sound effect for second QTE result
 	_play_2x_cut_sound_effect(result2)
 	
+	# IMMEDIATE DAMAGE - Apply second strike damage right after QTE
+	var second_damage = 0
+	if result2 in ["crit", "normal"]:
+		second_damage = 6 if result2 == "crit" else 4
+		target.take_damage(second_damage)
+		VFXManager.play_hit_effects(target)
+		print("⚔️ IMMEDIATE: Second strike deals " + str(second_damage) + " damage")
+	
 	# Step 4: If first failed but second succeeded, start animation now
 	var second_success = result2 in ["crit", "normal"]
 	if not first_success and second_success:
@@ -405,20 +421,17 @@ func execute_2x_cut_dual_qte(target):
 	# Wait for animation to complete
 	await AnimationBridge.animation_sequence_complete
 	
-	# Step 5: Calculate damage and return info for TurnManager to apply
-	var total_damage = 0
-	if result1 in ["crit", "normal"]:
-		total_damage += 6 if result1 == "crit" else 4  # First strike damage
-	if result2 in ["crit", "normal"]:
-		total_damage += 6 if result2 == "crit" else 4  # Second strike damage
+	# Step 5: Calculate total damage (already applied immediately)
+	var total_damage = first_damage + second_damage
 	
-	print("⚔️ 2x Cut complete - returning damage info: ", total_damage)
+	print("⚔️ 2x Cut complete - total damage applied: ", total_damage)
 	
-	# Return damage info for TurnManager to apply consistently
+	# Return info for TurnManager (damage already applied, just need resolve/success tracking)
 	return {
 		"damage": total_damage,
 		"qte_results": [result1, result2],
-		"success": total_damage > 0
+		"success": total_damage > 0,
+		"handled_damage": true  # Flag that damage was already applied
 	}
 
 func execute_whirlwind_sequence(target):
@@ -440,22 +453,26 @@ func execute_whirlwind_sequence(target):
 	# Play sound effect for QTE result
 	_play_whirlwind_sound_effect(result)
 	
-	# Step 3: Play result animation
-	AnimationBridge.play_result_animation("whirlwind", result)
-	await AnimationBridge.animation_sequence_complete
-	
-	# Step 4: Calculate damage based on QTE result and SkillsRegistry
+	# IMMEDIATE DAMAGE - Apply damage right after QTE
 	var total_damage = 0
 	if result in ["crit", "normal"]:
 		total_damage = 30 if result == "crit" else 25  # Crit gets 1.5x multiplier from base 25
+		target.take_damage(total_damage)
+		VFXManager.play_hit_effects(target)
+		print("🌪️ IMMEDIATE: Whirlwind deals " + str(total_damage) + " damage")
 	
-	print("🌪️ Whirlwind complete - returning damage info: ", total_damage)
+	# Step 3: Play result animation (pure visual feedback)
+	AnimationBridge.play_result_animation("whirlwind", result)
+	await AnimationBridge.animation_sequence_complete
 	
-	# Return damage info for TurnManager to apply consistently
+	print("🌪️ Whirlwind complete - damage already applied: ", total_damage)
+	
+	# Return info for TurnManager (damage already applied)
 	return {
 		"damage": total_damage,
 		"qte_result": result,
-		"success": total_damage > 0
+		"success": total_damage > 0,
+		"handled_damage": true  # Flag that damage was already applied
 	}
 
 func execute_poison_sequence(target):
@@ -477,14 +494,12 @@ func execute_poison_sequence(target):
 	# Play sound effect for QTE result
 	_play_poison_sound_effect(result)
 	
-	# Step 3: Play result animation
-	AnimationBridge.play_result_animation("poison", result)
-	await AnimationBridge.animation_sequence_complete
-	
-	# Step 4: Calculate damage based on QTE result and SkillsRegistry
+	# IMMEDIATE DAMAGE - Apply damage and effects right after QTE
 	var total_damage = 0
 	if result in ["crit", "normal"]:
 		total_damage = 23 if result == "crit" else 15  # Crit gets 1.5x multiplier from base 15
+		target.take_damage(total_damage)
+		VFXManager.play_hit_effects(target)
 		
 		# Apply poison effect to target
 		var poison_effect = {
@@ -496,19 +511,26 @@ func execute_poison_sequence(target):
 			"damage_per_stack": 15
 		}
 		target.status_effects.apply_effect(poison_effect)
-		print("☠️ Applied poison effect to ", target.name)
+		print("☠️ IMMEDIATE: Applied poison effect and " + str(total_damage) + " damage to ", target.name)
 	else:
 		# Failed QTE - still deal minimal damage like other abilities
 		total_damage = 5
-		print("☠️ Poison QTE failed - weak strike for ", total_damage, " damage")
+		target.take_damage(total_damage)
+		VFXManager.play_hit_effects(target)
+		print("☠️ IMMEDIATE: Poison QTE failed - weak strike for ", total_damage, " damage")
 	
-	print("☠️ Poison complete - returning damage info: ", total_damage)
+	# Step 3: Play result animation (pure visual feedback)
+	AnimationBridge.play_result_animation("poison", result)
+	await AnimationBridge.animation_sequence_complete
 	
-	# Return damage info for TurnManager to apply consistently
+	print("☠️ Poison complete - damage already applied: ", total_damage)
+	
+	# Return info for TurnManager (damage already applied)
 	return {
 		"damage": total_damage,
 		"qte_result": result,
-		"success": true  # Always true since ability was attempted (prevents turn loop)
+		"success": true,  # Always true since ability was attempted (prevents turn loop)
+		"handled_damage": true  # Flag that damage was already applied
 	}
 
 func execute_uppercut_sequence(target):
@@ -623,14 +645,12 @@ func execute_burn_strike_sequence(target):
 	print("🔥 Burn strike incoming...")
 	var result = await QTEManager.start_qte("confirm attack", 600, "Press Z to ignite!")
 	
-	# Step 3: Play result animation
-	AnimationBridge.play_result_animation("basic_attack_p1", result)
-	await AnimationBridge.animation_sequence_complete
-	
-	# Step 4: Calculate damage and apply burn effect
+	# IMMEDIATE DAMAGE - Apply damage and effects right after QTE
 	var total_damage = 0
 	if result in ["crit", "normal"]:
 		total_damage = 20 if result == "crit" else 12
+		target.take_damage(total_damage)
+		VFXManager.play_hit_effects(target)
 		
 		# Apply burn effect to target
 		var burn_effect = {
@@ -642,20 +662,27 @@ func execute_burn_strike_sequence(target):
 			"damage_per_stack": 12
 		}
 		target.status_effects.apply_effect(burn_effect)
-		print("🔥 Applied burn effect to ", target.name)
+		print("🔥 IMMEDIATE: Applied burn effect and " + str(total_damage) + " damage to ", target.name)
 		
 		# Show status applied popup
 		CombatUI.show_status_applied_popup(target, "burn")
 	else:
 		total_damage = 4
-		print("🔥 Burn QTE failed - weak strike for ", total_damage, " damage")
+		target.take_damage(total_damage)
+		VFXManager.play_hit_effects(target)
+		print("🔥 IMMEDIATE: Burn QTE failed - weak strike for ", total_damage, " damage")
 	
-	print("🔥 Burn strike complete - returning damage info: ", total_damage)
+	# Step 3: Play result animation (pure visual feedback)
+	AnimationBridge.play_result_animation("basic_attack_p1", result)
+	await AnimationBridge.animation_sequence_complete
+	
+	print("🔥 Burn strike complete - damage already applied: ", total_damage)
 	
 	return {
 		"damage": total_damage,
 		"qte_result": result,
-		"success": true
+		"success": true,
+		"handled_damage": true  # Flag that damage was already applied
 	}
 
 # TEST STATUS EFFECTS - Shield Boost (Self-buff)
@@ -671,11 +698,7 @@ func execute_shield_boost_sequence(target):
 	print("🛡️ Shield boost incoming...")
 	var result = await QTEManager.start_qte("confirm attack", 700, "Press Z to shield!")
 	
-	# Step 3: Play result animation
-	AnimationBridge.play_result_animation("basic_attack_p1", result)
-	await AnimationBridge.animation_sequence_complete
-	
-	# Step 4: Apply shield effect to self
+	# IMMEDIATE EFFECT - Apply shield immediately after QTE  
 	var total_damage = 0
 	if result in ["crit", "normal"]:
 		var shield_hp = 75 if result == "crit" else 50
@@ -688,7 +711,7 @@ func execute_shield_boost_sequence(target):
 			"shield_hp": shield_hp
 		}
 		self.status_effects.apply_effect(shield_effect)
-		print("🛡️ Applied shield (", shield_hp, " HP) to ", self.name)
+		print("🛡️ IMMEDIATE: Applied shield (", shield_hp, " HP) to ", self.name)
 		
 		# Show status applied popup
 		CombatUI.show_status_applied_popup(self, "shield")
@@ -696,15 +719,20 @@ func execute_shield_boost_sequence(target):
 		# Shield abilities deal no damage but are successful
 		total_damage = 0
 	else:
-		print("🛡️ Shield QTE failed - no shield granted")
+		print("🛡️ IMMEDIATE: Shield QTE failed - no shield granted")
 		total_damage = 0
 	
-	print("🛡️ Shield boost complete - returning damage info: ", total_damage)
+	# Step 3: Play result animation (pure visual feedback)
+	AnimationBridge.play_result_animation("basic_attack_p1", result)
+	await AnimationBridge.animation_sequence_complete
+	
+	print("🛡️ Shield boost complete - effects already applied: ", total_damage)
 	
 	return {
 		"damage": total_damage,
 		"qte_result": result,
 		"success": true,
+		"handled_damage": true  # Flag that effects were already applied
 	}
 
 # TEST STATUS EFFECTS - Mark Target (Utility debuff)
@@ -720,36 +748,43 @@ func execute_mark_target_sequence(target):
 	print("🎯 Mark target incoming...")
 	var result = await QTEManager.start_qte("confirm attack", 500, "Press Z to mark!")
 	
-	# Step 3: Play result animation
-	AnimationBridge.play_result_animation("basic_attack_p1", result)
-	await AnimationBridge.animation_sequence_complete
+	# Play sound effect for QTE result
+	_play_mark_target_sound_effect(result)
 	
-	# Step 4: Apply mark effect and small damage
+	# IMMEDIATE EFFECT/DAMAGE - Apply immediately after QTE
 	var total_damage = 0
 	if result in ["crit", "normal"]:
-		total_damage = 8 if result == "crit" else 5  # Small damage
-		
-		# Apply mark effect to target
+		# Apply mark effect to target (no damage from this ability)
 		var mark_effect = {
 			"type": "mark",
 			"target": target,
 			"caster": self
 		}
 		target.status_effects.apply_effect(mark_effect)
-		print("🎯 Applied mark to ", target.name, " - next attack deals double damage!")
+		print("🎯 IMMEDIATE: Applied mark to ", target.name, " - next attack deals double damage!")
 		
 		# Show status applied popup
 		CombatUI.show_status_applied_popup(target, "mark")
+		
+		# No damage - this is a strategic setup ability
+		total_damage = 0
 	else:
 		total_damage = 2
-		print("🎯 Mark QTE failed - weak strike for ", total_damage, " damage")
+		target.take_damage(total_damage)
+		VFXManager.play_hit_effects(target)
+		print("🎯 IMMEDIATE: Mark QTE failed - weak strike for ", total_damage, " damage")
 	
-	print("🎯 Mark target complete - returning damage info: ", total_damage)
+	# Step 3: Play result animation (pure visual feedback)
+	AnimationBridge.play_result_animation("basic_attack_p1", result)
+	await AnimationBridge.animation_sequence_complete
+	
+	print("🎯 Mark target complete - effects already applied: ", total_damage)
 	
 	return {
 		"damage": total_damage,
 		"qte_result": result,
-		"success": true
+		"success": true,
+		"handled_damage": true  # Flag that damage/effects were already applied
 	}
 
 func process_ninja_attack_result(result: String, target):
@@ -986,6 +1021,23 @@ func _play_whirlwind_sound_effect(qte_result: String):
 
 # Sound effect helper for poison modular system
 func _play_poison_sound_effect(qte_result: String):
+	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+	if not sfx_player:
+		return
+		
+	match qte_result:
+		"crit":
+			sfx_player.stream = preload("res://assets/sfx/crit.wav")
+			sfx_player.play()
+		"normal":
+			sfx_player.stream = preload("res://assets/sfx/attack.wav")
+			sfx_player.play()
+		"fail":
+			sfx_player.stream = preload("res://assets/sfx/miss.wav")
+			sfx_player.play()
+
+# Sound effect helper for mark target modular system
+func _play_mark_target_sound_effect(qte_result: String):
 	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
 	if not sfx_player:
 		return
