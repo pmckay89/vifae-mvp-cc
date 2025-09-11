@@ -70,35 +70,36 @@ func set_resolve(character_name: String, new_value: int):
 	var old_value = get_resolve(character_name)
 	var clamped_value = clamp(new_value, 0, MAX_RESOLVE)
 	
-	# Find labels dynamically every time (bypass initialization issues)
+	# Find labels dynamically every time using FF-style UI paths
 	var battle_scene = get_node_or_null("/root/BattleScene")
 	if not battle_scene:
 		print("RESOLVE→ ERROR: BattleScene not found")
 		return
 		
-	var hp_bars = battle_scene.get_node_or_null("UILayer/HPBars")
-	if not hp_bars:
-		print("RESOLVE→ ERROR: HPBars not found")
+	var ui_layer = battle_scene.get_node_or_null("UILayer")
+	if not ui_layer:
+		print("RESOLVE→ ERROR: UILayer not found")
 		return
 	
-	var p1_label = hp_bars.get_node_or_null("Player1Resolve")
-	var p2_label = hp_bars.get_node_or_null("Player2Resolve")
+	# Use FF-style resolve display paths
+	var p1_label = ui_layer.get_node_or_null("PlayerUIContainer/PlayersVBox/Player1Row/Player1Info/Player1Header/Player1ResolveCount")
+	var p2_label = ui_layer.get_node_or_null("PlayerUIContainer/PlayersVBox/Player2Row/Player2Info/Player2Header/Player2ResolveCount")
 	
 	match character_name:
 		"Player1":
 			player1_resolve = clamped_value
 			if p1_label:
-				p1_label.text = "RESOLVE: " + str(player1_resolve) + "/6"
-				print("RESOLVE→ P1 updated to: ", p1_label.text)
+				p1_label.text = str(player1_resolve)
+				print("RESOLVE→ P1 updated to: ", player1_resolve)
 			else:
-				print("RESOLVE→ ERROR: Player1Resolve label not found in scene")
+				print("RESOLVE→ ERROR: Player1ResolveCount label not found in FF-style UI")
 		"Player2":
 			player2_resolve = clamped_value
 			if p2_label:
-				p2_label.text = "RESOLVE: " + str(player2_resolve) + "/6"
-				print("RESOLVE→ P2 updated to: ", p2_label.text)
+				p2_label.text = str(player2_resolve)
+				print("RESOLVE→ P2 updated to: ", player2_resolve)
 			else:
-				print("RESOLVE→ ERROR: Player2Resolve label not found in scene")
+				print("RESOLVE→ ERROR: Player2ResolveCount label not found in FF-style UI")
 	
 	print("RESOLVE→ " + character_name + " resolve: " + str(old_value) + " → " + str(clamped_value))
 

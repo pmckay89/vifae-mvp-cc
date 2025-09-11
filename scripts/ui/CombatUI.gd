@@ -10,28 +10,50 @@ var status_icon_labels: Dictionary = {}  # effect_type -> Label node
 var status_icon_container: Control = null
 
 func update_hp_bar(actor_name: String, hp: int, max_hp: int):
-	var path = ""
-	var display_name = ""
-	
 	match actor_name:
 		"Player1":
-			path = "/root/BattleScene/UILayer/HPBars/Player1HP"
-			display_name = "SWORD SPIRIT"
+			update_player_hp_display("Player1", hp, max_hp)
 		"Player2":
-			path = "/root/BattleScene/UILayer/HPBars/Player2HP"
-			display_name = "GUN GIRL"
+			update_player_hp_display("Player2", hp, max_hp)
 		"Enemy":
-			path = "/root/BattleScene/UILayer/EnemyHUD/EnemyHPLabel"
-			display_name = "BOSS HP"
+			# Keep old enemy HP system for now
+			var path = "/root/BattleScene/UILayer/EnemyHUD/EnemyHPLabel"
+			var label = get_node_or_null(path)
+			if label:
+				label.text = "BOSS HP: " + str(hp) + "/" + str(max_hp)
+			else:
+				print("⚠️ Could not find enemy HP bar at " + path)
 		_:
 			print("⚠️ Unknown actor name: " + actor_name)
-			return
-	
-	var label = get_node_or_null(path)
-	if label:
-		label.text = display_name + ": " + str(hp) + "/" + str(max_hp)
+
+func update_player_hp_display(player: String, hp: int, max_hp: int):
+	# Update HP text label
+	var hp_label_path = "/root/BattleScene/UILayer/PlayerUIContainer/PlayersVBox/" + player + "Row/" + player + "Info/" + player + "Header/" + player + "HP"
+	var hp_label = get_node_or_null(hp_label_path)
+	if hp_label:
+		hp_label.text = str(hp) + "/" + str(max_hp)
 	else:
-		print("⚠️ Could not find HP bar at " + path)
+		print("⚠️ Could not find " + player + " HP label at " + hp_label_path)
+	
+	# Update HP progress bar
+	var hp_bar_path = "/root/BattleScene/UILayer/PlayerUIContainer/PlayersVBox/" + player + "Row/" + player + "Info/" + player + "ProgressContainer/" + player + "HPBar"
+	var hp_bar = get_node_or_null(hp_bar_path)
+	if hp_bar:
+		hp_bar.max_value = max_hp
+		hp_bar.value = hp
+		
+		# Color HP bar based on health percentage
+		var health_percent = float(hp) / float(max_hp)
+		var hp_fill_style = hp_bar.get_theme_stylebox("fill")
+		if hp_fill_style:
+			if health_percent > 0.6:
+				hp_fill_style.bg_color = Color(0.2, 0.8, 0.2, 1)  # Green
+			elif health_percent > 0.3:
+				hp_fill_style.bg_color = Color(0.8, 0.8, 0.2, 1)  # Yellow
+			else:
+				hp_fill_style.bg_color = Color(0.8, 0.2, 0.2, 1)  # Red
+	else:
+		print("⚠️ Could not find " + player + " HP bar at " + hp_bar_path)
 
 func show_damage_popup(target_node: Node, amount: int):
 	if target_node == null:
@@ -74,7 +96,34 @@ func show_status_applied_popup(target_node: Node, effect_type: String):
 		print("⚠️ Cannot show status popup on null target")
 		return
 	
-	# Add to queue instead of showing immediately
+	# DEBUG: Log all shield effect calls
+	if effect_type == "shield":
+		print("🛡️ [DEBUG] Shield popup called - Target: ", target_node.name, " Type: ", effect_type)
+	
+	# Shield is a player-only buff - never show on enemies
+	if effect_type == "shield" and target_node.name.begins_with("Enemy"):
+		print("🛡️ [BUG BLOCKED] Shield is player-only - skipping enemy display")
+		return
+	
+	# Check if target is a player and route player-compatible effects to FF-style status area
+	if target_node.name == "Player1" or target_node.name == "Player2":
+		# Only show certain effects on players (not enemy-specific effects)
+		var player_effects = ["burn", "poison", "bleed", "shield", "mark", "vulnerable", "stun", "regeneration", "frozen", "damage_boost", "critical_boost", "armor_up", "reflect", "focus", "resolve_gain", "confusion"]
+		if effect_type in player_effects:
+			show_player_status_icon(target_node.name, effect_type)
+			print("🎯 [CombatUI] Routed " + effect_type + " status to " + target_node.name + " FF-style container")
+		else:
+			print("🎯 [CombatUI] Skipped " + effect_type + " - not a player effect")
+	elif target_node.name.begins_with("Enemy"):
+		# Only show enemy-specific effects on enemies (shield is NEVER an enemy effect)
+		var enemy_effects = ["armor_down", "frozen", "burn", "poison", "bleed", "mark", "vulnerable", "stun"]
+		if effect_type in enemy_effects:
+			show_status_icon(effect_type)  # Use enemy status container
+			print("🎯 [CombatUI] Routed " + effect_type + " status to enemy container")
+		else:
+			print("🎯 [CombatUI] Skipped " + effect_type + " - not an enemy effect")
+	
+	# Still show popup for visual feedback
 	var popup_data = {
 		"target": target_node,
 		"effect_type": effect_type,
@@ -182,8 +231,10 @@ func show_bleed_popup(target_node: Node, amount: int):
 	else:
 		popup.show_damage(amount)
 
-# Initialize status icon container (called once)
-func _ensure_status_container():
+# Initialize status icon container - now routes to player-specific areas
+func _ensure_status_container(target_node: Node = null):
+	# This function is now mainly for enemy status effects
+	# Player status effects use the new show_player_status_icon function
 	if status_icon_container != null:
 		return
 	
@@ -192,16 +243,16 @@ func _ensure_status_container():
 		print("⚠️ Could not find UILayer for status container")
 		return
 	
-	# Create container for status icons
+	# Create container for enemy status icons
 	status_icon_container = Control.new()
-	status_icon_container.name = "StatusIconContainer"
+	status_icon_container.name = "EnemyStatusIconContainer"
 	
-	# Position container near enemy HP area (adjust these coordinates as needed)
+	# Position container near enemy HP area
 	status_icon_container.position = Vector2(900, 550)  # Bottom-right area near enemy HP
 	status_icon_container.size = Vector2(200, 50)  # Container size
 	
 	ui_layer.add_child(status_icon_container)
-	print("🎯 [CombatUI] Created status icon container at position (900, 550)")
+	print("🎯 [CombatUI] Created enemy status icon container at position (900, 550)")
 
 # Persistent status effect icon system
 func show_status_icon(effect_type: String):
@@ -260,6 +311,88 @@ func _get_status_icon_data(effect_type: String) -> Dictionary:
 		"mark": {"icon": "🎯", "color": Color(1.0, 0.8, 0.0, 1.0)},
 		"vulnerable": {"icon": "💥", "color": Color(1.0, 0.2, 0.2, 1.0)},
 		"stun": {"icon": "😵", "color": Color(0.8, 0.8, 0.2, 1.0)},
-		"regeneration": {"icon": "💚", "color": Color(0.2, 1.0, 0.2, 1.0)}
+		"regeneration": {"icon": "💚", "color": Color(0.2, 1.0, 0.2, 1.0)},
+		"frozen": {"icon": "❄️", "color": Color(0.5, 0.8, 1.0, 1.0)},
+		"armor_down": {"icon": "⚔️", "color": Color(0.8, 0.6, 0.2, 1.0)},
+		"damage_boost": {"icon": "💪", "color": Color(1.0, 0.6, 0.0, 1.0)},
+		"critical_boost": {"icon": "⭐", "color": Color(1.0, 1.0, 0.0, 1.0)},
+		"armor_up": {"icon": "🛡️", "color": Color(0.6, 0.6, 0.8, 1.0)},
+		"reflect": {"icon": "🔄", "color": Color(0.8, 0.4, 1.0, 1.0)},
+		"focus": {"icon": "🎯", "color": Color(0.0, 1.0, 1.0, 1.0)},
+		"resolve_gain": {"icon": "⚡", "color": Color(1.0, 1.0, 0.0, 1.0)},
+		"confusion": {"icon": "😵‍💫", "color": Color(1.0, 0.4, 1.0, 1.0)}
 	}
 	return icon_data.get(effect_type, {"icon": "⚡", "color": Color.WHITE})
+
+# Player-specific status effects - routes to correct player container
+func show_player_status_icon(player_name: String, effect_type: String):
+	print("🎯 [CombatUI] Showing " + effect_type + " icon for " + player_name)
+	
+	# Get the correct player status area
+	var status_area_path = "/root/BattleScene/UILayer/PlayerUIContainer/PlayersVBox/" + player_name + "Row/" + player_name + "StatusArea"
+	var status_area = get_node_or_null(status_area_path)
+	
+	if not status_area:
+		print("⚠️ Could not find status area for " + player_name + " at " + status_area_path)
+		return
+	
+	# Don't create duplicate icons for this player
+	var icon_key = player_name + "_" + effect_type
+	if icon_key in status_icon_labels:
+		print("🔍 [DEBUG] Icon already exists for " + icon_key)
+		return
+	
+	# Create status icon label
+	var icon_label = Label.new()
+	icon_label.name = "StatusIcon_" + effect_type
+	
+	# Set icon and color based on effect type
+	var icon_data = _get_status_icon_data(effect_type)
+	icon_label.text = icon_data.icon
+	icon_label.modulate = icon_data.color
+	icon_label.add_theme_font_size_override("font_size", 24)
+	
+	status_area.add_child(icon_label)
+	status_icon_labels[icon_key] = icon_label
+	
+	print("🎯 [CombatUI] Created " + effect_type + " icon for " + player_name + " in FF-style container")
+
+func hide_player_status_icon(player_name: String, effect_type: String):
+	var icon_key = player_name + "_" + effect_type
+	if icon_key in status_icon_labels:
+		var icon_label = status_icon_labels[icon_key]
+		if icon_label and is_instance_valid(icon_label):
+			icon_label.queue_free()
+		status_icon_labels.erase(icon_key)
+		print("🎯 [CombatUI] Hidden " + effect_type + " icon for " + player_name)
+
+# Update resolve display
+func update_resolve_display(player_name: String, resolve_count: int):
+	var resolve_label_path = "/root/BattleScene/UILayer/PlayerUIContainer/PlayersVBox/" + player_name + "Row/" + player_name + "Info/" + player_name + "Header/" + player_name + "ResolveCount"
+	var resolve_label = get_node_or_null(resolve_label_path)
+	if resolve_label:
+		resolve_label.text = str(resolve_count)
+		print("🎯 [CombatUI] Updated " + player_name + " resolve display: " + str(resolve_count))
+	else:
+		print("⚠️ Could not find resolve label for " + player_name + " at " + resolve_label_path)
+
+# Update turn indicator to show whose turn it is
+func update_turn_indicator(current_player: String):
+	# Hide all turn indicators first
+	var player1_indicator = get_node_or_null("/root/BattleScene/UILayer/PlayerUIContainer/PlayersVBox/Player1Row/Player1Info/Player1Header/Player1TurnIndicator")
+	var player2_indicator = get_node_or_null("/root/BattleScene/UILayer/PlayerUIContainer/PlayersVBox/Player2Row/Player2Info/Player2Header/Player2TurnIndicator")
+	
+	if player1_indicator:
+		player1_indicator.visible = false
+	if player2_indicator:
+		player2_indicator.visible = false
+	
+	# Show indicator for current player
+	if current_player == "Player1" and player1_indicator:
+		player1_indicator.visible = true
+		print("🎯 [CombatUI] Showing turn indicator for Player1")
+	elif current_player == "Player2" and player2_indicator:
+		player2_indicator.visible = true
+		print("🎯 [CombatUI] Showing turn indicator for Player2")
+	else:
+		print("🎯 [CombatUI] Turn indicator hidden (enemy turn or unknown player)")

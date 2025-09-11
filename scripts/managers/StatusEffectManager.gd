@@ -24,8 +24,14 @@ func apply_effect(effect_data: Dictionary):
 		active_effects.append(effect_data.duplicate())
 		print("🧪 [StatusEffectManager] Added new effect: ", effect_type)
 		
-		# Show persistent status icon
-		CombatUI.show_status_icon(effect_type)
+		# Show persistent status icon with proper routing
+		var target = effect_data.get("target")
+		if target and (target.name == "Player1" or target.name == "Player2"):
+			# Player status icon
+			CombatUI.show_player_status_icon(target.name, effect_type)
+		else:
+			# Enemy status icon (for enemy targets or no target)
+			CombatUI.show_status_icon(effect_type)
 	
 	_debug_print_effects()
 

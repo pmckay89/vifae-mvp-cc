@@ -158,6 +158,11 @@ func _ready():
 	update_coin_display()
 	ProgressManager.coins_changed.connect(_on_coins_changed)
 	
+	# Initialize resolve displays for both players
+	update_resolve_display("Player1")
+	update_resolve_display("Player2")
+	
+	
 	# Start the state machine
 	change_state(State.BEGIN_TURN)
 	
@@ -211,16 +216,20 @@ func _input(event):
 	
 	# DEBUG: Resolve testing (Q/A = Player1, E/D = Player2)
 	if event.keycode == KEY_Q:
-		ResolveManager.debug_increment_resolve("Player1")
+		print("DEBUG→ Q key pressed - incrementing Player1 resolve")
+		increment_player_resolve("Player1", 1)
 		return
 	if event.keycode == KEY_A:
-		ResolveManager.debug_decrement_resolve("Player1") 
+		print("DEBUG→ A key pressed - decrementing Player1 resolve")
+		increment_player_resolve("Player1", -1)
 		return
 	if event.keycode == KEY_E:
-		ResolveManager.debug_increment_resolve("Player2")
+		print("DEBUG→ E key pressed - incrementing Player2 resolve")
+		increment_player_resolve("Player2", 1)
 		return
 	if event.keycode == KEY_D:
-		ResolveManager.debug_decrement_resolve("Player2")
+		print("DEBUG→ D key pressed - decrementing Player2 resolve")
+		increment_player_resolve("Player2", -1)
 		return
 	
 	# DEBUG: Quick enemy kill for testing (F key)
@@ -630,7 +639,7 @@ func use_item_immediately(item_name: String):
 				var new_resolve = min(old_resolve + resolve_amount, max_resolve)
 				var actual_gain = new_resolve - old_resolve
 				
-				ResolveManager.set_resolve(current_player_name, new_resolve)
+				change_player_resolve(current_player_name, new_resolve)
 				
 				# Show blue resolve popup
 				var popup_scene = load("res://scenes/DamagePopup.tscn")
@@ -664,7 +673,7 @@ func spend_skill_resolve(player_name: String, skill_name: String) -> bool:
 	if can_afford_skill(player_name, skill_name):
 		var cost = get_skill_resolve_cost(skill_name)
 		var current_resolve = ResolveManager.get_resolve(player_name)
-		ResolveManager.set_resolve(player_name, current_resolve - cost)
+		change_player_resolve(player_name, current_resolve - cost)
 		print("RESOLVE→ " + player_name + " spent " + str(cost) + " resolve for " + skill_name)
 		return true
 	return false
@@ -747,6 +756,15 @@ func begin_turn():
 
 func actor_ready():
 	print("STATE→ ACTOR_READY: " + current_actor.name)
+	
+	# Check if current actor is frozen and skip their turn
+	if current_actor.has_method("get") and current_actor.get("status_effects"):
+		if current_actor.status_effects.has_effect("frozen"):
+			await show_frozen_turn_skip()
+			return
+	
+	# Update turn indicator in FF-style UI
+	CombatUI.update_turn_indicator(current_actor.name)
 	
 	if turn_label:
 		turn_label.text = current_actor.name + "'s Turn"
@@ -1042,7 +1060,7 @@ func resolve_action():
 				# Ability already applied damage itself, just award resolve
 				print("DMG→ " + selected_action + " handled its own damage, skipping TurnManager damage application")
 				if success and damage > 0:
-					ResolveManager.set_resolve(current_actor.name, ResolveManager.get_resolve(current_actor.name) + 1)
+					increment_player_resolve(current_actor.name, 1)
 					print("RESOLVE→ " + current_actor.name + " gains +1 resolve for successful " + selected_action)
 			else:
 				# TurnManager applies damage (old system compatibility)
@@ -1053,7 +1071,7 @@ func resolve_action():
 					
 					# Award resolve for successful abilities
 					if success:
-						ResolveManager.set_resolve(current_actor.name, ResolveManager.get_resolve(current_actor.name) + 1)
+						increment_player_resolve(current_actor.name, 1)
 						print("RESOLVE→ " + current_actor.name + " gains +1 resolve for successful " + selected_action)
 				else:
 					print("DEBUG→ No damage applied - damage: ", damage, " target: ", selected_target)
@@ -1071,7 +1089,7 @@ func resolve_action():
 					"crit", "normal": 
 						damage = 8  # Success = consistent damage
 						# Award resolve for successful attack
-						ResolveManager.set_resolve(current_actor.name, ResolveManager.get_resolve(current_actor.name) + 1)
+						increment_player_resolve(current_actor.name, 1)
 					"fail": damage = 0            # Fail = no damage
 				var target_name = "null target"
 				if selected_target:
@@ -1121,7 +1139,7 @@ func resolve_action():
 			
 			# Award resolve for perfect mirror strike sequence
 			if damage == 0:
-				ResolveManager.set_resolve(selected_target.name, ResolveManager.get_resolve(selected_target.name) + 1)
+				increment_player_resolve(selected_target.name, 1)
 				print("RESOLVE→ " + selected_target.name + " gains +1 resolve for perfect mirror strike sequence!")
 			
 			# Apply mirror strike damage directly
@@ -1145,7 +1163,7 @@ func resolve_action():
 			
 			# Award resolve for perfect lightning surge defense
 			if damage == 0:
-				ResolveManager.set_resolve(selected_target.name, ResolveManager.get_resolve(selected_target.name) + 1)
+				increment_player_resolve(selected_target.name, 1)
 				print("RESOLVE→ " + selected_target.name + " gains +1 resolve for perfect lightning surge defense!")
 			
 			# Apply lightning surge damage directly
@@ -1180,10 +1198,10 @@ func resolve_action():
 			
 			# Award resolve for perfect parries/defenses
 			if selected_action == "arc_slash" and qte_result == "perfect" and damage == 0:
-				ResolveManager.set_resolve(selected_target.name, ResolveManager.get_resolve(selected_target.name) + 1)
+				increment_player_resolve(selected_target.name, 1)
 				print("RESOLVE→ " + selected_target.name + " gains +1 resolve for perfect arc_slash parry!")
 			elif selected_action == "phase_slam" and (qte_result == "perfect" or qte_result == "normal") and damage == 0:
-				ResolveManager.set_resolve(selected_target.name, ResolveManager.get_resolve(selected_target.name) + 1)
+				increment_player_resolve(selected_target.name, 1)
 				print("RESOLVE→ " + selected_target.name + " gains +1 resolve for successful phase_slam defense!")
 			
 			# Play Phase Slam impact sound after QTE resolves
@@ -1371,6 +1389,7 @@ func reset_combat():
 	if skills_menu:
 		skills_menu.visible = false
 	
+	
 	print("RESET→ Complete, starting new combat")
 
 # Initialize HP displays with actual character values (not hardcoded)
@@ -1506,7 +1525,7 @@ func _apply_basic_attack_damage(qte_result: String, target: Node, attacker: Node
 		"crit", "normal": 
 			damage = 8  # Success = consistent damage
 			# Award resolve for successful attack
-			ResolveManager.set_resolve(attacker.name, ResolveManager.get_resolve(attacker.name) + 1)
+			increment_player_resolve(attacker.name, 1)
 			print("RESOLVE→ " + attacker.name + " gains +1 resolve for successful attack")
 		"fail": 
 			damage = 0  # Fail = no damage
@@ -1618,6 +1637,72 @@ func update_coin_display():
 # Signal handler for coin changes
 func _on_coins_changed(new_amount: int):
 	update_coin_display()
+
+# Helper function to update resolve and display
+func update_resolve_display(player_name: String):
+	var current_resolve = ResolveManager.get_resolve(player_name)
+	CombatUI.update_resolve_display(player_name, current_resolve)
+
+# Helper function to change resolve and update display
+func change_player_resolve(player_name: String, new_resolve: int):
+	ResolveManager.set_resolve(player_name, new_resolve)
+	update_resolve_display(player_name)
+
+# Helper function to increment resolve and update display  
+func increment_player_resolve(player_name: String, amount: int = 1):
+	var current_resolve = ResolveManager.get_resolve(player_name)
+	change_player_resolve(player_name, current_resolve + amount)
+
+# Handle frozen status - show notification and skip turn
+func show_frozen_turn_skip():
+	print("🧊 " + current_actor.name + " is FROZEN! Turn skipped.")
+	
+	# Show large "FROZEN!" notification
+	show_frozen_notification()
+	
+	# Wait for player to see what happened
+	await get_tree().create_timer(2.5).timeout
+	
+	# Remove frozen status (consumed)
+	current_actor.status_effects.remove_effect("frozen")
+	print("🧊 Frozen effect removed from " + current_actor.name)
+	
+	# End turn normally
+	end_turn()
+
+# Display frozen notification popup
+func show_frozen_notification():
+	# Create a large centered popup for "FROZEN!"
+	var ui_layer = get_node_or_null("/root/BattleScene/UILayer")
+	if not ui_layer:
+		return
+	
+	var frozen_label = Label.new()
+	frozen_label.name = "FrozenNotification"
+	frozen_label.text = "FROZEN!"
+	frozen_label.add_theme_font_size_override("font_size", 48)
+	frozen_label.add_theme_color_override("font_color", Color(0.5, 0.8, 1.0, 1.0))  # Ice blue
+	frozen_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	frozen_label.add_theme_constant_override("outline_size", 3)
+	
+	# Center the label properly
+	frozen_label.anchors_preset = Control.PRESET_CENTER
+	frozen_label.anchor_left = 0.5
+	frozen_label.anchor_right = 0.5
+	frozen_label.anchor_top = 0.5
+	frozen_label.anchor_bottom = 0.5
+	frozen_label.offset_left = -100  # Half width
+	frozen_label.offset_right = 100   # Half width
+	frozen_label.offset_top = -25     # Half height
+	frozen_label.offset_bottom = 25   # Half height
+	frozen_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	frozen_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	
+	ui_layer.add_child(frozen_label)
+	
+	# Auto-remove after delay
+	var timer = get_tree().create_timer(2.5)
+	timer.timeout.connect(func(): if frozen_label and is_instance_valid(frozen_label): frozen_label.queue_free())
 
 # Update scroll window to keep selected skill visible
 func _update_scroll_window():

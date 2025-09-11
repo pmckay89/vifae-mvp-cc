@@ -218,7 +218,7 @@ func reset_for_new_combat():
 	print("RESET→ " + name + " fully restored")
 
 func get_ability_list() -> Array:
-	return ["big_shot", "scatter_shot", "focus", "grenade", "bullet_rain"]
+	return ["big_shot", "scatter_shot", "focus", "grenade", "bullet_rain", "freezing_shot", "armor_piercing", "bleeding_shot"]
 
 func get_ability_display_name(ability_name: String) -> String:
 	match ability_name:
@@ -232,6 +232,12 @@ func get_ability_display_name(ability_name: String) -> String:
 			return "Grenade"
 		"bullet_rain":
 			return "Bullet Rain"
+		"freezing_shot":
+			return "Freezing Shot"
+		"armor_piercing":
+			return "Armor Piercing"
+		"bleeding_shot":
+			return "Bleeding Shot"
 		_:
 			return ability_name
 
@@ -244,6 +250,17 @@ func execute_ability(ability_name: String, target):
 		await get_tree().create_timer(0.5).timeout
 		activate_focus()
 		return
+	
+	# Handle modular status abilities (new system)
+	if ability_name == "freezing_shot":
+		var result = await execute_freezing_shot_sequence(target)
+		return result
+	elif ability_name == "armor_piercing":
+		var result = await execute_armor_piercing_sequence(target)
+		return result
+	elif ability_name == "bleeding_shot":
+		var result = await execute_bleeding_shot_sequence(target)
+		return result
 	
 	# Handle bridge-animated abilities (grenade, future abilities)
 	if not get_bridge_ability_config(ability_name).is_empty():
@@ -649,3 +666,235 @@ func execute_animated_ability(ability_name: String, target):
 	else:
 		print("❌ [Player2] QTEManager not found")
 		AnimationBridge.cleanup_animation(ability_name)
+
+# ===== MODULAR STATUS ABILITIES =====
+
+# 🧊 Freezing Shot - Skips enemy's next turn
+func execute_freezing_shot_sequence(target):
+	print("🧊 " + name + " begins Freezing Shot sequence!")
+	
+	# Step 1: Spawn and play windup animation (uses basic_attack placeholder)
+	var instance = AnimationBridge.spawn_ability_animation("basic_attack", Vector2.ZERO, self)
+	AnimationBridge.play_windup_animation("basic_attack")
+	await AnimationBridge.animation_ready_for_qte
+	
+	# Step 2: QTE
+	print("🧊 Freezing shot incoming...")
+	var result = await QTEManager.start_qte("confirm attack", 600, "Press Z to freeze!")
+	
+	# Step 3: IMMEDIATE - Sound + Damage + Status Effect
+	_play_freezing_shot_sound_effect(result)
+	var total_damage = _apply_freezing_shot_immediate(target, result)
+	
+	# Step 4: Play result animation (pure visual feedback)
+	AnimationBridge.play_result_animation("basic_attack", result)
+	await AnimationBridge.animation_sequence_complete
+	
+	print("🧊 Freezing shot complete - damage already applied: ", total_damage)
+	
+	return {
+		"damage": total_damage,
+		"qte_result": result,
+		"success": true,
+		"handled_damage": true
+	}
+
+# 🛡️ Armor Piercing - Reduces enemy defense for multiple turns
+func execute_armor_piercing_sequence(target):
+	print("🛡️ " + name + " begins Armor Piercing sequence!")
+	
+	# Step 1: Spawn and play windup animation (uses basic_attack placeholder)
+	var instance = AnimationBridge.spawn_ability_animation("basic_attack", Vector2.ZERO, self)
+	AnimationBridge.play_windup_animation("basic_attack")
+	await AnimationBridge.animation_ready_for_qte
+	
+	# Step 2: QTE
+	print("🛡️ Armor piercing shot incoming...")
+	var result = await QTEManager.start_qte("confirm attack", 600, "Press Z to pierce!")
+	
+	# Step 3: IMMEDIATE - Sound + Damage + Status Effect
+	_play_armor_piercing_sound_effect(result)
+	var total_damage = _apply_armor_piercing_immediate(target, result)
+	
+	# Step 4: Play result animation (pure visual feedback)
+	AnimationBridge.play_result_animation("basic_attack", result)
+	await AnimationBridge.animation_sequence_complete
+	
+	print("🛡️ Armor piercing complete - damage already applied: ", total_damage)
+	
+	return {
+		"damage": total_damage,
+		"qte_result": result,
+		"success": true,
+		"handled_damage": true
+	}
+
+# 🩸 Bleeding Shot - Applies damage over time
+func execute_bleeding_shot_sequence(target):
+	print("🩸 " + name + " begins Bleeding Shot sequence!")
+	
+	# Step 1: Spawn and play windup animation (uses basic_attack placeholder)
+	var instance = AnimationBridge.spawn_ability_animation("basic_attack", Vector2.ZERO, self)
+	AnimationBridge.play_windup_animation("basic_attack")
+	await AnimationBridge.animation_ready_for_qte
+	
+	# Step 2: QTE
+	print("🩸 Bleeding shot incoming...")
+	var result = await QTEManager.start_qte("confirm attack", 600, "Press Z to bleed!")
+	
+	# Step 3: IMMEDIATE - Sound + Damage + Status Effect
+	_play_bleeding_shot_sound_effect(result)
+	var total_damage = _apply_bleeding_shot_immediate(target, result)
+	
+	# Step 4: Play result animation (pure visual feedback)
+	AnimationBridge.play_result_animation("basic_attack", result)
+	await AnimationBridge.animation_sequence_complete
+	
+	print("🩸 Bleeding shot complete - damage already applied: ", total_damage)
+	
+	return {
+		"damage": total_damage,
+		"qte_result": result,
+		"success": true,
+		"handled_damage": true
+	}
+
+# ===== IMMEDIATE DAMAGE & EFFECT HELPERS =====
+
+func _apply_freezing_shot_immediate(target, qte_result: String) -> int:
+	var total_damage = 0
+	if qte_result in ["crit", "normal"]:
+		total_damage = 12 if qte_result == "crit" else 8
+		target.take_damage(total_damage)
+		VFXManager.play_enhanced_hit_effects(target, total_damage, VFXManager.EffectType.ICE)
+		
+		# Apply frozen effect to target
+		var frozen_effect = {
+			"type": "frozen",
+			"target": target,
+			"caster": self,
+			"duration": 1,
+			"skip_turn": true
+		}
+		target.status_effects.apply_effect(frozen_effect)
+		print("🧊 IMMEDIATE: Applied frozen effect and " + str(total_damage) + " damage to ", target.name)
+		
+		# Show status applied popup with enhanced VFX
+		CombatUI.show_status_applied_popup(target, "frozen")
+		VFXManager.play_status_effect_vfx(target, "frozen", 2)  # Tier 2 with mini-zoom
+	else:
+		total_damage = 2
+		target.take_damage(total_damage)
+		VFXManager.play_hit_effects(target)
+		print("🧊 IMMEDIATE: Freezing shot failed - weak hit for ", total_damage, " damage")
+	
+	return total_damage
+
+func _apply_armor_piercing_immediate(target, qte_result: String) -> int:
+	var total_damage = 0
+	if qte_result in ["crit", "normal"]:
+		total_damage = 23 if qte_result == "crit" else 15
+		target.take_damage(total_damage)
+		VFXManager.play_enhanced_hit_effects(target, total_damage, VFXManager.EffectType.CRITICAL)
+		
+		# Apply armor down effect to target
+		var armor_effect = {
+			"type": "armor_down",
+			"target": target,
+			"caster": self,
+			"duration": 3,
+			"damage_multiplier": 1.5
+		}
+		target.status_effects.apply_effect(armor_effect)
+		print("🛡️ IMMEDIATE: Applied armor down and " + str(total_damage) + " damage to ", target.name)
+		
+		# Show status applied popup with enhanced VFX
+		CombatUI.show_status_applied_popup(target, "armor_down")
+		VFXManager.play_status_effect_vfx(target, "armor_down", 1)  # Tier 1 - just color flash
+	else:
+		total_damage = 5
+		target.take_damage(total_damage)
+		VFXManager.play_hit_effects(target)
+		print("🛡️ IMMEDIATE: Armor piercing failed - weak hit for ", total_damage, " damage")
+	
+	return total_damage
+
+func _apply_bleeding_shot_immediate(target, qte_result: String) -> int:
+	var total_damage = 0
+	if qte_result in ["crit", "normal"]:
+		total_damage = 15 if qte_result == "crit" else 10
+		target.take_damage(total_damage)
+		VFXManager.play_enhanced_hit_effects(target, total_damage, VFXManager.EffectType.POISON)  # Use poison type for red/green
+		
+		# Apply bleed effect to target
+		var bleed_effect = {
+			"type": "bleed",
+			"target": target,
+			"caster": self,
+			"stacks": 1,
+			"duration": 4,
+			"damage_per_stack": 10
+		}
+		target.status_effects.apply_effect(bleed_effect)
+		print("🩸 IMMEDIATE: Applied bleed effect and " + str(total_damage) + " damage to ", target.name)
+		
+		# Show status applied popup with enhanced VFX
+		CombatUI.show_status_applied_popup(target, "bleed")
+		VFXManager.play_status_effect_vfx(target, "bleed", 1)  # Tier 1 - just color flash
+	else:
+		total_damage = 3
+		target.take_damage(total_damage)
+		VFXManager.play_hit_effects(target)
+		print("🩸 IMMEDIATE: Bleeding shot failed - weak hit for ", total_damage, " damage")
+	
+	return total_damage
+
+# ===== SOUND EFFECT HELPERS =====
+
+func _play_freezing_shot_sound_effect(qte_result: String):
+	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+	if not sfx_player:
+		return
+		
+	match qte_result:
+		"crit":
+			sfx_player.stream = preload("res://assets/sfx/crit.wav")
+			sfx_player.play()
+		"normal":
+			sfx_player.stream = preload("res://assets/sfx/gun1.wav")  # Different from regular gun sound
+			sfx_player.play()
+		"fail":
+			sfx_player.stream = preload("res://assets/sfx/miss.wav")
+			sfx_player.play()
+
+func _play_armor_piercing_sound_effect(qte_result: String):
+	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+	if not sfx_player:
+		return
+		
+	match qte_result:
+		"crit":
+			sfx_player.stream = preload("res://assets/sfx/crit.wav")
+			sfx_player.play()
+		"normal":
+			sfx_player.stream = preload("res://assets/sfx/gun2.wav")  # Heavy gun sound
+			sfx_player.play()
+		"fail":
+			sfx_player.stream = preload("res://assets/sfx/miss.wav")
+			sfx_player.play()
+
+func _play_bleeding_shot_sound_effect(qte_result: String):
+	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+	if not sfx_player:
+		return
+		
+	match qte_result:
+		"crit":
+			sfx_player.stream = preload("res://assets/sfx/crit.wav")
+			sfx_player.play()
+		"normal":
+			sfx_player.stream = preload("res://assets/sfx/attack.wav")  # Regular attack sound
+			sfx_player.play()
+		"fail":
+			sfx_player.stream = preload("res://assets/sfx/miss.wav")
+			sfx_player.play()

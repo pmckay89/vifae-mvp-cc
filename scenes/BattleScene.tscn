@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3 uid="uid://bywrdjiurayct"]
+[gd_scene load_steps=27 format=3 uid="uid://bywrdjiurayct"]
 
 [ext_resource type="Script" uid="uid://bb1b4n2pur4i0" path="res://scripts/managers/input_listener.gd" id="1_ftvu5"]
 [ext_resource type="Texture2D" uid="uid://cjc248508locs" path="res://assets/backgrounds/arena2.png" id="1_irk3j"]
@@ -18,6 +18,35 @@
 [ext_resource type="Script" uid="uid://rv08adbymf0w" path="res://scenes/ui/PauseOverlay.gd" id="7_l1ooa"]
 [ext_resource type="Script" uid="uid://di7rn5ua3w270" path="res://scenes/BattleCamera.gd" id="9_hrc4b"]
 [ext_resource type="Script" uid="uid://bgh85qj1p8mir" path="res://scripts/ui/SelectionDescription.gd" id="10_desc"]
+[ext_resource type="Texture2D" uid="uid://cy38fgmo5meuh" path="res://assets/ui/resolve.png" id="resolve_icon"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_player_panel"]
+bg_color = Color(0, 0, 0, 0.7)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6, 0.6, 0.8, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_bg"]
+bg_color = Color(0.2, 0.2, 0.2, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.4, 0.4, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_fill"]
+bg_color = Color(0.2, 0.8, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 1, 0.4, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_irk3j"]
 bg_color = Color(0, 0, 0, 0.47451)
@@ -85,6 +114,156 @@ theme_override_constants/outline_size = 2
 theme_override_font_sizes/font_size = 24
 text = "0"
 vertical_alignment = 1
+
+[node name="PlayerUIContainer" type="PanelContainer" parent="UILayer"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -105.0
+offset_right = 420.0
+offset_bottom = -20.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_player_panel")
+
+[node name="PlayersVBox" type="VBoxContainer" parent="UILayer/PlayerUIContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Player1Row" type="HBoxContainer" parent="UILayer/PlayerUIContainer/PlayersVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Player1Info" type="VBoxContainer" parent="UILayer/PlayerUIContainer/PlayersVBox/Player1Row"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+
+[node name="Player1Header" type="HBoxContainer" parent="UILayer/PlayerUIContainer/PlayersVBox/Player1Row/Player1Info"]
+layout_mode = 2
+
+[node name="Player1TurnIndicator" type="Label" parent="UILayer/PlayerUIContainer/PlayersVBox/Player1Row/Player1Info/Player1Header"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 18
+text = "►"
+
+[node name="Player1Name" type="Label" parent="UILayer/PlayerUIContainer/PlayersVBox/Player1Row/Player1Info/Player1Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.9, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 16
+text = "SWORD SPIRIT"
+
+[node name="Player1HP" type="Label" parent="UILayer/PlayerUIContainer/PlayersVBox/Player1Row/Player1Info/Player1Header"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 16
+text = "100/100"
+
+[node name="Player1ResolveIcon" type="TextureRect" parent="UILayer/PlayerUIContainer/PlayersVBox/Player1Row/Player1Info/Player1Header"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+texture = ExtResource("resolve_icon")
+expand_mode = 2
+stretch_mode = 4
+
+[node name="Player1ResolveCount" type="Label" parent="UILayer/PlayerUIContainer/PlayersVBox/Player1Row/Player1Info/Player1Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.7, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 16
+text = "3"
+
+[node name="Player1ProgressContainer" type="HBoxContainer" parent="UILayer/PlayerUIContainer/PlayersVBox/Player1Row/Player1Info"]
+layout_mode = 2
+
+[node name="Player1HPBar" type="ProgressBar" parent="UILayer/PlayerUIContainer/PlayersVBox/Player1Row/Player1Info/Player1ProgressContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/background = SubResource("StyleBoxFlat_hp_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_hp_fill")
+value = 85.0
+show_percentage = false
+
+[node name="Player1StatusArea" type="HBoxContainer" parent="UILayer/PlayerUIContainer/PlayersVBox/Player1Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="Player2Row" type="HBoxContainer" parent="UILayer/PlayerUIContainer/PlayersVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Player2Info" type="VBoxContainer" parent="UILayer/PlayerUIContainer/PlayersVBox/Player2Row"]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+
+[node name="Player2Header" type="HBoxContainer" parent="UILayer/PlayerUIContainer/PlayersVBox/Player2Row/Player2Info"]
+layout_mode = 2
+
+[node name="Player2TurnIndicator" type="Label" parent="UILayer/PlayerUIContainer/PlayersVBox/Player2Row/Player2Info/Player2Header"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 18
+text = "►"
+
+[node name="Player2Name" type="Label" parent="UILayer/PlayerUIContainer/PlayersVBox/Player2Row/Player2Info/Player2Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.8, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 16
+text = "GUN GIRL"
+
+[node name="Player2HP" type="Label" parent="UILayer/PlayerUIContainer/PlayersVBox/Player2Row/Player2Info/Player2Header"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 16
+text = "100/100"
+
+[node name="Player2ResolveIcon" type="TextureRect" parent="UILayer/PlayerUIContainer/PlayersVBox/Player2Row/Player2Info/Player2Header"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+texture = ExtResource("resolve_icon")
+expand_mode = 2
+stretch_mode = 4
+
+[node name="Player2ResolveCount" type="Label" parent="UILayer/PlayerUIContainer/PlayersVBox/Player2Row/Player2Info/Player2Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.7, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 1
+theme_override_font_sizes/font_size = 16
+text = "1"
+
+[node name="Player2ProgressContainer" type="HBoxContainer" parent="UILayer/PlayerUIContainer/PlayersVBox/Player2Row/Player2Info"]
+layout_mode = 2
+
+[node name="Player2HPBar" type="ProgressBar" parent="UILayer/PlayerUIContainer/PlayersVBox/Player2Row/Player2Info/Player2ProgressContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/background = SubResource("StyleBoxFlat_hp_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_hp_fill")
+value = 92.0
+show_percentage = false
+
+[node name="Player2StatusArea" type="HBoxContainer" parent="UILayer/PlayerUIContainer/PlayersVBox/Player2Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
 
 [node name="PauseOverlay" parent="UILayer" instance=ExtResource("6_irk3j")]
 visible = false
@@ -273,35 +452,6 @@ theme_override_constants/outline_size = 2
 theme_override_font_sizes/font_size = 14
 text = "BOSS HP: 100"
 horizontal_alignment = 1
-
-[node name="HPBars" type="VBoxContainer" parent="UILayer"]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -569.0
-offset_top = 213.0
-offset_right = -388.0
-offset_bottom = 317.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Player1HP" type="Label" parent="UILayer/HPBars"]
-layout_mode = 2
-text = "SWORD SPIRIT: 100/100"
-
-[node name="Player1Resolve" type="Label" parent="UILayer/HPBars"]
-layout_mode = 2
-text = "RESOLVE: 0/6"
-
-[node name="Player2HP" type="Label" parent="UILayer/HPBars"]
-layout_mode = 2
-text = "GUN GIRL:  	 		      100/100"
-
-[node name="Player2Resolve" type="Label" parent="UILayer/HPBars"]
-layout_mode = 2
-text = "RESOLVE: 0/6"
 
 [node name="SkillsMenu" type="Control" parent="UILayer"]
 layout_mode = 3
