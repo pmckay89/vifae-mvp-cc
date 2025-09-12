@@ -1,10 +1,11 @@
-[gd_scene load_steps=27 format=3 uid="uid://bywrdjiurayct"]
+[gd_scene load_steps=28 format=3 uid="uid://bywrdjiurayct"]
 
 [ext_resource type="Script" uid="uid://bb1b4n2pur4i0" path="res://scripts/managers/input_listener.gd" id="1_ftvu5"]
 [ext_resource type="Texture2D" uid="uid://cjc248508locs" path="res://assets/backgrounds/arena2.png" id="1_irk3j"]
 [ext_resource type="PackedScene" uid="uid://ce1cfkpg1oapd" path="res://scenes/Player1.tscn" id="2_0yex5"]
 [ext_resource type="PackedScene" uid="uid://c8rlmnvaxhyuc" path="res://scenes/Player2.tscn" id="3_bsu3s"]
 [ext_resource type="PackedScene" uid="uid://brt8asynsnb14" path="res://scenes/Enemy.tscn" id="4_sdfhe"]
+[ext_resource type="Script" uid="uid://3o7vtj3bmxsp" path="res://scripts/managers/BackgroundManager.gd" id="5_bgmgr"]
 [ext_resource type="Script" uid="uid://smu7o2wlaelw" path="res://scripts/managers/TurnManager.gd" id="5_hrc4b"]
 [ext_resource type="PackedScene" uid="uid://ch4juq0gsqhm0" path="res://scenes/ui/ResultOverlay.tscn" id="6_a4ns4"]
 [ext_resource type="PackedScene" uid="uid://ct511gfryly8b" path="res://scenes/ui/PauseOverlay.tscn" id="6_irk3j"]
@@ -421,11 +422,19 @@ layout_mode = 2
 text = "\"Item\""
 
 [node name="TurnLabel" type="Label" parent="UILayer"]
-offset_left = 366.0
-offset_top = 546.0
-offset_right = 447.0
-offset_bottom = 569.0
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -130.0
+offset_right = 420.0
+offset_bottom = -110.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 2
+theme_override_font_sizes/font_size = 18
 text = "Turn: --"
+horizontal_alignment = 1
 
 [node name="EnemyHUD" type="VBoxContainer" parent="UILayer"]
 offset_left = 884.0
@@ -497,6 +506,9 @@ offset_top = 45.0
 offset_right = 165.0
 offset_bottom = 85.0
 text = "Resolve Potion"
+
+[node name="BackgroundManager" type="Node" parent="."]
+script = ExtResource("5_bgmgr")
 
 [node name="TurnManager" type="Node" parent="."]
 script = ExtResource("5_hrc4b")

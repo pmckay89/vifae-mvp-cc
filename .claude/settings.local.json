@@ -47,7 +47,8 @@
       "Read(/C:\\Users\\yow_g\\Documents\\vifae mvp\\vifae-mvp-cc/**)",
       "Read(/C:\\Users\\yow_g\\Documents\\vifae mvp\\vifae-mvp-cc/**)",
       "Bash(git push:*)",
-      "Read(/C:\\Users\\yow_g\\Documents\\vifae mvp\\vifae-mvp-cc/**)"
+      "Read(/C:\\Users\\yow_g\\Documents\\vifae mvp\\vifae-mvp-cc/**)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": [],

@@ -107,8 +107,16 @@ func _on_close_pressed():
 func _start_next_battle():
 	print("SHOP→ Starting next battle")
 	
-	# Get TurnManager and start new combat
+	# Get TurnManager and BackgroundManager for next battle
 	var turn_manager = get_node_or_null("/root/BattleScene/TurnManager")
+	var background_manager = get_node_or_null("/root/BattleScene/BackgroundManager")
+	var background_sprite = get_node_or_null("/root/BattleScene/Background")
+	
+	# Change background before starting new battle
+	if background_manager and background_sprite:
+		background_manager.change_battle_background(background_sprite)
+		print("SHOP→ Background randomized for next battle")
+	
 	if turn_manager:
 		# Reset combat for next battle
 		turn_manager.reset_combat()

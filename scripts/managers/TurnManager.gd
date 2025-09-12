@@ -74,6 +74,10 @@ const GAME_OVER_THEME = "res://assets/music/closer.wav"
 @onready var pause_overlay := get_node_or_null("/root/BattleScene/UILayer/PauseOverlay")
 @onready var coin_label := get_node_or_null("/root/BattleScene/UILayer/CoinDisplay/CoinLabel")
 
+# Background system
+@onready var background_manager := get_node("../BackgroundManager")
+@onready var background_sprite := get_node("../Background")
+
 # Attack announcement UI
 var attack_announcement_label: Label
 
@@ -725,6 +729,10 @@ func change_state(new_state: State):
 			reset_combat()
 
 func begin_turn():
+	# Randomize background at the start of each new battle cycle
+	if current_turn_index == 0 and background_manager and background_sprite:
+		background_manager.change_battle_background(background_sprite)
+	
 	current_actor = turn_order[current_turn_index]
 	print("STATE→ BEGIN_TURN: " + current_actor.name)
 	
