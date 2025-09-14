@@ -128,6 +128,16 @@ var turn_order_provider: TurnOrderProvider
 func _ready():
 	AudioServer.set_bus_volume_db(0, -6.0)  # Force Master bus loud
 	print("STATE→ INITIALIZING TurnManager")
+
+	# Ensure audio players use correct buses (fixes settings persistence)
+	if bgm_player:
+		bgm_player.bus = "Music"
+		print("STATE→ BGM Player assigned to Music bus")
+
+	var sfx_player = get_node_or_null("../SFXPlayer")
+	if sfx_player:
+		sfx_player.bus = "SFX"
+		print("STATE→ SFX Player assigned to SFX bus")
 	
 	# Initialize selection_description reference safely
 	selection_description = get_node_or_null("../UILayer/QTEContainer/SelectionDescriptionLabel")
@@ -1479,12 +1489,25 @@ func toggle_pause():
 	if pause_overlay:
 		if pause_overlay.visible:
 			pause_overlay.hide_pause()
+			restore_ui_after_pause()
 			print("PAUSE→ Game resumed")
 		else:
 			pause_overlay.show_pause()
+			# Disable action menu when pausing
+			if action_menu:
+				action_menu.visible = false
 			print("PAUSE→ Game paused")
 	else:
 		print("ERROR→ PauseOverlay not found")
+
+func restore_ui_after_pause():
+	print("PAUSE→ Restoring UI after pause")
+	# Only show action menu if it's currently showing menu state and they can act
+	if current_state == State.SHOW_MENU and action_menu:
+		action_menu.visible = true
+		print("PAUSE→ ActionMenu restored")
+	else:
+		print("PAUSE→ ActionMenu not restored (state: ", State.keys()[current_state], ")")
 
 # Turn order provider management
 func set_turn_order_provider(provider: TurnOrderProvider) -> void:

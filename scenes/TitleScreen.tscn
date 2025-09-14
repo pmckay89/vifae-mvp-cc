@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://bx8l0kh4kqh3j"]
+[gd_scene load_steps=4 format=3 uid="uid://bx8l0kh4kqh3j"]
 
 [ext_resource type="Texture2D" uid="uid://dwvvnr7dhm32g" path="res://assets/backgrounds/titlescreen.png" id="1_2hjgx"]
 [ext_resource type="Script" path="res://scripts/TitleScreen.gd" id="1_xv5wl"]
+[ext_resource type="PackedScene" uid="uid://bkl8m9n0p1q2r3" path="res://scenes/SettingsOverlay.tscn" id="3_overlay"]
 
 [node name="TitleScreen" type="Control"]
 layout_mode = 3
@@ -47,6 +48,8 @@ text = "Settings"
 [node name="QuitButton" type="Button" parent="MenuContainer"]
 layout_mode = 2
 text = "Quit"
+
+[node name="SettingsOverlay" parent="." instance=ExtResource("3_overlay")]
 
 [connection signal="pressed" from="MenuContainer/StartButton" to="." method="_on_start_button_pressed"]
 [connection signal="pressed" from="MenuContainer/LoadButton" to="." method="_on_load_button_pressed"]

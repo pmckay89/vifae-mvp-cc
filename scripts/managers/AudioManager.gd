@@ -11,9 +11,9 @@ func _ready():
 	add_child(sfx_player)
 	add_child(bgm_player)
 	
-	# Configure players with safe defaults
-	sfx_player.bus = "Master"  # Safe fallback
-	bgm_player.bus = "Master"  # Safe fallback
+	# Configure players with proper buses
+	sfx_player.bus = "SFX"
+	bgm_player.bus = "Music"
 	
 	print("[AudioManager] Initialized with stub functions")
 
@@ -69,36 +69,48 @@ func _play_safe_sfx(sound_id: String) -> void:
 		print("[AudioManager] Asset not found: " + asset_path + " (stub)")
 
 func _fade_bgm_safe(track: String, duration: float) -> void:
-	# Check if BGM bus exists
-	var bgm_bus_index = AudioServer.get_bus_index("BGM")
-	if bgm_bus_index == -1:
-		print("[AudioManager] BGM bus not found, using Master bus")
+	# Check if Music bus exists
+	var music_bus_index = AudioServer.get_bus_index("Music")
+	if music_bus_index == -1:
+		print("[AudioManager] Music bus not found, using Master bus")
 		bgm_player.bus = "Master"
 	else:
-		bgm_player.bus = "BGM"
+		bgm_player.bus = "Music"
 	
-	# Try to load BGM asset
-	var asset_path = "res://assets/music/" + track + ".ogg"
-	if ResourceLoader.exists(asset_path):
-		var stream = load(asset_path)
-		if stream:
-			# Fade out current, fade in new
-			if bgm_player.playing:
-				var tween = create_tween()
-				tween.tween_property(bgm_player, "volume_db", -60, duration / 2)
-				await tween.finished
-			
-			bgm_player.stream = stream
-			bgm_player.volume_db = -60
-			bgm_player.play()
-			
-			var fade_in_tween = create_tween()
-			fade_in_tween.tween_property(bgm_player, "volume_db", -6, duration / 2)
-			print("[AudioManager] BGM faded to: " + asset_path)
-		else:
-			print("[AudioManager] Failed to load BGM: " + asset_path)
+	# Try to load BGM asset (check multiple locations and formats)
+	var asset_path = ""
+	var stream = null
+
+	# Check common locations and formats
+	var possible_paths = [
+		"res://assets/music/" + track + ".ogg",
+		"res://assets/music/" + track + ".wav",
+		"res://assets/sfx/" + track + ".ogg",
+		"res://assets/sfx/" + track + ".wav"
+	]
+
+	for path in possible_paths:
+		if ResourceLoader.exists(path):
+			asset_path = path
+			stream = load(path)
+			break
+
+	if stream:
+		# Fade out current, fade in new
+		if bgm_player.playing:
+			var tween = create_tween()
+			tween.tween_property(bgm_player, "volume_db", -60, duration / 2)
+			await tween.finished
+
+		bgm_player.stream = stream
+		bgm_player.volume_db = -60
+		bgm_player.play()
+
+		var fade_in_tween = create_tween()
+		fade_in_tween.tween_property(bgm_player, "volume_db", -6, duration / 2)
+		print("[AudioManager] BGM faded to: " + asset_path)
 	else:
-		print("[AudioManager] BGM asset not found: " + asset_path + " (stub)")
+		print("[AudioManager] BGM asset not found for track: " + track + " (checked multiple locations)")
 
 # Utility functions
 func stop_all_sfx() -> void:

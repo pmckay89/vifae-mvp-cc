@@ -1,0 +1,103 @@
+[gd_scene load_steps=2 format=3 uid="uid://cs8ujlm2b5ctu"]
+
+[ext_resource type="Script" uid="uid://dxm7w6bnpilvh" path="res://scripts/ui/SettingsMenu.gd" id="1_settings"]
+
+[node name="SettingsMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_settings")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.1, 0.1, 0.15, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+text = "AUDIO SETTINGS"
+horizontal_alignment = 1
+
+[node name="MusicContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="MusicLabel" type="Label" parent="CenterContainer/VBoxContainer/MusicContainer"]
+layout_mode = 2
+text = "Music Volume"
+
+[node name="MusicControls" type="HBoxContainer" parent="CenterContainer/VBoxContainer/MusicContainer"]
+layout_mode = 2
+
+[node name="MusicToggle" type="Button" parent="CenterContainer/VBoxContainer/MusicContainer/MusicControls"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "🎵"
+
+[node name="MusicSlider" type="HSlider" parent="CenterContainer/VBoxContainer/MusicContainer/MusicControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+step = 20.0
+value = 60.0
+
+[node name="MusicValue" type="Label" parent="CenterContainer/VBoxContainer/MusicContainer/MusicControls"]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "50%"
+
+[node name="HSeparator2" type="HSeparator" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="SFXContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="SFXLabel" type="Label" parent="CenterContainer/VBoxContainer/SFXContainer"]
+layout_mode = 2
+text = "SFX Volume"
+
+[node name="SFXControls" type="HBoxContainer" parent="CenterContainer/VBoxContainer/SFXContainer"]
+layout_mode = 2
+
+[node name="SFXToggle" type="Button" parent="CenterContainer/VBoxContainer/SFXContainer/SFXControls"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "🔫"
+
+[node name="SFXSlider" type="HSlider" parent="CenterContainer/VBoxContainer/SFXContainer/SFXControls"]
+layout_mode = 2
+size_flags_horizontal = 3
+step = 20.0
+value = 80.0
+
+[node name="SFXValue" type="Label" parent="CenterContainer/VBoxContainer/SFXContainer/SFXControls"]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "80%"
+
+[node name="HSeparator3" type="HSeparator" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+text = "BACK"
+
+[connection signal="pressed" from="CenterContainer/VBoxContainer/MusicContainer/MusicControls/MusicToggle" to="." method="_on_music_toggle_pressed"]
+[connection signal="value_changed" from="CenterContainer/VBoxContainer/MusicContainer/MusicControls/MusicSlider" to="." method="_on_music_slider_value_changed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/SFXContainer/SFXControls/SFXToggle" to="." method="_on_sfx_toggle_pressed"]
+[connection signal="value_changed" from="CenterContainer/VBoxContainer/SFXContainer/SFXControls/SFXSlider" to="." method="_on_sfx_slider_value_changed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/BackButton" to="." method="_on_back_button_pressed"]
