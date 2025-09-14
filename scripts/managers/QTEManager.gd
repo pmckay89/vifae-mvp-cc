@@ -739,12 +739,16 @@ func start_sniper_qte(action_name: String, prompt_text: String, _target_player =
 	if qte_circle:
 		qte_circle.visible = false
 	
-	# Create sweet spot (stationary center target)
+	# Create sweet spot (stationary target over enemy)
 	var sweet_spot = ColorRect.new()
-	sweet_spot.size = Vector2(20, 20)
+	sweet_spot.size = Vector2(30, 30)
 	sweet_spot.color = Color.RED
 	var screen_center = get_viewport().get_visible_rect().size / 2
-	sweet_spot.position = screen_center - sweet_spot.size / 2
+
+	# Position horizontally over the enemy, vertically at screen center
+	var enemy_node = get_node_or_null("/root/BattleScene/Enemy")
+	var enemy_pos = enemy_node.global_position if enemy_node else Vector2(900, 300)
+	sweet_spot.position = Vector2(enemy_pos.x - sweet_spot.size.x / 2, screen_center.y - sweet_spot.size.y / 2)
 	qte_container.add_child(sweet_spot)
 	
 	# Create crosshair (moving bullet)
@@ -873,22 +877,28 @@ func start_multishot_qte(prompt_text: String, target_player) -> String:
 		projectile_results.append("pending")  # Track each projectile
 		print("🎯 Projectile ", i, " created at: ", projectile.position)
 	
-	# Launch sequence with 0.5s intervals
+	# Launch sequence with randomized intervals for unpredictability
 	var start_time = Time.get_ticks_msec()
-	var launch_interval = 500  # 0.5 seconds in ms
-	var projectile_speed = 675.0  # pixels per second (50% faster than 450)
+	var projectile_speed = 850.0  # pixels per second (increased from 675 for faster gameplay)
 	var parry_distance = 50.0  # Distance from player for parry window
 	var launched_projectiles = []
-	
+
+	# Generate random launch intervals (0.2s to 0.8s range)
+	var launch_intervals = []
+	for i in 3:  # Need 3 intervals for 4 projectiles
+		var random_interval = randf_range(0.2, 0.8)  # 200ms to 800ms
+		launch_intervals.append(random_interval)
+	print("🎯 Random launch intervals: ", launch_intervals)
+
 	# Launch projectiles with immediate movement
 	var active_projectiles = []
 	var projectile_tracker = {"active_count": 4}  # Shared reference for tracking
-	
+
 	# Start async movement for each projectile as it launches
 	for i in 4:
 		# Skip delay for first projectile (already visible)
 		if i > 0:
-			await get_tree().create_timer(launch_interval / 1000.0).timeout
+			await get_tree().create_timer(launch_intervals[i-1]).timeout
 			# Make projectile visible
 			projectiles[i].visible = true
 		
@@ -1002,6 +1012,16 @@ func _start_projectile_movement(proj_data: Dictionary, enemy_pos: Vector2, playe
 			if target_player and target_player.has_method("take_damage"):
 				target_player.take_damage(15)
 				print("🎯 Applied 15 damage to player")
+
+				# Trigger hitstun animation using AnimationBridge
+				var animation_bridge = get_node_or_null("/root/AnimationBridge")
+				if animation_bridge and animation_bridge.has_method("play_hitstun_animation"):
+					if target_player.name == "Player1":
+						animation_bridge.play_hitstun_animation("ninja_hitstun", "Player1")
+						print("🎯 Playing ninja_hitstun animation for Player1 projectile hit")
+					elif target_player.name == "Player2":
+						animation_bridge.play_hitstun_animation("hitstun", "Player2")
+						print("🎯 Playing hitstun animation for Player2 projectile hit")
 			
 			# Remove projectile
 			projectile.queue_free()

@@ -311,3 +311,64 @@ func _debug_print_children(node: Node, prefix: String, depth: int):
 	
 	for child in node.get_children():
 		_debug_print_children(child, prefix + "  ", depth + 1)
+
+# Play hitstun animation for damaged players
+func play_hitstun_animation(animation_name: String, player_name: String):
+	print("🎬 [AnimationBridge] Playing hitstun animation: ", animation_name, " for ", player_name)
+
+	# Load and instantiate animation scene
+	var animation_scene = load("res://testing animations.tscn")
+	if not animation_scene:
+		print("❌ [AnimationBridge] Could not load testing animations scene")
+		return
+
+	var animation_instance = animation_scene.instantiate()
+	get_tree().current_scene.add_child(animation_instance)
+
+	# Position the animation at spawn position
+	animation_instance.global_position = Vector2(0, 0)
+	animation_instance.z_index = 100
+
+	# Hide the corresponding player's idle sprite and position HeroRoot
+	var player_node = null
+	var hero_root = animation_instance.get_node_or_null("HeroRoot")
+	if hero_root:
+		# Get the player node and hide their idle sprite
+		if player_name == "Player1":
+			player_node = get_tree().current_scene.get_node_or_null("Player1")
+			hero_root.position = Vector2(77, 233)  # Player1's battle position
+		elif player_name == "Player2":
+			player_node = get_tree().current_scene.get_node_or_null("Player2")
+			hero_root.position = Vector2(121, 389)  # Player2's battle position
+
+		# Hide the player's idle sprite during hitstun
+		if player_node:
+			var idle_sprite = player_node.get_node_or_null("idle")
+			if idle_sprite:
+				idle_sprite.visible = false
+				print("🎬 [AnimationBridge] Hidden ", player_name, " idle sprite during hitstun")
+
+		hero_root.scale = Vector2(1.0, 1.0)  # Normal scale
+
+	# Get the AnimationPlayer and play the hitstun animation
+	var animation_player = animation_instance.get_node_or_null("HeroRoot/Hero/AnimationPlayer")
+	if animation_player:
+		animation_player.play(animation_name)
+		print("🎬 [AnimationBridge] Playing hitstun: ", animation_name)
+
+		# Clean up after animation finishes
+		animation_player.animation_finished.connect(func(anim_name):
+			print("🎬 [AnimationBridge] Hitstun animation finished: ", anim_name)
+
+			# Restore the player's idle sprite
+			if player_node:
+				var idle_sprite = player_node.get_node_or_null("idle")
+				if idle_sprite:
+					idle_sprite.visible = true
+					print("🎬 [AnimationBridge] Restored ", player_name, " idle sprite after hitstun")
+
+			animation_instance.queue_free()
+		)
+	else:
+		print("❌ [AnimationBridge] Could not find AnimationPlayer for hitstun")
+		animation_instance.queue_free()

@@ -2,20 +2,40 @@ extends Label
 
 var descriptions = {
     "attack": "Basic strike dealing 10-15 damage. Timing QTE.",
+
     # Player1 (Sword Spirit) abilities
     "2x_cut": "Double slash dealing medium damage. Confirm Attack QTE.",
     "moonfall_slash": "Powerful overhead strike. Confirm Attack QTE.",
     "spirit_wave": "Ranged spiritual attack. Confirm Attack QTE.",
     "uppercut": "Rising sword attack. Confirm Attack QTE.",
+    "whirlwind": "Spinning attack hitting all enemies. Confirm Attack QTE.",
+    "poison": "Toxic blade that inflicts poison damage over time. Confirm Attack QTE.",
+    "burn_strike": "Fiery slash that burns the target. Confirm Attack QTE.",
+    "shield_boost": "Increases defense temporarily. No QTE.",
+    "mark_target": "Marks enemy for increased damage. No QTE.",
+
     # Player2 (Gun Girl) abilities
     "big_shot": "Powerful shot dealing 50-70 damage. Confirm Attack QTE.",
     "scatter_shot": "Spread shot hitting multiple areas. Confirm Attack QTE.",
     "focus": "Doubles damage of next attack. No QTE.",
     "grenade": "Explosive area damage. Confirm Attack QTE.",
     "bullet_rain": "Fires multiple shots for 7-10 damage each. Confirm Attack QTE.",
+    "freezing_shot": "Ice bullet that slows the enemy. Confirm Attack QTE.",
+    "armor_piercing": "Shot that ignores enemy defense. Confirm Attack QTE.",
+    "bleeding_shot": "Bullet that causes bleeding damage over time. Confirm Attack QTE.",
+
+    # Shared abilities
+    "berserker_rage": "Increases attack power but reduces defense. No QTE.",
+    "healing_touch": "Restores HP to self or ally. No QTE.",
+    "curse_strike": "Dark attack that weakens the enemy. Confirm Attack QTE.",
+    "time_shift": "Slows down time for tactical advantage. No QTE.",
+    "energy_barrier": "Creates protective barrier absorbing damage. No QTE.",
+    "spirit_slash": "Spiritual sword attack. Confirm Attack QTE.",
+
     # Legacy abilities (may be unused)
     "jump_shot": "Aerial shot dealing 15-25 damage. Confirm Attack QTE.",
     "precision_strike": "Focused shot dealing 20-30 damage. Confirm Attack QTE.",
+
     # Items
     "hp_potion": "Restores 50 HP. Uses drink animation. One per turn.",
     "resolve_potion": "Restores 3 Resolve. Uses drink animation. One per turn."
@@ -24,15 +44,25 @@ var descriptions = {
 func show_description(key: String):
     text = descriptions.get(key, "")
     visible = true
-    
+
     # Essential fix: Ensure parent container is visible
     if get_parent():
         get_parent().visible = true
+
+    # Show the background panel
+    var bg_panel = get_node("../../DescriptionBackground")
+    if bg_panel:
+        bg_panel.visible = true
     
-    # Set proper styling - red text with outline for visibility
-    add_theme_color_override("font_color", Color.RED)
+    # Set proper styling - white text with outline for visibility
+    add_theme_color_override("font_color", Color.WHITE)
     add_theme_color_override("font_outline_color", Color.BLACK) 
     add_theme_constant_override("outline_size", 2)
 
 func hide_description():
     visible = false
+
+    # Hide the background panel too
+    var bg_panel = get_node("../../DescriptionBackground")
+    if bg_panel:
+        bg_panel.visible = false

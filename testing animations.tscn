@@ -1,4 +1,4 @@
-[gd_scene load_steps=246 format=3 uid="uid://b55wbmfbve30"]
+[gd_scene load_steps=278 format=3 uid="uid://b55wbmfbve30"]
 
 [ext_resource type="Texture2D" uid="uid://h62ecpojvn1h" path="res://assets/characters/enemy-XT.png" id="1_84ipl"]
 [ext_resource type="Texture2D" uid="uid://cwr4rn6e6cl4r" path="res://assets/animations/individual pngs/vifae-idle00.png" id="2_8k0kx"]
@@ -171,12 +171,44 @@
 [ext_resource type="Texture2D" uid="uid://b3rnyox7820f7" path="res://assets/animations/BE/ghost_attack52.png" id="85_afawx"]
 [ext_resource type="Texture2D" uid="uid://c3x8mnpq4rfil" path="res://assets/animations/BE/ghost_attack53.png" id="86_0p20h"]
 [ext_resource type="Texture2D" uid="uid://mgqrraqfmg31" path="res://assets/animations/BE/ghost_attack54.png" id="87_5rjio"]
+[ext_resource type="Texture2D" uid="uid://dye5qrwr3q4hg" path="res://assets/animations/BE/ghost_attack1_finish1.png" id="88_ed35g"]
+[ext_resource type="Texture2D" uid="uid://drhtenrm5dcmx" path="res://assets/animations/BE/ghost_attack1_finish2.png" id="89_a70es"]
 [ext_resource type="Texture2D" uid="uid://bifaklda4opla" path="res://assets/animations/ninja_idle.png" id="90_p6fbl"]
+[ext_resource type="Texture2D" uid="uid://bmhwiql7r7nod" path="res://assets/animations/BE/ghost_attack1_finish3.png" id="90_ycduo"]
+[ext_resource type="Texture2D" uid="uid://ovd7egpvctem" path="res://assets/animations/BE/ghost_attack1_finish4.png" id="91_wnfxu"]
+[ext_resource type="Texture2D" uid="uid://p5k38cypni46" path="res://assets/animations/BE/ghost_attack1_finish5.png" id="92_q5gj3"]
+[ext_resource type="Texture2D" uid="uid://b4vth4tpeeytr" path="res://assets/animations/BE/ghost_attack1_finish6.png" id="93_2otvc"]
+[ext_resource type="Texture2D" uid="uid://dagj0lxfr14f4" path="res://assets/animations/BE/ghost_attack1_finish7.png" id="94_lnn4m"]
+[ext_resource type="Texture2D" uid="uid://cyoqxn1xejtp5" path="res://assets/animations/BE/ghost_attack1_finish8.png" id="95_nspw1"]
+[ext_resource type="Texture2D" uid="uid://b6wchkfs7cbkn" path="res://assets/animations/BE/ghost_attack1_finish9.png" id="96_5qrgb"]
+[ext_resource type="Texture2D" uid="uid://dv3cbtsk3n6xc" path="res://assets/animations/BE/ghost_attack1_windup1.png" id="97_02n13"]
+[ext_resource type="Texture2D" uid="uid://xso85esowibp" path="res://assets/animations/BE/ghost_attack1_windup2.png" id="98_2kwkv"]
+[ext_resource type="Texture2D" uid="uid://jw0luy30sh8j" path="res://assets/animations/BE/ghost_attack1_windup3.png" id="99_belhn"]
+[ext_resource type="Texture2D" uid="uid://bdqv0q402e3od" path="res://assets/animations/BE/ghost_attack1_windup4.png" id="100_1af8t"]
+[ext_resource type="Texture2D" uid="uid://cd45cq1s5bumr" path="res://assets/animations/BE/ghost_attack1_windup5.png" id="101_ts5ar"]
+[ext_resource type="Texture2D" uid="uid://dmkco0t5aj6lt" path="res://assets/animations/BE/ghost_attack1_windup6.png" id="102_53owk"]
+[ext_resource type="Texture2D" uid="uid://b7aydlhwi5xcu" path="res://assets/animations/BE/ghost_attack1_windup7.png" id="103_rev01"]
+[ext_resource type="Texture2D" uid="uid://dt6s17a86jv60" path="res://assets/animations/BE/ghost_attack1_windup8.png" id="104_sbit6"]
+[ext_resource type="Texture2D" uid="uid://bkrg0ir426kvi" path="res://assets/animations/BE/ghost_attack1_windup9.png" id="105_spo7t"]
+[ext_resource type="Texture2D" uid="uid://drhphb331lrf6" path="res://assets/animations/BE/ghost_attack1_windup10.png" id="106_cfg1k"]
+[ext_resource type="Texture2D" uid="uid://bx13ee4bn485o" path="res://assets/animations/BE/ghost_attack1_windup11.png" id="107_afawx"]
+[ext_resource type="Texture2D" uid="uid://ddrxlh4yormxm" path="res://assets/animations/BE/ghost_attack1_windup12.png" id="108_0p20h"]
+[ext_resource type="Texture2D" uid="uid://cggw6hle56l0m" path="res://assets/animations/BE/ghost_attack1_windup13.png" id="109_5rjio"]
+[ext_resource type="Texture2D" uid="uid://b0x8o6c17vky7" path="res://assets/animations/BE/ghost_attack1_windup14.png" id="110_yryl8"]
+[ext_resource type="Texture2D" uid="uid://ciun5k6oohl3i" path="res://assets/animations/BE/ghost_attack1_windup15.png" id="111_4km7q"]
+[ext_resource type="Texture2D" uid="uid://bu4feyers61n5" path="res://assets/animations/BE/ghost_attack1_windup16.png" id="112_2ysb2"]
+[ext_resource type="Texture2D" uid="uid://wak1mgiv4fwb" path="res://assets/animations/BE/ghost_attack1_windup17.png" id="113_pgjo6"]
+[ext_resource type="Texture2D" uid="uid://ywbyomhbgey1" path="res://assets/animations/BE/ghost_attack1_windup18.png" id="114_cwdof"]
+[ext_resource type="Texture2D" uid="uid://cwupik1cm1fao" path="res://assets/animations/BE/ghost_attack1_windup19.png" id="115_c15pp"]
+[ext_resource type="Texture2D" uid="uid://btdkaj0r7uvk3" path="res://assets/animations/BE/ghost_attack1_windup20.png" id="116_1c6gv"]
+[ext_resource type="Texture2D" uid="uid://bvyjwv8eug153" path="res://assets/animations/BE/ghost_attack1_windup21.png" id="117_65ird"]
 [ext_resource type="Texture2D" uid="uid://clpsk42av51m1" path="res://assets/animations/individual pngs/ninja_ww_attack1.png" id="117_esvvd"]
 [ext_resource type="Texture2D" uid="uid://c50e6at8bdk34" path="res://assets/animations/individual pngs/ninja_hitstun1.png" id="117_j5607"]
+[ext_resource type="Texture2D" uid="uid://cgemav4ua11tb" path="res://assets/animations/BE/ghost_attack1_windup22.png" id="118_2ix5q"]
 [ext_resource type="Texture2D" uid="uid://dmm4yenvnk07j" path="res://assets/animations/individual pngs/ninja_hitstun2.png" id="118_7xvpr"]
 [ext_resource type="Texture2D" uid="uid://b4x7hk4ydak5u" path="res://assets/animations/individual pngs/ninja_ww_attack2.png" id="118_kc7ar"]
 [ext_resource type="Texture2D" uid="uid://6lga8bvfsotc" path="res://assets/animations/individual pngs/ninja_hitstun3.png" id="119_d30q7"]
+[ext_resource type="Texture2D" uid="uid://cxy3y77f6a0wb" path="res://assets/animations/BE/ghost_attack1_windup23.png" id="119_frjve"]
 [ext_resource type="Texture2D" uid="uid://cwor7qrb8hp2f" path="res://assets/animations/individual pngs/ninja_ww_attack4.png" id="119_o5c8g"]
 [ext_resource type="Texture2D" uid="uid://dfgl1s65ant8q" path="res://assets/animations/individual pngs/ninja_ww_attack5.png" id="120_1i1ow"]
 [ext_resource type="Texture2D" uid="uid://mtoq8uk546d5" path="res://assets/animations/individual pngs/ninja_hitstun4.png" id="120_4e6u0"]
@@ -605,6 +637,112 @@ animations = [{
 "loop": true,
 "name": &"BE_Test1",
 "speed": 30.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("88_ed35g")
+}, {
+"duration": 1.0,
+"texture": ExtResource("89_a70es")
+}, {
+"duration": 1.0,
+"texture": ExtResource("90_ycduo")
+}, {
+"duration": 1.0,
+"texture": ExtResource("91_wnfxu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("92_q5gj3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("93_2otvc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("94_lnn4m")
+}, {
+"duration": 1.0,
+"texture": ExtResource("95_nspw1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("96_5qrgb")
+}],
+"loop": true,
+"name": &"BE_Test1_Finish",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("97_02n13")
+}, {
+"duration": 1.0,
+"texture": ExtResource("98_2kwkv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("99_belhn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("100_1af8t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("101_ts5ar")
+}, {
+"duration": 1.0,
+"texture": ExtResource("102_53owk")
+}, {
+"duration": 1.0,
+"texture": ExtResource("103_rev01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("104_sbit6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("105_spo7t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("106_cfg1k")
+}, {
+"duration": 1.0,
+"texture": ExtResource("107_afawx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("108_0p20h")
+}, {
+"duration": 1.0,
+"texture": ExtResource("109_5rjio")
+}, {
+"duration": 1.0,
+"texture": ExtResource("110_yryl8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("111_4km7q")
+}, {
+"duration": 1.0,
+"texture": ExtResource("112_2ysb2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("113_pgjo6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("114_cwdof")
+}, {
+"duration": 1.0,
+"texture": ExtResource("115_c15pp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("116_1c6gv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("117_65ird")
+}, {
+"duration": 1.0,
+"texture": ExtResource("118_2ix5q")
+}, {
+"duration": 1.0,
+"texture": ExtResource("119_frjve")
+}],
+"loop": true,
+"name": &"BE_Test1_Windup",
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
