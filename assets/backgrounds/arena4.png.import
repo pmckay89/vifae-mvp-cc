@@ -3,11 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://3pefoich1cj6"
-valid=false
+path="res://.godot/imported/arena4.png-95a4cdfdaae28c6946857ffd59b4175a.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/backgrounds/arena4.png"
+dest_files=["res://.godot/imported/arena4.png-95a4cdfdaae28c6946857ffd59b4175a.ctex"]
 
 [params]
 

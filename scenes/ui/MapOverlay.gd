@@ -160,9 +160,17 @@ func _on_quit_pressed():
 
 func _start_new_run():
 	print("MAP→ Starting new run")
-	
-	# Get TurnManager and reset everything for new run
+
+	# Get TurnManager and BackgroundManager for new run
 	var turn_manager = get_node_or_null("/root/BattleScene/TurnManager")
+	var background_manager = get_node_or_null("/root/BattleScene/BackgroundManager")
+	var background_sprite = get_node_or_null("/root/BattleScene/Background")
+
+	# Change background before starting new run
+	if background_manager and background_sprite:
+		background_manager.change_battle_background(background_sprite)
+		print("MAP→ Background randomized for new run")
+
 	if turn_manager:
 		# Reset combat completely
 		turn_manager.reset_combat()
