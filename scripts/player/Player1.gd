@@ -280,6 +280,16 @@ func take_damage(amount):
 	for effect in damage_result.effects_triggered:
 		print("🎯 [", name, "] ", effect, " effect triggered!")
 
+	# Check for barrier absorption
+	if status_effects.has_effect("barrier"):
+		var barrier_effect = status_effects.find_effect("barrier")
+		var absorbed = min(final_damage, barrier_effect.get("absorb_amount", 0))
+		if absorbed > 0:
+			final_damage -= absorbed
+			print("🛡️ BARRIER: Absorbed " + str(absorbed) + " damage")
+			CombatUI.show_damage_popup(self, absorbed)
+			status_effects.remove_effect("barrier")  # Remove after any damage
+
 	hp -= final_damage
 	print(name, "takes", final_damage, "damage. HP:", hp)
 
@@ -301,7 +311,7 @@ func reset_for_new_combat():
 	print("RESET→ " + name + " fully restored")
 
 func get_ability_list() -> Array:
-	return ["2x_cut", "moonfall_slash", "spirit_wave", "whirlwind", "poison", "burn_strike", "shield_boost", "mark_target"]
+	return ["2x_cut", "moonfall_slash", "spirit_wave", "whirlwind", "poison", "burn_strike", "shield_boost", "mark_target", "berserker_rage", "healing_touch", "curse_strike", "time_shift", "energy_barrier"]
 
 func get_ability_display_name(ability_name: String) -> String:
 	match ability_name:
@@ -321,6 +331,16 @@ func get_ability_display_name(ability_name: String) -> String:
 			return "Shield Boost"
 		"mark_target":
 			return "Mark Target"
+		"berserker_rage":
+			return "Berserker Rage"
+		"healing_touch":
+			return "Healing Touch"
+		"curse_strike":
+			return "Curse Strike"
+		"time_shift":
+			return "Time Shift"
+		"energy_barrier":
+			return "Energy Barrier"
 		_:
 			return ability_name
 
@@ -349,6 +369,21 @@ func execute_ability(ability_name: String, target):
 		return result
 	elif ability_name == "mark_target":
 		var result = await execute_mark_target_sequence(target)
+		return result
+	elif ability_name == "berserker_rage":
+		var result = await execute_berserker_rage_sequence(target)
+		return result
+	elif ability_name == "healing_touch":
+		var result = await execute_healing_touch_sequence(target)
+		return result
+	elif ability_name == "curse_strike":
+		var result = await execute_curse_strike_sequence(target)
+		return result
+	elif ability_name == "time_shift":
+		var result = await execute_time_shift_sequence(target)
+		return result
+	elif ability_name == "energy_barrier":
+		var result = await execute_energy_barrier_sequence(target)
 		return result
 	elif ability_name == "uppercut":
 		await execute_uppercut_sequence(target)
@@ -1052,3 +1087,239 @@ func _play_mark_target_sound_effect(qte_result: String):
 		"fail":
 			sfx_player.stream = preload("res://assets/sfx/miss.wav")
 			sfx_player.play()
+
+# New Status Effect Abilities
+func execute_berserker_rage_sequence(target):
+	print("😡 " + name + " begins Berserker Rage sequence!")
+
+	# Step 1: Spawn animation and play windup
+	var instance = AnimationBridge.spawn_ability_animation("basic_attack_p1", Vector2.ZERO, self)
+	AnimationBridge.play_windup_animation("basic_attack_p1")
+	await AnimationBridge.animation_ready_for_qte
+
+	# Step 2: QTE
+	print("😡 Berserker rage incoming...")
+	var result = await QTEManager.start_qte("confirm attack", 600, "Press Z for RAGE!")
+
+	# Step 3: IMMEDIATE - Apply rage to self
+	var total_damage = _apply_berserker_rage_immediate(self, result)
+
+	# Step 4: Play result animation
+	AnimationBridge.play_result_animation("basic_attack_p1", result)
+	await AnimationBridge.animation_sequence_complete
+
+	print("😡 Berserker rage complete - rage applied to self")
+
+	return {
+		"damage": total_damage,
+		"qte_result": result,
+		"success": true,
+		"handled_damage": true
+	}
+
+func _apply_berserker_rage_immediate(target, qte_result: String) -> int:
+	if qte_result in ["crit", "normal"]:
+		var rage_effect = {
+			"type": "rage",
+			"target": target,
+			"caster": self,
+			"duration": 2,
+			"damage_modifier": 2.0,
+			"incoming_modifier": 1.25
+		}
+		target.status_effects.apply_effect(rage_effect)
+		print("😡 IMMEDIATE: Applied rage to ", target.name, " (+100% damage, +25% incoming)")
+
+		# Show status applied popup
+		CombatUI.show_status_applied_popup(target, "rage")
+		return 0  # No direct damage, just status effect
+	else:
+		print("😡 IMMEDIATE: Rage failed")
+		return 0
+
+func execute_healing_touch_sequence(target):
+	print("💚 " + name + " begins Healing Touch sequence!")
+
+	# Step 1: Spawn animation and play windup
+	var instance = AnimationBridge.spawn_ability_animation("basic_attack_p1", Vector2.ZERO, self)
+	AnimationBridge.play_windup_animation("basic_attack_p1")
+	await AnimationBridge.animation_ready_for_qte
+
+	# Step 2: QTE
+	print("💚 Healing touch incoming...")
+	var result = await QTEManager.start_qte("confirm attack", 600, "Press Z to heal!")
+
+	# Step 3: IMMEDIATE - Apply regeneration to self
+	var total_damage = _apply_healing_touch_immediate(self, result)
+
+	# Step 4: Play result animation
+	AnimationBridge.play_result_animation("basic_attack_p1", result)
+	await AnimationBridge.animation_sequence_complete
+
+	print("💚 Healing touch complete - regeneration applied to self")
+
+	return {
+		"damage": total_damage,
+		"qte_result": result,
+		"success": true,
+		"handled_damage": true
+	}
+
+func _apply_healing_touch_immediate(target, qte_result: String) -> int:
+	if qte_result in ["crit", "normal"]:
+		var regen_effect = {
+			"type": "regeneration",
+			"target": target,
+			"caster": self,
+			"duration": 3,
+			"heal_per_turn": 10
+		}
+		target.status_effects.apply_effect(regen_effect)
+		print("💚 IMMEDIATE: Applied regeneration to ", target.name, " (10 HP/turn for 3 turns)")
+
+		# Show status applied popup
+		CombatUI.show_status_applied_popup(target, "regeneration")
+		return 0  # No direct damage, just status effect
+	else:
+		print("💚 IMMEDIATE: Healing touch failed")
+		return 0
+
+func execute_curse_strike_sequence(target):
+	print("💀 " + name + " begins Curse Strike sequence!")
+
+	# Step 1: Spawn animation and play windup
+	var instance = AnimationBridge.spawn_ability_animation("basic_attack_p1", Vector2.ZERO, self)
+	AnimationBridge.play_windup_animation("basic_attack_p1")
+	await AnimationBridge.animation_ready_for_qte
+
+	# Step 2: QTE
+	print("💀 Curse strike incoming...")
+	var result = await QTEManager.start_qte("confirm attack", 600, "Press Z to curse!")
+
+	# Step 3: IMMEDIATE - Apply weakness to target
+	var total_damage = _apply_curse_strike_immediate(target, result)
+
+	# Step 4: Play result animation
+	AnimationBridge.play_result_animation("basic_attack_p1", result)
+	await AnimationBridge.animation_sequence_complete
+
+	print("💀 Curse strike complete - weakness applied to target")
+
+	return {
+		"damage": total_damage,
+		"qte_result": result,
+		"success": true,
+		"handled_damage": true
+	}
+
+func _apply_curse_strike_immediate(target, qte_result: String) -> int:
+	if qte_result in ["crit", "normal"]:
+		var weakness_effect = {
+			"type": "weakness",
+			"target": target,
+			"caster": self,
+			"duration": 3,
+			"damage_modifier": 0.5
+		}
+		target.status_effects.apply_effect(weakness_effect)
+		print("💀 IMMEDIATE: Applied weakness to ", target.name, " (50% damage for 3 turns)")
+
+		# Show status applied popup
+		CombatUI.show_status_applied_popup(target, "weakness")
+		return 0  # No direct damage, just status effect
+	else:
+		print("💀 IMMEDIATE: Curse strike failed")
+		return 0
+
+func execute_time_shift_sequence(target):
+	print("💨 " + name + " begins Time Shift sequence!")
+
+	# Step 1: Spawn animation and play windup
+	var instance = AnimationBridge.spawn_ability_animation("basic_attack_p1", Vector2.ZERO, self)
+	AnimationBridge.play_windup_animation("basic_attack_p1")
+	await AnimationBridge.animation_ready_for_qte
+
+	# Step 2: QTE
+	print("💨 Time shift incoming...")
+	var result = await QTEManager.start_qte("confirm attack", 600, "Press Z to accelerate!")
+
+	# Step 3: IMMEDIATE - Apply haste to self
+	var total_damage = _apply_time_shift_immediate(self, result)
+
+	# Step 4: Play result animation
+	AnimationBridge.play_result_animation("basic_attack_p1", result)
+	await AnimationBridge.animation_sequence_complete
+
+	print("💨 Time shift complete - haste applied to self")
+
+	return {
+		"damage": total_damage,
+		"qte_result": result,
+		"success": true,
+		"handled_damage": true
+	}
+
+func _apply_time_shift_immediate(target, qte_result: String) -> int:
+	if qte_result in ["crit", "normal"]:
+		var haste_effect = {
+			"type": "haste",
+			"target": target,
+			"caster": self,
+			"duration": 2
+		}
+		target.status_effects.apply_effect(haste_effect)
+		print("💨 IMMEDIATE: Applied haste to ", target.name, " (extra turn for 2 turns)")
+
+		# Show status applied popup
+		CombatUI.show_status_applied_popup(target, "haste")
+		return 0  # No direct damage, just status effect
+	else:
+		print("💨 IMMEDIATE: Time shift failed")
+		return 0
+
+func execute_energy_barrier_sequence(target):
+	print("🛡️ " + name + " begins Energy Barrier sequence!")
+
+	# Step 1: Spawn animation and play windup
+	var instance = AnimationBridge.spawn_ability_animation("basic_attack_p1", Vector2.ZERO, self)
+	AnimationBridge.play_windup_animation("basic_attack_p1")
+	await AnimationBridge.animation_ready_for_qte
+
+	# Step 2: QTE
+	print("🛡️ Energy barrier incoming...")
+	var result = await QTEManager.start_qte("confirm attack", 600, "Press Z for barrier!")
+
+	# Step 3: IMMEDIATE - Apply barrier to self
+	var total_damage = _apply_energy_barrier_immediate(self, result)
+
+	# Step 4: Play result animation
+	AnimationBridge.play_result_animation("basic_attack_p1", result)
+	await AnimationBridge.animation_sequence_complete
+
+	print("🛡️ Energy barrier complete - barrier applied to self")
+
+	return {
+		"damage": total_damage,
+		"qte_result": result,
+		"success": true,
+		"handled_damage": true
+	}
+
+func _apply_energy_barrier_immediate(target, qte_result: String) -> int:
+	if qte_result in ["crit", "normal"]:
+		var barrier_amount = 30 if qte_result == "normal" else 35  # Slightly more for crit
+		var barrier_effect = {
+			"type": "barrier",
+			"target": target,
+			"caster": self,
+			"absorb_amount": barrier_amount
+		}
+		target.status_effects.apply_effect(barrier_effect)
+		print("🛡️ IMMEDIATE: Applied barrier to ", target.name, " (absorbs ", barrier_amount, " damage)")
+
+		# Show status applied popup
+		CombatUI.show_status_applied_popup(target, "barrier")
+		return 0  # No direct damage, just status effect
+	else:
+		print("🛡️ IMMEDIATE: Energy barrier failed")
+		return 0

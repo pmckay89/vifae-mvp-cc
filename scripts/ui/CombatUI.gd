@@ -108,7 +108,7 @@ func show_status_applied_popup(target_node: Node, effect_type: String):
 	# Check if target is a player and route player-compatible effects to FF-style status area
 	if target_node.name == "Player1" or target_node.name == "Player2":
 		# Only show certain effects on players (not enemy-specific effects)
-		var player_effects = ["burn", "poison", "bleed", "shield", "mark", "vulnerable", "stun", "regeneration", "frozen", "damage_boost", "critical_boost", "armor_up", "reflect", "focus", "resolve_gain", "confusion"]
+		var player_effects = ["burn", "poison", "bleed", "shield", "mark", "vulnerable", "stun", "regeneration", "frozen", "damage_boost", "critical_boost", "armor_up", "reflect", "focus", "resolve_gain", "confusion", "rage", "haste", "barrier"]
 		if effect_type in player_effects:
 			show_player_status_icon(target_node.name, effect_type)
 			print("🎯 [CombatUI] Routed " + effect_type + " status to " + target_node.name + " FF-style container")
@@ -116,7 +116,7 @@ func show_status_applied_popup(target_node: Node, effect_type: String):
 			print("🎯 [CombatUI] Skipped " + effect_type + " - not a player effect")
 	elif target_node.name.begins_with("Enemy"):
 		# Only show enemy-specific effects on enemies (shield is NEVER an enemy effect)
-		var enemy_effects = ["armor_down", "frozen", "burn", "poison", "bleed", "mark", "vulnerable", "stun"]
+		var enemy_effects = ["armor_down", "frozen", "burn", "poison", "bleed", "mark", "vulnerable", "stun", "weakness"]
 		if effect_type in enemy_effects:
 			show_status_icon(effect_type)  # Use enemy status container
 			print("🎯 [CombatUI] Routed " + effect_type + " status to enemy container")
@@ -278,9 +278,7 @@ func show_status_icon(effect_type: String):
 	icon_label.modulate = icon_data.color
 	icon_label.add_theme_font_size_override("font_size", 28)
 	
-	# Position within container (stack horizontally)
-	var icon_count = status_icon_labels.size()
-	icon_label.position = Vector2(icon_count * 35, 0)  # Stack icons horizontally
+	# Position will be set by _reposition_enemy_status_icons()
 	
 	print("🔍 [DEBUG] Container position: ", status_icon_container.position)
 	print("🔍 [DEBUG] Icon local position: ", icon_label.position)
@@ -291,7 +289,10 @@ func show_status_icon(effect_type: String):
 	
 	status_icon_container.add_child(icon_label)
 	status_icon_labels[effect_type] = icon_label
-	
+
+	# Reposition all icons to eliminate gaps
+	_reposition_enemy_status_icons()
+
 	print("🎯 [CombatUI] Created persistent ", effect_type, " icon in container")
 
 func hide_status_icon(effect_type: String):
@@ -300,7 +301,30 @@ func hide_status_icon(effect_type: String):
 		if icon_label and is_instance_valid(icon_label):
 			icon_label.queue_free()
 		status_icon_labels.erase(effect_type)
+
+		# Reposition remaining icons to eliminate gaps
+		_reposition_enemy_status_icons()
+
 		print("🎯 [CombatUI] Hidden persistent ", effect_type, " icon")
+
+# Reposition all enemy status icons to eliminate gaps
+func _reposition_enemy_status_icons():
+	if not status_icon_container:
+		return
+
+	var position_index = 0
+	# Loop through all active enemy status effects and reposition them
+	for effect_type in status_icon_labels.keys():
+		# Skip player icons (they start with "Player1_" or "Player2_")
+		if effect_type.begins_with("Player1_") or effect_type.begins_with("Player2_"):
+			continue
+
+		var icon_label = status_icon_labels[effect_type]
+		if icon_label and is_instance_valid(icon_label):
+			icon_label.position = Vector2(position_index * 35, 0)
+			position_index += 1
+
+	print("🎯 [CombatUI] Repositioned ", position_index, " enemy status icons")
 
 func _get_status_icon_data(effect_type: String) -> Dictionary:
 	var icon_data = {
@@ -316,11 +340,15 @@ func _get_status_icon_data(effect_type: String) -> Dictionary:
 		"armor_down": {"icon": "⚔️", "color": Color(0.8, 0.6, 0.2, 1.0)},
 		"damage_boost": {"icon": "💪", "color": Color(1.0, 0.6, 0.0, 1.0)},
 		"critical_boost": {"icon": "⭐", "color": Color(1.0, 1.0, 0.0, 1.0)},
-		"armor_up": {"icon": "🛡️", "color": Color(0.6, 0.6, 0.8, 1.0)},
+		"armor_up": {"icon": "🔰", "color": Color(0.6, 0.6, 0.8, 1.0)},
 		"reflect": {"icon": "🔄", "color": Color(0.8, 0.4, 1.0, 1.0)},
-		"focus": {"icon": "🎯", "color": Color(0.0, 1.0, 1.0, 1.0)},
-		"resolve_gain": {"icon": "⚡", "color": Color(1.0, 1.0, 0.0, 1.0)},
-		"confusion": {"icon": "😵‍💫", "color": Color(1.0, 0.4, 1.0, 1.0)}
+		"focus": {"icon": "👁️", "color": Color(0.0, 1.0, 1.0, 1.0)},
+		"resolve_gain": {"icon": "💎", "color": Color(1.0, 1.0, 0.0, 1.0)},
+		"confusion": {"icon": "😵‍💫", "color": Color(1.0, 0.4, 1.0, 1.0)},
+		"rage": {"icon": "😡", "color": Color(1.0, 0.2, 0.2, 1.0)},
+		"weakness": {"icon": "💀", "color": Color(0.6, 0.3, 0.8, 1.0)},
+		"haste": {"icon": "💨", "color": Color(0.0, 1.0, 1.0, 1.0)},
+		"barrier": {"icon": "🔵", "color": Color(0.8, 0.8, 1.0, 1.0)}
 	}
 	return icon_data.get(effect_type, {"icon": "⚡", "color": Color.WHITE})
 

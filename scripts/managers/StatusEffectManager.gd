@@ -106,13 +106,18 @@ func _handle_existing_effect(existing_effect: Dictionary, new_effect: Dictionary
 			print("🧪 [StatusEffectManager] Shield HP added - total: ", existing_effect["shield_hp"])
 		
 		# Duration-based effects: refresh duration, keep strongest values
-		"vulnerable", "armor_up", "stun", "confusion", "regeneration", "resolve_gain":
+		"vulnerable", "armor_up", "stun", "confusion", "regeneration", "resolve_gain", "rage", "weakness", "haste":
 			existing_effect["duration"] = new_effect.get("duration", existing_effect.get("duration", 3))
 			# Keep the stronger effect values
 			for key in new_effect.keys():
 				if key != "duration" and key != "type":
 					existing_effect[key] = max(existing_effect.get(key, 0), new_effect.get(key, 0))
 			print("🧪 [StatusEffectManager] ", effect_type.capitalize(), " refreshed - duration: ", existing_effect["duration"])
+
+		# Barrier: add absorption amounts
+		"barrier":
+			existing_effect["absorb_amount"] = existing_effect.get("absorb_amount", 0) + new_effect.get("absorb_amount", 30)
+			print("🧪 [StatusEffectManager] Barrier absorption added - total: ", existing_effect["absorb_amount"])
 		
 		# Mark: doesn't stack, just refresh
 		"mark":
@@ -172,10 +177,20 @@ func _process_single_effect(effect: Dictionary, current_actor: Node, effect_inde
 		"resolve_gain":
 			_process_resolve_gain_effect(effect, effect_index)
 		
+		# New Status Effects
+		"rage":
+			_process_rage_effect(effect, effect_index)
+		"weakness":
+			_process_weakness_effect(effect, effect_index)
+		"haste":
+			_process_haste_effect(effect, effect_index)
+		"barrier":
+			_process_barrier_effect(effect, effect_index)
+
 		# Unique Effects
 		"mark":
 			_process_mark_effect(effect, effect_index)
-		
+
 		_:
 			print("🧪 [StatusEffectManager] Unknown effect type: ", effect_type)
 
@@ -495,6 +510,32 @@ func calculate_final_damage(attacker: Node, target: Node, base_damage: int) -> D
 	print("🧮 [StatusEffectManager] Final damage: ", result.final_damage, " (absorbed: ", result.absorbed, ")")
 	
 	return result
+
+# Process new status effects
+func _process_rage_effect(effect: Dictionary, effect_index: int):
+	var duration = effect.get("duration", 2)
+	effect["duration"] = duration - 1
+	if effect["duration"] <= 0:
+		active_effects.remove_at(effect_index)
+		print("😡 [StatusEffectManager] Rage effect ended")
+
+func _process_weakness_effect(effect: Dictionary, effect_index: int):
+	var duration = effect.get("duration", 3)
+	effect["duration"] = duration - 1
+	if effect["duration"] <= 0:
+		active_effects.remove_at(effect_index)
+		print("💀 [StatusEffectManager] Weakness effect ended")
+
+func _process_haste_effect(effect: Dictionary, effect_index: int):
+	var duration = effect.get("duration", 2)
+	effect["duration"] = duration - 1
+	if effect["duration"] <= 0:
+		active_effects.remove_at(effect_index)
+		print("💨 [StatusEffectManager] Haste effect ended")
+
+func _process_barrier_effect(effect: Dictionary, effect_index: int):
+	# Barrier persists until absorbed, no duration countdown
+	pass
 
 # Debug helper
 func _debug_print_effects():
