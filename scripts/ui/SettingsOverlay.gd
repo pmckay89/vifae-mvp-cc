@@ -3,6 +3,8 @@ extends Control
 # Settings Overlay - can be used anywhere without scene transitions
 # Same functionality as SettingsMenu but as overlay
 
+signal overlay_closed
+
 @onready var music_toggle = $"CenterContainer/SettingsPanel/VBoxContainer/MusicContainer/MusicControls/MusicToggle"
 @onready var music_slider = $"CenterContainer/SettingsPanel/VBoxContainer/MusicContainer/MusicControls/MusicSlider"
 @onready var music_value = $"CenterContainer/SettingsPanel/VBoxContainer/MusicContainer/MusicControls/MusicValue"
@@ -56,6 +58,9 @@ func hide_overlay():
 	if pause_overlay:
 		pause_overlay.show_pause_from_settings()
 		pause_overlay = null
+	else:
+		# If not from pause menu, emit signal for title screen
+		overlay_closed.emit()
 
 func update_ui_from_settings():
 	var settings = SettingsManager

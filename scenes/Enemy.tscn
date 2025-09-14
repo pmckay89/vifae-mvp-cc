@@ -1,12 +1,16 @@
-[gd_scene load_steps=34 format=3 uid="uid://brt8asynsnb14"]
+[gd_scene load_steps=35 format=3 uid="uid://brt8asynsnb14"]
 
 [ext_resource type="Script" uid="uid://bmke3c4xaykpx" path="res://scripts/enemy/Enemy.gd" id="1_8mwfh"]
+[ext_resource type="Texture2D" uid="uid://dmstvhjbsjjhh" path="res://assets/animations/individual pngs/enemy-XT-idle1.png" id="2_isvm2"]
 [ext_resource type="Texture2D" uid="uid://c18ya62t5fg16" path="res://assets/characters/ENemy1.png" id="2_mpr68"]
 [ext_resource type="Texture2D" uid="uid://cfxqolxqitd0v" path="res://assets/characters/enemy_flinch2.png" id="3_5wwv6"]
+[ext_resource type="Texture2D" uid="uid://btwnqt0nuwtsf" path="res://assets/animations/individual pngs/enemy-XT-idle2.png" id="3_gr8dl"]
 [ext_resource type="Script" uid="uid://cqooqbawtijgf" path="res://scripts/enemy/EnemyAI.gd" id="3_xy2ub"]
 [ext_resource type="Texture2D" uid="uid://doebce22ltyh3" path="res://assets/characters/enemy_flinch1.png" id="4_1vja8"]
-[ext_resource type="Texture2D" uid="uid://bs1o8v3hmpu1m" path="res://assets/animations/enemy-XT-idle1.png" id="5_idle"]
+[ext_resource type="Texture2D" uid="uid://bt3c6o58qdkdt" path="res://assets/animations/individual pngs/enemy-XT-idle3.png" id="4_axa8o"]
+[ext_resource type="Texture2D" uid="uid://cmdvi7k4vt2xs" path="res://assets/animations/individual pngs/enemy-XT-idle4.png" id="5_4iqch"]
 [ext_resource type="Texture2D" uid="uid://dhk8m2kgisim0" path="res://assets/animations/enemy-XT-idle2.png" id="6_idle2"]
+[ext_resource type="Texture2D" uid="uid://biywvtm18e2yi" path="res://assets/animations/individual pngs/enemy-XT-idle5.png" id="6_x3f71"]
 [ext_resource type="Texture2D" uid="uid://4kvon0bntopf" path="res://assets/animations/enemy-XT-laser.png" id="7_laser"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_bg"]
@@ -24,18 +28,6 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.4, 1, 0.4, 1)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_idle_0"]
-atlas = ExtResource("5_idle")
-region = Rect2(0, 0, 128, 128)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_idle_1"]
-atlas = ExtResource("5_idle")
-region = Rect2(128, 0, 128, 128)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_idle_2"]
-atlas = ExtResource("5_idle")
-region = Rect2(256, 0, 128, 128)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_idle2_0"]
 atlas = ExtResource("6_idle2")
@@ -117,13 +109,19 @@ region = Rect2(2560, 0, 256, 256)
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_idle_0")
+"texture": ExtResource("2_isvm2")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_idle_1")
+"texture": ExtResource("3_gr8dl")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_idle_2")
+"texture": ExtResource("4_axa8o")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_4iqch")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_x3f71")
 }],
 "loop": true,
 "name": &"idle",
@@ -221,6 +219,8 @@ scale = Vector2(4, 4)
 sprite_frames = SubResource("SpriteFrames_enemy_idle")
 animation = &"idle"
 autoplay = "idle"
+frame = 4
+frame_progress = 0.227694
 
 [node name="e-block" type="Sprite2D" parent="."]
 visible = false

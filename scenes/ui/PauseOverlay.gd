@@ -3,6 +3,7 @@ extends Control
 @onready var title_label := $VBoxContainer/Title
 @onready var resume_button := $VBoxContainer/ButtonContainer/ResumeButton
 @onready var settings_button := $VBoxContainer/ButtonContainer/SettingsButton
+@onready var save_quit_button := $VBoxContainer/ButtonContainer/SaveQuitButton
 @onready var quit_button := $VBoxContainer/ButtonContainer/QuitButton
 @onready var panel := $Panel
 @onready var settings_overlay := get_node("../SettingsOverlay")
@@ -17,6 +18,8 @@ func _ready():
 		resume_button.pressed.connect(_on_resume_pressed)
 	if settings_button and not settings_button.pressed.is_connected(_on_settings_pressed):
 		settings_button.pressed.connect(_on_settings_pressed)
+	if save_quit_button and not save_quit_button.pressed.is_connected(_on_save_quit_pressed):
+		save_quit_button.pressed.connect(_on_save_quit_pressed)
 	if quit_button and not quit_button.pressed.is_connected(_on_quit_pressed):
 		quit_button.pressed.connect(_on_quit_pressed)
 
@@ -66,6 +69,17 @@ func _on_settings_pressed():
 		settings_overlay.show_overlay(self)
 	else:
 		print("PAUSE→ Settings overlay not found!")
+
+func _on_save_quit_pressed():
+	print("PAUSE→ Save & Quit pressed")
+	# Save the game first
+	if SaveManager.save_game():
+		print("PAUSE→ Game saved successfully, quitting...")
+		get_tree().quit()
+	else:
+		print("PAUSE→ Save failed! Quitting anyway...")
+		# Still quit even if save failed
+		get_tree().quit()
 
 func hide_pause_immediately():
 	print("PAUSE→ Hiding pause immediately")

@@ -78,6 +78,7 @@ const GAME_OVER_THEME = "res://assets/music/closer.wav"
 @onready var background_manager := get_node("../BackgroundManager")
 @onready var background_sprite := get_node("../Background")
 
+
 # Attack announcement UI
 var attack_announcement_label: Label
 
@@ -190,6 +191,13 @@ func _ready():
 	if hp_potion_button and selection_description:
 		hp_potion_button.focus_entered.connect(func(): selection_description.show_description("hp_potion"))
 	# Item button if added later
+
+	# Apply any pending save data after everything is initialized
+	call_deferred("_apply_save_if_pending")
+
+func _apply_save_if_pending():
+	if SaveManager.check_and_apply_pending_save():
+		print("[TurnManager] Applied loaded save data")
 
 func _on_menu_closed():
 	if selection_description:
@@ -1508,6 +1516,16 @@ func restore_ui_after_pause():
 		print("PAUSE→ ActionMenu restored")
 	else:
 		print("PAUSE→ ActionMenu not restored (state: ", State.keys()[current_state], ")")
+
+# Save/Load methods for SaveManager
+func get_current_turn() -> int:
+	# Return a simple turn number (how many turns have passed)
+	return current_turn_index + 1
+
+func set_current_turn(turn_number: int):
+	# Set turn index (turn_number - 1 since we display +1)
+	current_turn_index = max(0, turn_number - 1)
+	print("[TurnManager] Turn set to: ", turn_number, " (index: ", current_turn_index, ")")
 
 # Turn order provider management
 func set_turn_order_provider(provider: TurnOrderProvider) -> void:

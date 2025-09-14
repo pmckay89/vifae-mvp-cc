@@ -104,6 +104,13 @@ func _fade_bgm_safe(track: String, duration: float) -> void:
 
 		bgm_player.stream = stream
 		bgm_player.volume_db = -60
+
+		# Enable looping if the stream supports it
+		if stream.has_method("set_loop"):
+			stream.set_loop(true)
+		elif "loop" in stream:
+			stream.loop = true
+
 		bgm_player.play()
 
 		var fade_in_tween = create_tween()

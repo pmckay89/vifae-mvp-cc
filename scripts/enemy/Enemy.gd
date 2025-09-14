@@ -359,3 +359,11 @@ func reset_for_new_combat():
 	
 	_update_idle_animation()
 	print("ENEMY→ Reset for new combat - HP: ", hp, "/", hp_max)
+
+# Save/Load methods for SaveManager
+func get_current_hp() -> int:
+	return hp
+
+func set_hp(new_hp: int):
+	hp = clamp(new_hp, 0, hp_max)
+	print("[Enemy] HP set to: ", hp, "/", hp_max)

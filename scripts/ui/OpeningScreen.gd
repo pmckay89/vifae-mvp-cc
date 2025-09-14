@@ -26,18 +26,21 @@ func start_blink_animation():
 		tween.tween_property(prompt_label, "modulate:a", 0.0, 0.5)
 		tween.tween_property(prompt_label, "modulate:a", 1.0, 0.5)
 
-func _unhandled_input(event):
+func _input(event):
 	# Check for any input (keyboard, mouse, gamepad)
 	var input_detected = false
-	
+
 	if event is InputEventKey and event.pressed:
 		input_detected = true
 	elif event is InputEventMouseButton and event.pressed:
 		input_detected = true
 	elif event is InputEventJoypadButton and event.pressed:
 		input_detected = true
-		
+
 	if input_detected:
 		print("OPENING→ Input detected, transitioning to title screen")
 		# Music will continue playing through title screen
+		var viewport = get_viewport()
+		if viewport:
+			viewport.set_input_as_handled()
 		get_tree().change_scene_to_file(NEXT_SCENE_AFTER_OPENING)

@@ -1323,3 +1323,18 @@ func _apply_energy_barrier_immediate(target, qte_result: String) -> int:
 	else:
 		print("🛡️ IMMEDIATE: Energy barrier failed")
 		return 0
+
+# Save/Load methods for SaveManager
+func get_current_hp() -> int:
+	return hp
+
+func set_hp(new_hp: int):
+	hp = clamp(new_hp, 0, hp_max)
+	print("[Player1] HP set to: ", hp, "/", hp_max)
+
+func get_resolve() -> int:
+	return ResolveManager.player1_resolve
+
+func set_resolve(new_resolve: int):
+	ResolveManager.player1_resolve = clamp(new_resolve, 0, ResolveManager.MAX_RESOLVE)
+	print("[Player1] Resolve set to: ", ResolveManager.player1_resolve)

@@ -31,6 +31,7 @@ ResolveManager="*res://ResolveManager.gd"
 AnimationBridge="*res://scripts/managers/AnimationBridge.gd"
 ProgressManager="*res://scripts/managers/ProgressManager.gd"
 SettingsManager="*res://scripts/managers/SettingsManager.gd"
+SaveManager="*res://scripts/managers/SaveManager.gd"
 AudioManager="*res://scripts/managers/AudioManager.gd"
 
 [editor]
