@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://bkpfi788v3d20"]
+[gd_scene load_steps=3 format=3 uid="uid://bkpfi788v3d20"]
 
 [ext_resource type="Script" path="res://scenes/ui/UpgradeOverlay.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/shop2.png" id="2_shop2"]
 
 [node name="UpgradeOverlay" type="Control"]
 layout_mode = 3
@@ -8,6 +9,10 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource("1")
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(576, 324)
+texture = ExtResource("2_shop2")
 
 [node name="Panel" type="Panel" parent="."]
 layout_mode = 1
@@ -49,7 +54,131 @@ layout_mode = 2
 
 [node name="IronWillButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
 layout_mode = 2
-text = "Iron Will (1 coin) - Permanent +2 resolve"
+text = "Iron Will (1 coin) - Permanent +2 resolve capacity"
+
+[node name="StrongBodyButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Strong Body (1 coin) - Permanent +25 max HP"
+
+[node name="CombatTrainingButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Combat Training (2 coins) - Permanent +10% damage to all attacks"
+
+[node name="ThickSkinButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Thick Skin (2 coins) - Permanent -10% damage taken"
+
+[node name="QuickRecoveryButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Quick Recovery (2 coins) - Heal +5 HP at start of each battle"
+
+[node name="BerserkerMightButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Berserker's Might (3 coins) - Permanent +25% damage, -10% defense"
+
+[node name="GuardianBlessingButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Guardian's Blessing (4 coins) - Permanent +50 max HP"
+
+[node name="BattleVeteranButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Battle Veteran (4 coins) - Permanent +20% damage, +10% defense"
+
+[node name="AdrenalineRushButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Adrenaline Rush (3 coins) - Gain +1 resolve when below 25% HP"
+
+[node name="LegendaryResilienceButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Legendary Resilience (5 coins) - Permanent +100 max HP"
+
+[node name="MasterCombatantButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Master Combatant (6 coins) - Permanent +50% damage to all attacks"
+
+[node name="UnbreakableWillButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Unbreakable Will (5 coins) - Start each battle with maximum resolve"
+
+[node name="DeathDefianceButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Death Defiance (6 coins) - Survive fatal damage once per battle (permanent)"
+
+[node name="SwordMasteryButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Sword Mastery (3 coins) - Player1 abilities deal +25% damage"
+
+[node name="GunExpertiseButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Gun Expertise (3 coins) - Player2 abilities deal +25% damage"
+
+[node name="DualWieldingButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Dual Wielding (4 coins) - Both players gain +15% damage"
+
+[node name="TeamSynergyButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Team Synergy (5 coins) - Using abilities with both players in same turn gives +50% damage"
+
+[node name="CoinMagnetButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Coin Magnet (2 coins) - Gain +1 coin after each battle victory"
+
+[node name="TreasureHunterButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Treasure Hunter (3 coins) - 25% chance to find extra coin after battle"
+
+[node name="BattleEconomistButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Battle Economist (4 coins) - All shop items cost 1 less coin (minimum 1)"
+
+[node name="CounterFighterButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Counter Fighter (3 coins) - Deal 15 damage to enemies when they hit you"
+
+[node name="BloodlustButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Bloodlust (4 coins) - Heal 10 HP whenever you deal 50+ damage in one attack"
+
+[node name="PrecisionStrikeButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Precision Strike (3 coins) - Critical hits heal you for 25 HP"
+
+[node name="MomentumFighterButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Momentum Fighter (4 coins) - Each consecutive successful attack gains +10% damage"
+
+[node name="DamageShieldButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Damage Shield (4 coins) - First 20 damage taken each battle is negated"
+
+[node name="ArmorPlatingButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Armor Plating (3 coins) - Reduce all damage by 5 (permanent)"
+
+[node name="RegenerationButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Regeneration (5 coins) - Heal 10 HP at end of each turn"
+
+[node name="LastStandButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Last Stand (4 coins) - Take 50% less damage when below 30% HP"
+
+[node name="FirstStrikeButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "First Strike (3 coins) - Deal +100% damage on your first attack each battle"
+
+[node name="FinishingBlowButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Finishing Blow (4 coins) - Deal +200% damage to enemies below 25% HP"
+
+[node name="RampageButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Rampage (5 coins) - Killing an enemy grants +50% damage for rest of battle"
+
+[node name="WeaponMasterButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Weapon Master (6 coins) - All attacks have 25% chance to deal double damage"
 
 [node name="CloseButton" type="Button" parent="Panel/VBoxContainer"]
 layout_mode = 2

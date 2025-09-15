@@ -4,6 +4,7 @@ extends Control
 @onready var coins_label := $Panel/VBoxContainer/CoinsLabel
 @onready var path_a_button := $Panel/VBoxContainer/ChoiceContainer/PathAButton
 @onready var path_b_button := $Panel/VBoxContainer/ChoiceContainer/PathBButton
+@onready var path_c_button := $Panel/VBoxContainer/ChoiceContainer/PathCButton
 @onready var close_button := $Panel/VBoxContainer/CloseButton
 @onready var restart_button := $Panel/VBoxContainer/RestartButton
 @onready var quit_button := $Panel/VBoxContainer/QuitButton
@@ -19,6 +20,8 @@ func _ready():
 		path_a_button.pressed.connect(_on_path_a_pressed)
 	if path_b_button and not path_b_button.pressed.is_connected(_on_path_b_pressed):
 		path_b_button.pressed.connect(_on_path_b_pressed)
+	if path_c_button and not path_c_button.pressed.is_connected(_on_path_c_pressed):
+		path_c_button.pressed.connect(_on_path_c_pressed)
 	if close_button and not close_button.pressed.is_connected(_on_close_pressed):
 		close_button.pressed.connect(_on_close_pressed)
 	if restart_button and not restart_button.pressed.is_connected(_on_restart_pressed):
@@ -90,37 +93,32 @@ func _on_path_a_pressed():
 	_choose_path("A")
 
 func _on_path_b_pressed():
-	print("MAP→ Path B selected") 
+	print("MAP→ Path B selected")
 	_choose_path("B")
 
+func _on_path_c_pressed():
+	print("MAP→ Path C selected")
+	_choose_path("C")
+
 func _choose_path(path: String):
-	# Tell ProgressManager about the choice
-	ProgressManager.choose_path(path)
-	
-	# Get the chosen node type to determine which overlay to show
-	var choices = ProgressManager.get_available_choices()
-	var chosen_type
-	
-	if path == "A" and choices.size() > 0:
-		chosen_type = choices[0].type
-	elif path == "B" and choices.size() > 1:
-		chosen_type = choices[1].type
-	else:
-		print("ERROR→ Invalid path choice or no choices available")
-		return
-	
+	# Tell ProgressManager about the choice (if needed)
+	if ProgressManager.has_method("choose_path"):
+		ProgressManager.choose_path(path)
+
 	# Hide map and show appropriate overlay
 	hide_map()
 	await get_tree().create_timer(0.4).timeout  # Wait for fade out
-	
-	# Signal to TurnManager to change state
-	match chosen_type:
-		ProgressManager.NodeType.SHOP:
+
+	# Direct path mapping to overlays
+	match path:
+		"A":  # Items
 			_show_shop()
-		ProgressManager.NodeType.UPGRADE:
+		"B":  # Upgrades
 			_show_upgrade()
+		"C":  # Abilities
+			_show_abilities()
 		_:
-			print("MAP→ Unknown node type: ", chosen_type)
+			print("MAP→ Unknown path: ", path)
 
 func _show_shop():
 	print("MAP→ Opening shop...")
@@ -137,6 +135,14 @@ func _show_upgrade():
 		upgrade_overlay.show_upgrade()
 	else:
 		print("ERROR→ UpgradeOverlay not found!")
+
+func _show_abilities():
+	print("MAP→ Opening abilities...")
+	var abilities_overlay = get_node_or_null("/root/BattleScene/UILayer/AbilitiesOverlay")
+	if abilities_overlay and abilities_overlay.has_method("show_abilities"):
+		abilities_overlay.show_abilities()
+	else:
+		print("ERROR→ AbilitiesOverlay not found!")
 
 func _on_close_pressed():
 	print("MAP→ Close button pressed")

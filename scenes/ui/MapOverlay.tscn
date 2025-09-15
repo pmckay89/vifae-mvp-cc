@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://b4kn6x7i8pqvw"]
+[gd_scene load_steps=3 format=3 uid="uid://b4kn6x7i8pqvw"]
 
 [ext_resource type="Script" path="res://scenes/ui/MapOverlay.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/shop2.png" id="2_shop2"]
 
 [node name="MapOverlay" type="Control"]
 layout_mode = 3
@@ -8,6 +9,10 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource("1")
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(576, 324)
+texture = ExtResource("2_shop2")
 
 [node name="Panel" type="Panel" parent="."]
 layout_mode = 1
@@ -53,11 +58,15 @@ size_flags_horizontal = 4
 
 [node name="PathAButton" type="Button" parent="Panel/VBoxContainer/ChoiceContainer"]
 layout_mode = 2
-text = "Path A: Shop"
+text = "Items"
 
 [node name="PathBButton" type="Button" parent="Panel/VBoxContainer/ChoiceContainer"]
 layout_mode = 2
-text = "Path B: Upgrade"
+text = "Upgrades"
+
+[node name="PathCButton" type="Button" parent="Panel/VBoxContainer/ChoiceContainer"]
+layout_mode = 2
+text = "Abilities"
 
 [node name="HSeparator3" type="HSeparator" parent="Panel/VBoxContainer"]
 layout_mode = 2

@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://bywrdjiurayct"]
+[gd_scene load_steps=30 format=3 uid="uid://bywrdjiurayct"]
 
 [ext_resource type="Script" uid="uid://bb1b4n2pur4i0" path="res://scripts/managers/input_listener.gd" id="1_ftvu5"]
 [ext_resource type="Texture2D" uid="uid://cjc248508locs" path="res://assets/backgrounds/arena2.png" id="1_irk3j"]
@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" uid="uid://b8pfi788v3d1y" path="res://scenes/ui/ShopOverlay.tscn" id="6_shop"]
 [ext_resource type="PackedScene" path="res://scenes/ui/UpgradeOverlay.tscn" id="6_upgrade"]
 [ext_resource type="PackedScene" uid="uid://bvic6x7i8pqvw" path="res://scenes/ui/VictoryOverlay.tscn" id="6_victory"]
+[ext_resource type="PackedScene" path="res://scenes/ui/AbilitiesOverlay.tscn" id="7_abilities"]
 [ext_resource type="AudioStream" uid="uid://0g2th53lt00s" path="res://assets/music/bgm2.mp3" id="7_bsu3s"]
 [ext_resource type="Texture2D" uid="uid://dh46lb38hhalo" path="res://assets/ui/coin.png" id="7_coin"]
 [ext_resource type="Script" uid="uid://rv08adbymf0w" path="res://scenes/ui/PauseOverlay.gd" id="7_l1ooa"]
@@ -292,6 +293,10 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="UpgradeOverlay" parent="UILayer" instance=ExtResource("6_upgrade")]
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="AbilitiesOverlay" parent="UILayer" instance=ExtResource("7_abilities")]
 visible = false
 grow_horizontal = 2
 grow_vertical = 2

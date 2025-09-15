@@ -45,6 +45,54 @@
 - ✅ QTE integration works perfectly with Player1 animations
 - ✅ Player1 idle sprite management (hide/show during attacks)
 
+## ✅ COMPLETED: Shop System Overhaul (Latest Update)
+
+### **Three-Category Shop System**
+- **Background**: All shop overlays now use `shop2.png` background for consistent theming
+- **Post-Battle Menu**: Updated with three clear options:
+  - **"Items"** (was "Shop") - Consumables and battle items
+  - **"Upgrades"** - Permanent character improvements
+  - **"Abilities"** - Combat skills for purchase
+
+### **Items Shop (20+ items)**
+- **Consumables (1-2 coins)**: Health Potion, Resolve Potion, Antidote, Pain Killer, Bandages
+- **Damage Enhancers (2-3 coins)**: Power Boost, Weapon Oil, Explosive Rounds, Sharpening Stone, Elemental Infusion
+- **Defensive Items (2-3 coins)**: Shield Tonic, Armor Polish, Iron Skin
+- **Utility Items (1-2 coins)**: Lucky Coin, Scout's Map, Tactical Manual
+- **Rare Items (5-6 coins)**: Phoenix Feather, Vampire Fang, Berserker Blood, Guardian Angel
+
+### **Upgrades Shop (30+ upgrades)**
+- **Basic Upgrades (1-2 coins)**: Iron Will (+2 resolve), Strong Body (+25 HP), Combat Training (+10% damage)
+- **Advanced Upgrades (3-4 coins)**: Berserker's Might, Guardian's Blessing, Battle Veteran, Adrenaline Rush
+- **Elite Upgrades (5-6 coins)**: Legendary Resilience (+100 HP), Master Combatant (+50% damage), Death Defiance
+- **Specialist Upgrades**: Sword/Gun Mastery, Team Synergy, resource management, combat mechanics
+
+### **Abilities Shop**
+- **Combat Skills (2-3 coins)**: Spirit Wave, Uppercut, Whirlwind, Big Shot, Scatter Shot
+- **Permanent unlocks** for current run, no restrictions on quantity
+- **Integration ready** for ability system expansion
+
+### **Technical Implementation**
+- All shops use **ScrollContainer** for proper UI handling
+- **shop2.png background persists** throughout entire shopping experience
+- **Coin economy integration** with existing ProgressManager
+- **Modular overlay system** maintains existing battle flow
+- **AbilitiesOverlay** added to BattleScene UILayer
+
+## ✅ COMPLETED: Multishot & Big Shot QTE Improvements
+
+### **Multishot Enhancements**
+- **Randomized timing** (0.2s-0.8s intervals) prevents pattern memorization
+- **Increased projectile speed** (675→850 pixels/second) for faster gameplay
+- **Hitstun animations** integrated via AnimationBridge:
+  - Player1: "ninja_hitstun" animation at battle position (77, 233)
+  - Player2: "hitstun" animation at battle position (121, 389)
+  - **Idle sprite hiding** during hitstun for clean visual transitions
+
+### **Big Shot Targeting**
+- **Red square repositioned** to appear over enemy horizontally (enemy.x, screen_center.y)
+- **Intuitive targeting** - players aim crosshair at target over actual enemy
+
 ## Next Phase - Future Development
 
 ## Technical Implementation Details

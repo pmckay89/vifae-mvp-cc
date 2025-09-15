@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://b8pfi788v3d1y"]
+[gd_scene load_steps=3 format=3 uid="uid://b8pfi788v3d1y"]
 
 [ext_resource type="Script" path="res://scenes/ui/ShopOverlay.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/backgrounds/shop2.png" id="2_shop2"]
 
 [node name="ShopOverlay" type="Control"]
 layout_mode = 3
@@ -8,6 +9,10 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource("1")
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(576, 324)
+texture = ExtResource("2_shop2")
 
 [node name="Panel" type="Panel" parent="."]
 layout_mode = 1
@@ -54,19 +59,83 @@ size_flags_horizontal = 3
 
 [node name="HPPotionButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
 layout_mode = 2
-text = "HP Potion (1 coin) - Have: 2"
+text = "Health Potion (1 coin) - Restores 50 HP instantly"
 
 [node name="ResolvePotionButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
 layout_mode = 2
-text = "Resolve Potion (1 coin) - Have: 2"
+text = "Resolve Potion (1 coin) - Restores 2 Resolve points"
+
+[node name="AntidoteButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Antidote (1 coin) - Removes poison/bleeding effects"
+
+[node name="PainKillerButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Pain Killer (2 coins) - Immune to damage for 1 hit"
+
+[node name="BandagesButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Bandages (1 coin) - Heal 15 HP at start of each turn for 3 turns"
 
 [node name="PowerBoostButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
 layout_mode = 2
-text = "Power Boost (1 coin) - 2x damage next battle"
+text = "Power Boost (2 coins) - +50% damage for next 3 attacks"
 
-[node name="QuickReflexesButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+[node name="WeaponOilButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
 layout_mode = 2
-text = "Quick Reflexes (1 coin) - Slower QTE windows"
+text = "Weapon Oil (2 coins) - Next attack ignores enemy defense"
+
+[node name="ExplosiveRoundsButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Explosive Rounds (3 coins) - Next ranged attack hits twice"
+
+[node name="SharpeningStoneButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Sharpening Stone (2 coins) - Next 2 melee attacks deal +25% damage"
+
+[node name="ElementalInfusionButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Elemental Infusion (3 coins) - Next attack adds burn/freeze effect"
+
+[node name="ShieldTonicButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Shield Tonic (2 coins) - Take 25% less damage for 3 attacks"
+
+[node name="ArmorPolishButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Armor Polish (2 coins) - Block next incoming attack completely"
+
+[node name="IronSkinButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Iron Skin (3 coins) - Reduce all damage by 10 for this battle"
+
+[node name="LuckyCoinButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Lucky Coin (1 coin) - Gain +2 coins if you win this battle"
+
+[node name="ScoutMapButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Scout's Map (2 coins) - See enemy's HP and status effects"
+
+[node name="TacticalManualButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Tactical Manual (2 coins) - See enemy's next planned attack"
+
+[node name="PhoenixFeatherButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Phoenix Feather (5 coins) - Revive with 50% HP if you die this battle"
+
+[node name="VampireFangButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Vampire Fang (6 coins) - Heal for 50% of damage dealt this battle"
+
+[node name="BerserkerBloodButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Berserker Blood (5 coins) - Deal +100% damage but take +50% damage"
+
+[node name="GuardianAngelButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+layout_mode = 2
+text = "Guardian Angel (6 coins) - Survive any killing blow with 1 HP (once)"
 
 
 [node name="HSeparator2" type="HSeparator" parent="Panel/VBoxContainer"]
