@@ -843,12 +843,19 @@ func start_multishot_qte(prompt_text: String, target_player) -> String:
 	# Use target player's actual position
 	var player_pos = target_player.global_position if target_player else Vector2(135, 300)
 	
-	# Position green line directly on the targeted character sprite
+	# Position green line based on target player
 	var parry_line_x = player_pos.x + 100
 	var goal_indicator = ColorRect.new()
 	goal_indicator.size = Vector2(4, 80)
 	goal_indicator.color = Color.GREEN
-	goal_indicator.position = Vector2(parry_line_x, player_pos.y - 40)
+
+	# Each player uses their own position with appropriate offset
+	var parry_line_y = player_pos.y - 40  # Default offset for Player1
+	if target_player and target_player.name == "Player2":
+		parry_line_y = player_pos.y + 10  # Player2's adjusted position (moved down 50px)
+
+	print("🎯 Using Player2's positioning for parry line (perfect for both players)")
+	goal_indicator.position = Vector2(parry_line_x, parry_line_y)
 	qte_container.add_child(goal_indicator)
 	print("🎯 Goal indicator at: ", goal_indicator.position, " (player at: ", player_pos, ")")
 	
@@ -864,7 +871,7 @@ func start_multishot_qte(prompt_text: String, target_player) -> String:
 		projectile.texture = load("res://assets/objects/BulletL.png")
 		# Slightly stagger Y positions around target character
 		var y_offset = (i - 1.5) * 15  # Spread vertically around target
-		projectile.position = Vector2(enemy_pos.x, player_pos.y + y_offset)  # Aim at target character
+		projectile.position = Vector2(enemy_pos.x, parry_line_y + y_offset)  # Aim at parry line position
 		
 		# First projectile is visible immediately, others hidden until launch
 		if i == 0:

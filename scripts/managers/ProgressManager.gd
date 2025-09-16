@@ -46,7 +46,7 @@ func _ready():
 
 # Called after battle victory
 func complete_battle():
-	var coins_earned = 25  # Placeholder - could vary by battle difficulty
+	var coins_earned = get_battle_coin_reward()  # Progressive scaling based on battle
 	player_coins += coins_earned
 	coins_changed.emit(player_coins)  # Emit signal for UI update
 	print("PROGRESS→ Battle completed! Earned ", coins_earned, " coins (total: ", player_coins, ")")
@@ -219,6 +219,15 @@ func get_enemy_damage_multiplier() -> float:
 
 func get_current_battle_number() -> int:
 	return current_position + 1  # Convert 0-indexed to 1-indexed for display
+
+# Progressive coin rewards based on battle difficulty
+func get_battle_coin_reward() -> int:
+	match current_position:
+		0: return 5    # Battle 1: Tutorial Boss
+		1: return 10   # Battle 2: Shadow Beast
+		2: return 15   # Battle 3: Elite Guardian
+		3: return 20   # Battle 4: Ancient Warden
+		_: return 20   # Battle 5+: Final Boss (though game ends)
 
 # Reset for new game
 func reset_progress():

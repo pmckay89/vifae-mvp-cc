@@ -40,9 +40,19 @@ print("Available: ", animation_player.get_animation_list())
 **Symptoms**: Wrong player sprites appear, animations don't play
 **Solution**: After adding sprite frames, create AnimationPlayer tracks to control them
 
-### MISTAKE #3: Animation Timing Issues
-**Symptoms**: "Lingering frames", "animation continues after finishing"
-**Solution**: Add `animation_player.pause()` after completion
+### MISTAKE #3: Animation Loop Conflicts (CRITICAL FIX)
+**Symptoms**: Windup animations loop during QTE instead of pausing
+**Root Cause**: TWO animation systems conflict:
+- AnimationPlayer: Has `loop_mode = 0` (correct - plays once, pauses)
+- AnimatedSprite2D: Has `"loop": true` (wrong - keeps cycling frames)
+
+**PERMANENT SOLUTION IMPLEMENTED**:
+```
+WINDUP ANIMATIONS MUST HAVE: "loop": false in SpriteFrames
+✅ Fixed: ninja_ww_windup, 2x cut windup, BE_Test1_Windup
+```
+
+**Pattern**: All windup sprite animations need `"loop": false` to work with AnimationBridge
 
 ### Pre-Integration Checklist
 1. Sprite frames exist in AnimatedSprite2D ✓

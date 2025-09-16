@@ -409,55 +409,49 @@ func execute_2x_cut_dual_qte(target):
 	
 	AnimationBridge.play_windup_animation("2x_cut")
 	await AnimationBridge.animation_ready_for_qte
-	
-	# Step 2: First QTE
+
+	# QTE 1
 	print("⚔️ First strike incoming...")
 	var result1 = await QTEManager.start_qte("confirm attack", 500, "Press Z for 1st Cut!")
-	
-	# Play sound effect for first QTE result
 	_play_2x_cut_sound_effect(result1)
-	
-	# IMMEDIATE DAMAGE - Apply first strike damage right after QTE
+
+	# Apply first damage immediately
 	var first_damage = 0
 	if result1 in ["crit", "normal"]:
 		first_damage = 6 if result1 == "crit" else 4
 		target.take_damage(first_damage)
 		VFXManager.play_hit_effects(target)
-		print("⚔️ IMMEDIATE: First strike deals " + str(first_damage) + " damage")
-	
-	# Check if first QTE succeeded - if so, start finish animation immediately
+
+	# Start finish animation after first QTE for better feel
 	var first_success = result1 in ["crit", "normal"]
 	if first_success:
 		print("⚔️ First QTE success - starting finish animation!")
 		AnimationBridge.play_result_animation("2x_cut", "normal")
-	
-	# Brief pause between QTEs
+
+	# Brief pause
 	await get_tree().create_timer(0.3).timeout
-	
-	# Step 3: Second QTE (still happens even if first succeeded)
+
+	# QTE 2 (during animation)
 	print("⚔️ Second strike incoming...")
 	var result2 = await QTEManager.start_qte("confirm attack", 500, "Press Z for 2nd Cut!")
-	
-	# Play sound effect for second QTE result
 	_play_2x_cut_sound_effect(result2)
-	
-	# IMMEDIATE DAMAGE - Apply second strike damage right after QTE
+
+	# Apply second damage immediately
 	var second_damage = 0
 	if result2 in ["crit", "normal"]:
 		second_damage = 6 if result2 == "crit" else 4
 		target.take_damage(second_damage)
 		VFXManager.play_hit_effects(target)
-		print("⚔️ IMMEDIATE: Second strike deals " + str(second_damage) + " damage")
-	
-	# Step 4: If first failed but second succeeded, start animation now
+
+	# Handle case where first failed but second succeeded
 	var second_success = result2 in ["crit", "normal"]
 	if not first_success and second_success:
 		print("⚔️ Second QTE success - starting finish animation!")
 		AnimationBridge.play_result_animation("2x_cut", "normal")
 	elif not first_success and not second_success:
-		print("⚔️ Both QTEs failed - returning to idle")
+		print("⚔️ Both QTEs failed - playing fail animation")
 		AnimationBridge.play_result_animation("2x_cut", "fail")
-	
+
 	# Wait for animation to complete
 	await AnimationBridge.animation_sequence_complete
 	
