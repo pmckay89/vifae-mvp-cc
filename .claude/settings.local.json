@@ -48,7 +48,8 @@
       "Read(/C:\\Users\\yow_g\\Documents\\vifae mvp\\vifae-mvp-cc/**)",
       "Bash(git push:*)",
       "Read(/C:\\Users\\yow_g\\Documents\\vifae mvp\\vifae-mvp-cc/**)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.exe\" --headless --quit-after 2 project.godot)"
     ],
     "deny": [],
     "ask": [],

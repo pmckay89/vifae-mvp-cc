@@ -13,9 +13,9 @@
 [ext_resource type="Texture2D" uid="uid://c0gjtifwjdhty" path="res://assets/ui/QTE.png" id="6_sdfhe"]
 [ext_resource type="PackedScene" path="res://scenes/SettingsOverlay.tscn" id="6_settings"]
 [ext_resource type="PackedScene" uid="uid://b8pfi788v3d1y" path="res://scenes/ui/ShopOverlay.tscn" id="6_shop"]
-[ext_resource type="PackedScene" path="res://scenes/ui/UpgradeOverlay.tscn" id="6_upgrade"]
+[ext_resource type="PackedScene" uid="uid://bkpfi788v3d20" path="res://scenes/ui/UpgradeOverlay.tscn" id="6_upgrade"]
 [ext_resource type="PackedScene" uid="uid://bvic6x7i8pqvw" path="res://scenes/ui/VictoryOverlay.tscn" id="6_victory"]
-[ext_resource type="PackedScene" path="res://scenes/ui/AbilitiesOverlay.tscn" id="7_abilities"]
+[ext_resource type="PackedScene" uid="uid://kpfi788v3d30" path="res://scenes/ui/AbilitiesOverlay.tscn" id="7_abilities"]
 [ext_resource type="AudioStream" uid="uid://0g2th53lt00s" path="res://assets/music/bgm2.mp3" id="7_bsu3s"]
 [ext_resource type="Texture2D" uid="uid://dh46lb38hhalo" path="res://assets/ui/coin.png" id="7_coin"]
 [ext_resource type="Script" uid="uid://rv08adbymf0w" path="res://scenes/ui/PauseOverlay.gd" id="7_l1ooa"]
@@ -95,6 +95,7 @@ position = Vector2(939, 199)
 [node name="UILayer" type="CanvasLayer" parent="."]
 
 [node name="CoinDisplay" type="HBoxContainer" parent="UILayer"]
+z_index = 100
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0

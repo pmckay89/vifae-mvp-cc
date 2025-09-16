@@ -102,6 +102,7 @@ var skill_resolve_costs: Dictionary = {
 	"uppercut": 1,
 	"poison": 1,
 	"whirlwind": 2,
+	"ghost_attack": 2,  # New Ghost Attack ability
 	# New status effect abilities
 	"burn_strike": 1,
 	"shield_boost": 2,

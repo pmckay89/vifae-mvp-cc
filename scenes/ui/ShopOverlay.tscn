@@ -49,93 +49,30 @@ horizontal_alignment = 1
 [node name="HSeparator" type="HSeparator" parent="Panel/VBoxContainer"]
 layout_mode = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="Panel/VBoxContainer"]
+[node name="TabContainer" type="TabContainer" parent="Panel/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ItemsContainer" type="VBoxContainer" parent="Panel/VBoxContainer/ScrollContainer"]
+[node name="Items" type="ScrollContainer" parent="Panel/VBoxContainer/TabContainer"]
+layout_mode = 2
+
+[node name="ItemsContainer" type="VBoxContainer" parent="Panel/VBoxContainer/TabContainer/Items"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HPPotionButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+[node name="Upgrades" type="ScrollContainer" parent="Panel/VBoxContainer/TabContainer"]
 layout_mode = 2
-text = "Health Potion (1 coin) - Restores 50 HP instantly"
 
-[node name="ResolvePotionButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+[node name="UpgradesContainer" type="VBoxContainer" parent="Panel/VBoxContainer/TabContainer/Upgrades"]
 layout_mode = 2
-text = "Resolve Potion (1 coin) - Restores 2 Resolve points"
+size_flags_horizontal = 3
 
-[node name="AntidoteButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+[node name="Abilities" type="ScrollContainer" parent="Panel/VBoxContainer/TabContainer"]
 layout_mode = 2
-text = "Antidote (1 coin) - Removes poison/bleeding effects"
 
-[node name="PainKillerButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
+[node name="AbilitiesContainer" type="VBoxContainer" parent="Panel/VBoxContainer/TabContainer/Abilities"]
 layout_mode = 2
-text = "Pain Killer (2 coins) - Immune to damage for 1 hit"
-
-[node name="BandagesButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Bandages (1 coin) - Heal 15 HP at start of each turn for 3 turns"
-
-[node name="PowerBoostButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Power Boost (2 coins) - +50% damage for next 3 attacks"
-
-[node name="WeaponOilButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Weapon Oil (2 coins) - Next attack ignores enemy defense"
-
-[node name="ExplosiveRoundsButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Explosive Rounds (3 coins) - Next ranged attack hits twice"
-
-[node name="SharpeningStoneButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Sharpening Stone (2 coins) - Next 2 melee attacks deal +25% damage"
-
-[node name="ElementalInfusionButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Elemental Infusion (3 coins) - Next attack adds burn/freeze effect"
-
-[node name="ShieldTonicButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Shield Tonic (2 coins) - Take 25% less damage for 3 attacks"
-
-[node name="ArmorPolishButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Armor Polish (2 coins) - Block next incoming attack completely"
-
-[node name="IronSkinButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Iron Skin (3 coins) - Reduce all damage by 10 for this battle"
-
-[node name="LuckyCoinButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Lucky Coin (1 coin) - Gain +2 coins if you win this battle"
-
-[node name="ScoutMapButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Scout's Map (2 coins) - See enemy's HP and status effects"
-
-[node name="TacticalManualButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Tactical Manual (2 coins) - See enemy's next planned attack"
-
-[node name="PhoenixFeatherButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Phoenix Feather (5 coins) - Revive with 50% HP if you die this battle"
-
-[node name="VampireFangButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Vampire Fang (6 coins) - Heal for 50% of damage dealt this battle"
-
-[node name="BerserkerBloodButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Berserker Blood (5 coins) - Deal +100% damage but take +50% damage"
-
-[node name="GuardianAngelButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Guardian Angel (6 coins) - Survive any killing blow with 1 HP (once)"
+size_flags_horizontal = 3
 
 
 [node name="HSeparator2" type="HSeparator" parent="Panel/VBoxContainer"]

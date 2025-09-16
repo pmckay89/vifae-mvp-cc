@@ -92,5 +92,13 @@ func get_skills() -> Dictionary:
 			"crit_mult": 1.6,
 			"sfx": null,
 			"vfx": "mark_effect"
+		},
+		"Ghost Attack": {
+			"qte": "tap",
+			"window_ms": 600,
+			"damage": 18,
+			"crit_mult": 2.0,
+			"sfx": "blade_hit",
+			"vfx": "spirit_effect"
 		}
 	}

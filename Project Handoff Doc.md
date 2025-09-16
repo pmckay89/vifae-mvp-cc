@@ -1,647 +1,306 @@
-# Modular Combat System - Session Handoff
+# Claude Development Handoff - Vifae MVP
 
-**Date:** January 11, 2025 (Updated)  
-**Repository:** vifae-mvp-cc  
-**Branch:** main  
-**Goal:** Complete scalable modular combat system with immediate damage application
+**Engine**: Godot 4.4 | **Language**: GDScript | **Date**: January 15, 2025
 
+## 🎮 GAME CONTEXT
+Turn-based 2D RPG with QTE mechanics. 5-battle campaign with progressive shop system. Two players (ninja + gunner) vs scaling enemies.
 
-### ✅ Architecture Decision Made
-- **Confirmed single AnimationPlayer approach** - All animations (Player1 & Player2) will live in the same "testing animations.tscn" AnimationPlayer
-- **Benefits validated**: Easier combo system, shared resources, centralized management
-- **AnimationBridge location confirmed**: `scripts/managers/AnimationBridge.gd` (already exists and working)
+## 🏗️ CORE ARCHITECTURE
 
-### ✅ COMPLETED: Player1 Animation Integration
-- **Added Player1 sprite frames** to "testing animations.tscn":
-  - `idle_p1` - 9 frames from ninja_idle.png atlas (96x96)
-  - `attack_windup_p1` - 4 frames from ninja_attackwindup.png atlas (126x126)
-  - `attack_finish_p1` - 14 frames from ninja_attack.png + ninja_jumpback.png atlases (126x126)
-- **Created complete AnimationPlayer sequences** with keyframes for:
-  - Position animation (battle-aligned coordinates)
-  - Frame progression (proper timing)
-  - Scale compensation (different sprite dimensions)
-- **Added to AnimationLibrary**: Player1 animations fully registered and functional
+### Animation System (CRITICAL - Read First)
+```
+TurnManager → AnimationBridge → "testing animations.tscn" → Visual Result
+```
 
-## Current Animation System Status
+**TWO ANIMATION SYSTEMS - Don't Confuse Them:**
+- **AnimatedSprite2D**: Sprite frame sequences (`"2x cut finish"`)
+- **AnimationPlayer**: Scene animations (`"2x_finish"`)
+- **AnimationBridge uses AnimationPlayer names ONLY**
 
-### ✅ 3. Added Player1 Animations to AnimationBridge Library
+### Key File Locations
+```
+scripts/managers/AnimationBridge.gd    # Central animation controller
+scripts/managers/ProgressManager.gd    # Battle progression & enemy scaling
+scenes/ui/ShopOverlay.gd               # Progressive shop system
+testing animations.tscn                # ALL animations live here
+```
+
+## 🚨 ANIMATION DEBUGGING (Common Failure Points)
+
+### MISTAKE #1: Wrong Animation Names
 ```gdscript
-"basic_attack_p1": {
-    "scene_path": "res://testing animations.tscn",
-    "controller_node_path": "HeroRoot/Hero",
-    "animation_player_path": "HeroRoot/Hero/AnimationPlayer", 
-    "windup_animation": "attack_windup_p1",
-    "success_animation": "attack_finish_p1",
-    "fail_animation": "hitstun",
-    "spawn_offset": Vector2(-200, 0) # Left side positioning
-}
+// ❌ WRONG - Uses AnimatedSprite2D name
+AnimationBridge.play_windup_animation("BE_Test1_Windup")
+
+// ✅ CORRECT - Always verify AnimationPlayer names first
+print("Available: ", animation_player.get_animation_list())
 ```
 
-### ✅ 4. Completed Player1 AnimationBridge Integration
-**All validation criteria met:**
-- ✅ Player1 basic attack triggers correctly through AnimationBridge
-- ✅ No visual conflicts with Player2 animations
-- ✅ Proper cleanup after animation sequence
-- ✅ QTE integration works perfectly with Player1 animations
-- ✅ Player1 idle sprite management (hide/show during attacks)
+### MISTAKE #2: Missing AnimationPlayer Tracks
+**Symptoms**: Wrong player sprites appear, animations don't play
+**Solution**: After adding sprite frames, create AnimationPlayer tracks to control them
 
-## ✅ COMPLETED: Shop System Overhaul (Latest Update)
+### MISTAKE #3: Animation Timing Issues
+**Symptoms**: "Lingering frames", "animation continues after finishing"
+**Solution**: Add `animation_player.pause()` after completion
 
-### **Three-Category Shop System**
-- **Background**: All shop overlays now use `shop2.png` background for consistent theming
-- **Post-Battle Menu**: Updated with three clear options:
-  - **"Items"** (was "Shop") - Consumables and battle items
-  - **"Upgrades"** - Permanent character improvements
-  - **"Abilities"** - Combat skills for purchase
+### Pre-Integration Checklist
+1. Sprite frames exist in AnimatedSprite2D ✓
+2. AnimationPlayer tracks created ✓
+3. Test `animation_player.play("name")` independently ✓
+4. Verify exact names with `get_animation_list()` ✓
 
-### **Items Shop (20+ items)**
-- **Consumables (1-2 coins)**: Health Potion, Resolve Potion, Antidote, Pain Killer, Bandages
-- **Damage Enhancers (2-3 coins)**: Power Boost, Weapon Oil, Explosive Rounds, Sharpening Stone, Elemental Infusion
-- **Defensive Items (2-3 coins)**: Shield Tonic, Armor Polish, Iron Skin
-- **Utility Items (1-2 coins)**: Lucky Coin, Scout's Map, Tactical Manual
-- **Rare Items (5-6 coins)**: Phoenix Feather, Vampire Fang, Berserker Blood, Guardian Angel
+## 🏪 SHOP SYSTEM (Current State)
 
-### **Upgrades Shop (30+ upgrades)**
-- **Basic Upgrades (1-2 coins)**: Iron Will (+2 resolve), Strong Body (+25 HP), Combat Training (+10% damage)
-- **Advanced Upgrades (3-4 coins)**: Berserker's Might, Guardian's Blessing, Battle Veteran, Adrenaline Rush
-- **Elite Upgrades (5-6 coins)**: Legendary Resilience (+100 HP), Master Combatant (+50% damage), Death Defiance
-- **Specialist Upgrades**: Sword/Gun Mastery, Team Synergy, resource management, combat mechanics
-
-### **Abilities Shop**
-- **Combat Skills (2-3 coins)**: Spirit Wave, Uppercut, Whirlwind, Big Shot, Scatter Shot
-- **Permanent unlocks** for current run, no restrictions on quantity
-- **Integration ready** for ability system expansion
-
-### **Technical Implementation**
-- All shops use **ScrollContainer** for proper UI handling
-- **shop2.png background persists** throughout entire shopping experience
-- **Coin economy integration** with existing ProgressManager
-- **Modular overlay system** maintains existing battle flow
-- **AbilitiesOverlay** added to BattleScene UILayer
-
-## ✅ COMPLETED: Multishot & Big Shot QTE Improvements
-
-### **Multishot Enhancements**
-- **Randomized timing** (0.2s-0.8s intervals) prevents pattern memorization
-- **Increased projectile speed** (675→850 pixels/second) for faster gameplay
-- **Hitstun animations** integrated via AnimationBridge:
-  - Player1: "ninja_hitstun" animation at battle position (77, 233)
-  - Player2: "hitstun" animation at battle position (121, 389)
-  - **Idle sprite hiding** during hitstun for clean visual transitions
-
-### **Big Shot Targeting**
-- **Red square repositioned** to appear over enemy horizontally (enemy.x, screen_center.y)
-- **Intuitive targeting** - players aim crosshair at target over actual enemy
-
-## Next Phase - Future Development
-
-## Technical Implementation Details
-
-### Animation System Architecture
-```
-TurnManager → AnimationBridge → testing animations.tscn → Visual Result
-```
-
-### File Structure
-```
-📁 scripts/managers/
-  └── AnimationBridge.gd (centralized animation controller)
-📁 scenes/
-  └── testing animations.tscn (all animation sequences)
-      └── AnimationPlayer (Player1 & Player2 animations)
-      └── SpriteFrames (Player1 & Player2 sprite sequences)
-```
-
-### Player Positioning Strategy
-- **Player2**: Right side, existing positions
-- **Player1**: Left side, offset positions 
-- **Combos**: Both players animate simultaneously in same scene
-
-## ✅ SUCCESS CRITERIA - PHASE 1.1 COMPLETED!
-
-### Phase 1.1 Complete ✅:
-- ✅ Player1 basic attack fully working through AnimationBridge
-- ✅ Both Player1 and Player2 can attack without interference  
-- ✅ AnimationBridge properly handles both player types
-- ✅ No regression in existing Player2 functionality
-
-### ✅ All Validation Tests Passed:
-1. ✅ Player1 basic attack: windup → QTE → success/fail result
-2. ✅ Player2 basic attack: still works identically  
-3. ✅ Cross-contamination test: Player1 attack doesn't affect Player2 sprites
-4. ✅ Combo foundation: Both players can be animated simultaneously
-
-## Files Modified This Session
-- ✅ `testing animations.tscn` - Complete Player1 animation system integration
-  - Added Player1 sprite frames (idle_p1, attack_windup_p1, attack_finish_p1)
-  - Created full AnimationPlayer sequences with position/frame/scale keyframes
-  - Fixed coordinate system (root transforms, HeroRoot scaling)
-  - Applied sprite anchor compensation for perfect alignment
-- ✅ `scripts/managers/AnimationBridge.gd` - Player1 integration
-  - Added basic_attack_p1 to animation_library
-  - Added Player1 idle sprite visibility management
-  - Added Player1 idle_p1 return state handling
-- ✅ `scripts/managers/TurnManager.gd` - Updated attack flow
-  - Player1 now uses AnimationBridge instead of old system
-  - Consistent attack pattern for both Player1 and Player2
-- ✅ `scripts/player/Player1.gd` - Commented out old idle management
-
-## Key Reference Points
-- **AnimationBridge**: `scripts/managers/AnimationBridge.gd:11-48` (animation_library)
-- **Player1 sprites**: `testing animations.tscn:138-189` (attack_windup_p1 frames)
-- **Animation sequences**: `testing animations.tscn:1274-1287` (AnimationLibrary)
-
-## Future 50+ Abilities Expansion (Post-Phase 1)
-
-**Reference:** See `UNIFIED_ANIMATION_SYSTEM_HANDOFF.md` for complete implementation plan
-
-### Placeholder Animation Strategy
-- **All 50+ abilities start with** `"animation": "basic_attack"` placeholder
-- **Easy upgrade path**: Change animation reference without breaking functionality  
-- **Progressive enhancement**: Gradually replace placeholders with custom animations
-
-### Status Effect System Architecture
+### Progressive Unlock Logic
 ```gdscript
-// Modular buff/debuff system for shops, drops, scripted events
-var ability_database = {
-    "flame_strike": {
-        "name": "Flame Strike",
-        "damage": 12,
-        "status_effects": ["burn"],        // Attachable effects
-        "animation": "basic_attack",       // Placeholder initially
-        "timing_type": "instant",
-        "resolve_cost": 2
-    }
-}
+// After completing battle X, show these tabs:
+Battle 1: Items only (1-2 coins)
+Battle 2: Items + Upgrades (3-6 coins)
+Battle 3+: Items + Upgrades + Abilities (3 coins)
 ```
 
-### Content Distribution Integration
-- **Shop attachments**: Buy/sell status effect modifications
-- **Drop system**: Random effect combinations from defeated enemies
-- **Scripted events**: Story-driven permanent ability upgrades
-- **Modular design**: Easy attach/detach during gameplay
+### Flow Pattern
+```
+Battle → Victory → "Continue" → Shop → "Leave Shop" → ProgressManager.advance_position() → Next Battle
+```
 
+## 🎯 ABILITY INTEGRATION PATTERN (Proven)
 
-## 🎉 SESSION COMPLETE - PHASE 1.1 ACHIEVED!
-
-**Player1 is now fully integrated into the unified AnimationBridge system!**
-
-Both Player1 and Player2 use identical animation workflows:
-- ✅ Same calling pattern through TurnManager
-- ✅ Same AnimationBridge flow: spawn → windup → QTE → result → cleanup
-- ✅ Same idle management and position alignment
-- ✅ Ready for 50+ abilities expansion
-
-## 🎉 LATEST UPDATE - PLAYER2 STATUS ABILITIES SYSTEM COMPLETE!
-
-### ✅ COMPLETED January 11, 2025: Player2 Status Abilities
-**Successfully implemented 3 new Player2 status abilities following established patterns:**
-
-1. **Freezing Shot** ❄️ - Freezes enemy for 1 turn
-   - Enemy turn shows "FROZEN!" notification then ends automatically
-   - Immediate damage application after QTE
-   - Full AnimationBridge integration with sound effects
-
-2. **Armor Piercing** ⚔️ - Reduces enemy armor 
-   - Applies `armor_down` status effect
-   - Immediate damage + status effect application
-   - Consistent visual feedback and status icons
-
-3. **Bleeding Shot** 🩸 - Applies bleeding DOT
-   - Applies `bleed` status effect for damage over time
-   - Immediate damage + status application
-   - Works with existing DOT system like poison/burn
-
-#### ✅ System Validation Successful:
-- **Immediate Damage Application**: All abilities apply damage right after QTE (no timing delays)
-- **Modular Pattern Consistency**: Follows exact same structure as Player1 modular abilities
-- **Status Effect Routing**: Player effects route to FF-style UI containers, enemy effects to enemy area
-- **AnimationBridge Integration**: Full animation flow with windup → QTE → result → cleanup
-- **Sound Effects**: Proper audio feedback for each ability
-- **Turn Skip Mechanics**: Frozen status properly skips enemy turns with visual notification
-- **Icon System**: All status effects have proper visual indicators
-
-#### 🔧 Technical Fixes Completed:
-- **Fixed ResolveManager**: Updated paths from old HPBars to new FF-style UI containers
-- **Debug Commands Working**: Q/A/E/D keys properly update resolve displays
-- **Status Icon System**: Added comprehensive icon library for all effects
-- **Frozen Turn Logic**: Complete implementation with "FROZEN!" notification system
-
-### ✅ MODULAR SYSTEM ARCHITECTURE PROVEN:
-
-#### Core Pattern (Works for ALL abilities):
 ```gdscript
-func execute_status_ability(target):
-    # 1. Spawn animation via AnimationBridge
+func execute_ability_sequence(target):
+    # 1. Spawn via AnimationBridge
     var instance = AnimationBridge.spawn_ability_animation("ability_name", Vector2.ZERO, self)
-    
-    # 2. Play windup animation
-    AnimationBridge.play_windup_animation("ability_name") 
-    await AnimationBridge.animation_ready_for_qte
-    
-    # 3. Run QTE
-    var qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!", self)
-    
-    # 4. IMMEDIATE damage/effects application (NEW - no delays!)
-    _apply_ability_immediate(qte_result, target)
-    
-    # 5. Play result animation 
-    AnimationBridge.play_result_animation("ability_name", qte_result)
-    await AnimationBridge.animation_sequence_complete
-    
-    # 6. Return handled flag to prevent duplicate damage
-    return {"damage": damage_dealt, "success": damage_dealt > 0, "handled_damage": true}
-```
 
-## 🚀 READY FOR SHOP SYSTEM - COMBAT > SHOP > COMBAT LOOP
-
-### Current System Strengths:
-- **Scalable Architecture**: Adding new abilities is now systematic and predictable
-- **Immediate Feedback**: No timing delays - damage applies right after successful QTE
-- **Visual Consistency**: Status effects display properly in player/enemy containers  
-- **Sound Integration**: All abilities have proper audio feedback
-- **Status Management**: Comprehensive status effect system with icons and routing
-
-### Recommended Next Development Phases:
-
-#### Phase 3.1: Shop System Foundation
-**Goal**: Implement combat → shop → combat gameplay loop
-
-**Shop Features to Implement:**
-- **Ability Purchasing**: Buy new abilities with coins earned from combat
-- **Tier System**: Basic (50 coins) → Advanced (100 coins) → Ultimate (200 coins) 
-- **Character-Specific Abilities**: Different ability pools for Player1 vs Player2
-- **Status Effect Modifiers**: Buy attachments to add effects to existing abilities
-
-**Technical Requirements:**
-- Ability database system (JSON or GDScript configs)
-- Shop UI integration
-- Save/load purchased abilities
-- Ability unlock progression tracking
-
-#### Phase 3.2: Additional Status Effects
-**Ready to implement more effects using proven pattern:**
-
-**Damage Effects:**
-- `shock` ⚡ - Chain damage to multiple targets
-- `curse` 🔮 - Reduces healing effectiveness
-- `weakness` 💀 - Reduces damage output
-
-**Utility Effects:**  
-- `haste` 💨 - Extra turn or reduced cooldowns
-- `barrier` 🛡️ - Absorb next X damage
-- `regeneration` 💚 - Heal over time (already supported)
-
-**Control Effects:**
-- `sleep` 😴 - Skip turn but remove on damage
-- `charm` 💖 - Target attacks allies instead
-- `silence` 🔇 - Cannot use abilities
-
-#### Phase 3.3: Ability Expansion Strategy
-**Matrix Approach for 50+ Abilities:**
-- **6 Damage Types**: physical, fire, ice, lightning, poison, spirit
-- **5 Effect Categories**: direct, DOT, buff, debuff, control  
-- **4 Targeting Types**: single, multi, self, area
-- **Result**: 120 potential ability combinations
-
-**Implementation Pattern:**
-```gdscript
-var ability_database = {
-    "frost_lance": {
-        "base_damage": 10,
-        "status_effects": ["frozen"],
-        "animation": "basic_attack",  # Placeholder initially
-        "resolve_cost": 2,
-        "shop_tier": 2,
-        "character": "Player2"
-    }
-}
-```
-
-## 🎯 IMMEDIATE NEXT STEPS
-
-### Ready for Implementation:
-1. **Shop UI System**: Create shop interface for ability purchasing
-2. **Ability Database**: Convert existing abilities to data-driven configs  
-3. **Additional Status Effects**: Add 5-10 more effects using proven pattern
-4. **Save System**: Persist purchased abilities between combat sessions
-5. **Tier Progression**: Lock higher-tier abilities behind progression gates
-
-### Proven Workflow for Adding New Abilities:
-1. **Add to ability list** in Player class
-2. **Implement modular function** following established pattern  
-3. **Add immediate damage application** helper function
-4. **Add to AnimationBridge** with placeholder animation
-5. **Add sound effects** and status icons as needed
-6. **Test with debug commands** to verify all systems work
-
-## 🚀 NEXT DEVELOPMENT PHASE - MODULAR ABILITY ARCHITECTURE
-
-### Phase 2.1: Modular Ability System Foundation
-**Goal**: Scale current proven system to 50+ abilities with shop integration
-
-#### ✅ What We Have Working (PROVEN):
-- **Modular AnimationBridge**: All abilities use consistent animation flow
-- **Immediate Damage System**: No timing delays - damage applies right after QTE
-- **Status Effect System**: Comprehensive visual indicators and effect routing
-- **Scalable Pattern**: Adding abilities is now systematic and predictable
-
-#### 🎯 Core Architecture Principles:
-1. **Data-Driven Abilities**: JSON/GDScript configs for easy expansion
-2. **Modular Effects**: Stackable/combinable status effects (poison + speed boost)
-3. **Animation Placeholders**: All abilities work with `basic_attack` fallback
-4. **Unified Damage Flow**: TurnManager handles all damage/resolve consistently
-
-### Phase 2.2: Status Effect System
-```gdscript
-# Modular effect system - attach to any ability
-var ability_database = {
-    "poison_strike": {
-        "base_damage": 8,
-        "animation": "basic_attack",  # Placeholder
-        "effects": [
-            {"type": "poison", "duration": 3, "damage_per_turn": 2},
-            {"type": "speed_boost", "duration": 2, "multiplier": 1.5}
-        ],
-        "qte_type": "confirm_attack",
-        "resolve_cost": 2
-    }
-}
-```
-
-**Effect Categories to Implement:**
-- **Damage Over Time**: poison, burn, bleed
-- **Stat Modifiers**: speed, defense, damage (% based, stackable)
-- **Temporary Buffs**: damage_boost (200% next attack), shield, regen
-- **Debuffs**: slow, vulnerable, stunned
-
-### Phase 2.3: Ability Generation System
-**50+ Ability Matrix**: `6 damage types × 5 effect categories × 4 targeting types`
-
-```gdscript
-# Procedural + hand-crafted approach
-var damage_types = ["physical", "poison", "fire", "ice", "lightning", "spirit"]
-var effect_types = ["dot", "buff", "debuff", "heal", "control"]
-var targeting = ["single", "multi", "self", "area"]
-var magnitudes = ["weak", "normal", "strong", "ultimate"]
-```
-
-**Examples:**
-- `fire_strike` = fire damage + burn DoT
-- `ice_barrier` = self buff + damage reduction
-- `spirit_wave` = spirit damage + multi-target
-- `lightning_storm` = lightning + area + stun chance
-
-### Phase 2.4: Content Distribution Architecture
-```gdscript
-# Shop/Unlock System
-var ability_shop = {
-    "tier_1": ["poison_strike", "fire_bolt", "ice_shard"],  # 50 coins
-    "tier_2": ["double_poison", "flame_burst"],            # 100 coins  
-    "tier_3": ["inferno", "arctic_blast"],                 # 200 coins
-    "special": ["spirit_nova", "time_stop"]                # Event/map unlocks
-}
-```
-
-**Acquisition Methods:**
-- **Shop Tiers**: Basic → Advanced → Ultimate abilities
-- **Map Node Rewards**: Unique abilities from specific encounters
-- **Playthroughs**: New abilities unlock after completing runs
-- **Event Gates**: Story-driven ability unlocks
-
-### Phase 2.5: Character Expansion Framework
-```gdscript
-# Unique ability pools per character
-var character_abilities = {
-    "Player1": {  # Sword Spirit - melee/spirit focused
-        "base": ["basic_attack", "2x_cut", "spirit_wave"],
-        "unlockable": ["spirit_slash", "phantom_strike", "soul_rend"]
-    },
-    "Player2": {  # Gun Mage - ranged/tech focused  
-        "base": ["basic_attack", "big_shot", "bullet_rain"],
-        "unlockable": ["plasma_cannon", "emp_burst", "orbital_strike"]
-    },
-    "Player3": {  # Future character - unique theme
-        "base": ["basic_attack", "ability_a", "ability_b"],
-        "unlockable": ["unique_abilities"]
-    }
-}
-```
-
-### Phase 2.6: Implementation Roadmap
-
-#### 🔧 Technical Tasks:
-1. **Convert Remaining Abilities**: `spirit_wave`, `uppercut` → modular system
-2. **Status Effect Manager**: Centralized effect tracking/application
-3. **Ability Database**: JSON configs for all 50+ abilities
-4. **Effect Combination Logic**: Stackable buff/debuff system
-5. **Shop Integration**: Ability purchasing/unlock system
-
-#### 🎨 Content Tasks:
-1. **Generate 50+ Ability Configs**: Using matrix approach
-2. **Placeholder Animation Mapping**: All abilities → `basic_attack` fallback
-3. **Effect Balancing**: Damage/duration/cost tuning
-4. **Tier Progression**: Logical ability unlock progression
-
-#### 🧪 Testing Strategy:
-1. **Individual Ability Testing**: Each ability works with placeholders
-2. **Effect Stacking Testing**: Multiple buffs/debuffs combine correctly
-3. **Shop Integration Testing**: Purchase/unlock flow works
-4. **Balance Testing**: Damage curves and progression feel
-
-### Phase 2.7: Long-term Vision
-- **100+ Unique Abilities**: Mix of procedural + hand-crafted
-- **Deep Effect Combinations**: 3-4 stackable effects per ability
-- **Character Mastery**: Unlock paths for each character
-- **Dynamic Content**: Abilities change based on player choices/progression
-
----
-
-## 🧠 CLAUDE DEVELOPMENT NOTES - READ FIRST
-
-### ⚠️ Critical Development Guidelines
-
-#### Godot Version & Compatibility
-- **ALWAYS use Godot 4.4+ syntax** - NO Godot 3 patterns
-- Use `@onready`, `@export`, `create_tween()`, NOT `yield()` or old signal syntax
-- File extensions: `.gd`, `.tscn`, `.tres`
-- Assume GDScript 2.0 unless explicitly told otherwise
-
-#### AnimationBridge System Patterns
-```gdscript
-# ✅ CORRECT - Use actual QTE result values
-AnimationBridge.play_result_animation("ability_name", result1)  # "crit", "normal", "fail"
-
-# ❌ WRONG - Don't use generic success flags  (Phil may refer to a "success" state but he means Crit/Normal)
-AnimationBridge.play_result_animation("ability_name", "success")  # Breaks logic!
-```
-
-**AnimationBridge expects these exact values:**
-- `"crit"` or `"normal"` → plays `success_animation`
-- `"fail"` → plays `fail_animation`
-- Anything else (like `"success"`) → defaults to `fail_animation`
-
-#### Animation Name Debugging
-```gdscript
-# Always check BOTH when debugging animations:
-print("AnimatedSprite2D animations: ", sprite.sprite_frames.get_animation_names())
-print("AnimationPlayer animations: ", animation_player.get_animation_list())
-```
-- **AnimatedSprite2D**: Controls sprite frame sequences (e.g., `"2x cut finish"`)
-- **AnimationPlayer**: Controls scene animations (e.g., `"2x_finish"`)
-- **AnimationBridge uses AnimationPlayer names**, not AnimatedSprite2D!
-
-#### User's Common Patterns & Preferences
-
-**Phil's Development Style:**
-- Prefers **incremental testing** - "test one at a time, then roll out"
-- Values **scalable modular systems** over quick fixes
-- Wants **placeholder-friendly** architecture (missing animations = use basic_attack)
-- Focuses on **"make it work, then make it beautiful"** approach
-
-**Phil's Communication Style:**
-- Direct, practical questions: "what exact animation names are we using?"
-- Appreciates **concrete examples** over abstract theory
-- Prefers **step-by-step explanations** when things break
-- Values **debugging info** and clear logs
-
-**Common Issues to Watch For:**
-- **Animation name mismatches**: Always verify exact spellings/spaces
-- **QTE result confusion**: User might say "success" when meaning "crit/normal"
-- **Sprite conflicts**: AnimationBridge spawns scenes - can create duplicate sprites
-- **Turn flow issues**: Modular abilities must return proper damage info for TurnManager
-
-#### Debugging Checklist When Things Break
-1. **Check animation names** - exact spelling in AnimationPlayer
-2. **Verify QTE result values** - use "crit"/"normal"/"fail", not "success"
-3. **Add debug prints** - show what values are being passed
-4. **Test incrementally** - one ability at a time
-5. **Check logs** - AnimationBridge has extensive logging
-
-#### Project Architecture Principles
-- **TurnManager**: Handles turn flow, damage application, resolve
-- **AnimationBridge**: Shared service for all ability animations  
-- **Player Classes**: Handle ability logic, return damage info to TurnManager
-- **Modular Contract**: `execute_ability()` returns `{damage, qte_results, success}`
-
-#### Menu System Expansion
-**Turn Menu Structure**: Attack → Skills → Memory → Items
-
-**Memory System (Espers/Summons):**
-- **Concept**: Special ability category for powerful summon-like abilities
-- **Visual Style**: Reuse existing character animations but **tint completely black** (shadow effect)
-- **Purpose**: Hide identity of original sprite while reusing animation work
-- **Implementation**: Same AnimationBridge system, apply black tint shader/modulate
-- **Category**: Separate from regular skills, likely higher resolve costs
-```gdscript
-# Memory abilities - black tinted animations
-var memory_abilities = {
-    "shadow_strike": {
-        "animation": "basic_attack_p1",  # Reuses Player1 attack
-        "tint": Color.BLACK,             # Complete black silhouette
-        "category": "memory",
-        "resolve_cost": 4                # Higher cost than regular skills
-    }
-}
-```
-
-#### Success Patterns That Work
-```gdscript
-# ✅ Modular ability pattern (like 2x_cut)
-func execute_custom_ability(target):
-    # 1. Spawn animation
-    var instance = AnimationBridge.spawn_ability_animation("ability_name", Vector2.ZERO, self)
-    
     # 2. Play windup
     AnimationBridge.play_windup_animation("ability_name")
     await AnimationBridge.animation_ready_for_qte
-    
-    # 3. Run QTE(s)
-    var qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!")
-    
-    # 4. Play result (use actual QTE result!)
+
+    # 3. QTE
+    var qte_result = await QTEManager.start_qte("confirm attack", 800, "Press Z!", self)
+
+    # 4. IMMEDIATE damage application (no delays!)
+    _apply_damage_immediate(qte_result, target)
+
+    # 5. Result animation (use exact QTE result: "crit"/"normal"/"fail")
     AnimationBridge.play_result_animation("ability_name", qte_result)
     await AnimationBridge.animation_sequence_complete
-    
-    # 5. Return damage info for TurnManager
-    return {"damage": calculated_damage, "qte_results": [qte_result], "success": damage > 0}
+
+    # 6. Return for TurnManager
+    return {"damage": damage_dealt, "qte_results": [qte_result], "success": damage > 0}
 ```
 
----
-
-## 🎉 LATEST UPDATE - RANDOMIZED BACKGROUND SYSTEM COMPLETE!
-
-### ✅ COMPLETED January 13, 2025: Dynamic Arena Background System
-**Successfully implemented randomized background selection for enhanced visual variety:**
-
-#### 🏗️ New System Architecture:
-- **BackgroundManager.gd**: Centralized arena randomization controller
-- **10 Arena Variants**: arena.png through arena10.png (excluding corrupt files)
-- **True Randomization**: Proper `randomize()` seeding for genuine variety
-- **Seamless Integration**: Background changes at battle start and post-shop
-
-#### 🔄 Implementation Details:
+## 🐛 DEBUGGING COMMANDS
 ```gdscript
-// BackgroundManager handles all arena selection
-var valid_arenas = ["arena", "arena2", "arena3", "arena4", "arena5", 
-                   "arena6", "arena7", "arena8", "arena9", "arena10"]
+# Animation system verification
+print("AnimatedSprite2D: ", sprite.sprite_frames.get_animation_names())
+print("AnimationPlayer: ", animation_player.get_animation_list())
 
-func change_battle_background(background_node: Sprite2D):
-    var new_arena = get_random_arena()
-    background_node.texture = load("res://assets/backgrounds/" + new_arena + ".png")
+# Resolve system (Q/A for P1, E/D for P2)
+ResolveManager.add_resolve("Player1", 1)  # Q key
+ResolveManager.remove_resolve("Player1", 1)  # A key
 ```
 
-#### ✅ Integration Points Working:
-- **TurnManager.begin_turn()**: Randomizes at `current_turn_index == 0` (new battle cycle)
-- **ShopOverlay._start_next_battle()**: Changes background when exiting shop
-- **Scene File**: Proper ExtResource setup for Godot 4 compatibility
-- **Turn Label**: Moved above FF-style UI container for better positioning
+## 🎨 USER COMMUNICATION PATTERNS
 
-#### 🎮 User Experience Flow:
-```
-BATTLE (arena2) → WIN → SHOP → EXIT → NEW RANDOM (arena7) → BATTLE
-BATTLE (arena7) → WIN → SHOP → EXIT → NEW RANDOM (arena3) → BATTLE  
-BATTLE (arena3) → LOSE → RESET → NEW RANDOM (arena10) → RETRY
-```
+### Warning Signals
+- **"you're not listening"** = Misunderstood which player/sprite should be affected
+- **"user error as usual"** = Missing AnimationPlayer tracks (user needs to create them manually)
+- **Animation name corrections** = Exact spelling/capitalization matters
 
-### 🛍️ NEXT PHASE - OCARINA OF TIME STYLE SHOP SYSTEM
+### User Preferences
+- Test one thing at a time, then roll out
+- Incremental changes over big rewrites
+- Placeholder-friendly systems (missing animations → use basic_attack)
+- Direct questions: "what exact animation names are we using?"
 
-#### 📋 Current Shop Analysis Complete:
-- **Current**: Basic overlay with button list (ShopOverlay.tscn)
-- **Proposed**: Dedicated shop scene with shopkeeper, visual item display, OoT-style cursor navigation
+## 🏆 CAMPAIGN PROGRESSION
 
-#### 🎯 Planned Shop Upgrade Features:
-**Visual Design:**
-- Dedicated ShopScene.tscn (not overlay)
-- Animated shopkeeper character behind counter
-- Item icons arranged on shelves/counter
-- Selection cursor with smooth movement
-- Bottom dialogue panel for shopkeeper text
-
-**Technical Implementation:**
-- Scene transition: BattleScene → ShopScene → BattleScene  
-- Cursor-based item selection (Arrow keys + Z/X controls)
-- Shopkeeper dialogue system with typewriter effects
-- Visual item representations instead of text buttons
-- Enhanced atmosphere with shop-specific music/SFX
-
-#### 📁 Assets Needed for Shop Upgrade:
-```
-assets/shop/
-├── backgrounds/shop_interior.png
-├── characters/shopkeeper_*.png (idle, talk, gesture)
-├── items/*_icon.png (16 ability icons for P1/P2)
-└── ui/selection_cursor.png, dialogue_box.png
+### Battle Scaling (ProgressManager)
+```gdscript
+Battle 1: 1.0x stats (Tutorial Boss)
+Battle 2: 1.5x stats (Shadow Beast)
+Battle 3: 2.0x stats (Elite Guardian)
+Battle 4: 2.5x stats (Ancient Warden)
+Battle 5: 3.0x stats (Final Boss)
 ```
 
-#### 🎮 Implementation Strategy:
-**Phase 1**: User builds shop scene visually in Godot
-**Phase 2**: Claude wires up all functionality and systems
-**Phase 3**: Polish with animations, sounds, transitions
+### Shop Randomization
+- Items: 2-3 random per visit
+- Upgrades: 2-3 random per visit
+- Abilities: 4 random (2 shared, 1 P1, 1 P2) per visit
 
-### 📊 Ability Icon Generation List:
-**Player 1 (8 abilities)**: 2x_cut, moonfall_slash, spirit_wave, whirlwind, poison, burn_strike, shield_boost, mark_target
-**Player 2 (8 abilities)**: big_shot, scatter_shot, focus, grenade, bullet_rain, freezing_shot, armor_piercing, bleeding_shot
+## 🔧 CRITICAL FUNCTIONS
+
+### AnimationBridge Registration
+```gdscript
+"ability_name": {
+    "scene_path": "res://testing animations.tscn",
+    "windup_animation": "exact_animationplayer_name",
+    "success_animation": "exact_animationplayer_name",
+    "modulate_color": Color.BLACK  // Optional tinting
+}
+```
+
+### QTE Result Values (EXACT)
+- Use: `"crit"`, `"normal"`, `"fail"`
+- Never: `"success"` (breaks AnimationBridge logic)
+
+## 🚀 CURRENT STATE
+- ✅ 5-battle campaign with scaling
+- ✅ Progressive shop system
+- ✅ Modular ability architecture
+- ✅ Ghost Attack with black silhouette
+- ✅ Streamlined UI (no quit buttons, "Continue" flow)
+
+## 🎪 PROVEN ABILITY IMPLEMENTATIONS
+
+### Player Ability Lists
+```gdscript
+// Player 1 (Ninja/Sword) - 9 abilities
+["basic_attack", "2x_cut", "moonfall_slash", "spirit_wave", "whirlwind", "ghost_attack",
+ "poison", "burn_strike", "shield_boost", "mark_target"]
+
+// Player 2 (Gunner/Ranged) - 8 abilities
+["basic_attack", "big_shot", "scatter_shot", "focus", "grenade", "bullet_rain",
+ "freezing_shot", "armor_piercing", "bleeding_shot"]
+
+// Shared Pool (Status Effects)
+["poison", "burn_strike", "shield_boost", "mark_target", "freezing_shot",
+ "armor_piercing", "bleeding_shot", "berserker_rage", "healing_touch",
+ "curse_strike", "time_shift", "energy_barrier"]
+```
+
+### Status Effect System (Working Examples)
+```gdscript
+// Immediate damage + status application pattern
+func execute_status_ability(target):
+    # Standard AnimationBridge flow...
+
+    # IMMEDIATE damage application (no delays!)
+    var damage = calculate_damage(qte_result)
+    target.take_damage(damage)
+
+    # Apply status effect
+    if qte_result in ["normal", "crit"]:
+        match ability_name:
+            "freezing_shot": StatusManager.apply_status(target, "frozen", 1)
+            "bleeding_shot": StatusManager.apply_status(target, "bleed", 3)
+            "armor_piercing": StatusManager.apply_status(target, "armor_down", 2)
+```
+
+### Special Implementations
+
+#### Ghost Attack (Black Silhouette)
+```gdscript
+// AnimationBridge registration with tinting
+"ghost_attack": {
+    "scene_path": "res://testing animations.tscn",
+    "windup_animation": "BE_Test1_Windup",
+    "success_animation": "BE_Test1_Finish",
+    "modulate_color": Color.BLACK  // Black silhouette effect
+}
+```
+
+#### Multishot QTE (Randomized Timing)
+```gdscript
+// Enhanced multishot with random intervals
+for i in range(projectile_count):
+    var random_delay = randf_range(0.2, 0.8)
+    await get_tree().create_timer(random_delay).timeout
+    # Launch projectile at 850 pixels/second
+```
+
+#### Big Shot Targeting
+```gdscript
+// Red crosshair positioned over enemy horizontally
+crosshair_position = Vector2(enemy.global_position.x, screen_center.y)
+```
+
+## 🎨 GODOT 4.4 SPECIFIC PATTERNS
+
+### Critical Syntax Rules
+```gdscript
+// ✅ ALWAYS use Godot 4+ syntax
+@onready var node := $NodePath
+@export var property: int = 5
+var tween = create_tween()
+
+// ❌ NEVER use Godot 3 patterns
+onready var node = $NodePath  # Old syntax
+export var property = 5       # Old syntax
+yield(timer, "timeout")       # Use await instead
+```
+
+### Animation Timing Fixes
+```gdscript
+// Prevent animation lingering after completion
+await animation_player.animation_finished
+animation_player.pause()  // Critical for clean stops
+```
+
+## 🔊 AUDIO SYSTEM
+```gdscript
+// Working sound file paths
+"res://assets/sfx/attack.wav"     // Basic attacks
+"res://assets/sfx/bullet.wav"     // Gunner abilities
+// Note: blade_hit.wav doesn't exist - use attack.wav
+```
+
+## 🎮 QTE MECHANICS
+
+### QTE Result Values (CRITICAL)
+```gdscript
+// AnimationBridge expects these EXACT values:
+"crit" or "normal" → plays success_animation
+"fail" → plays fail_animation
+// NEVER use "success" - breaks the system!
+```
+
+### Turn Flow Integration
+```gdscript
+// Modular abilities must return proper damage info
+return {
+    "damage": damage_dealt,
+    "qte_results": [qte_result],
+    "success": damage_dealt > 0,
+    "handled_damage": true  // Prevents duplicate damage
+}
+```
+
+## 🏪 MEMORY SYSTEM (Esper/Summon Concept)
+```gdscript
+// Reuse existing animations with black tint for "shadow" abilities
+var memory_abilities = {
+    "shadow_strike": {
+        "animation": "basic_attack_p1",  // Reuses Player1 attack
+        "tint": Color.BLACK,             // Complete black silhouette
+        "category": "memory",
+        "resolve_cost": 4                // Higher cost than regular skills
+    }
+}
+```
+
+## 🔧 UI SYSTEM NOTES
+
+### FF-Style UI Paths
+```gdscript
+// Resolve system paths (fixed for new UI)
+var resolve_label_path = "/root/BattleScene/UILayer/PlayerUIContainer/PlayersVBox/" +
+                        player_name + "Row/" + player_name + "Info/" + player_name +
+                        "Header/" + player_name + "ResolveCount"
+```
+
+### Turn Menu Structure
+```
+Attack → Skills → Memory → Items
+```
+
+## 🎯 NEXT PRIORITIES
+1. Shop purchase implementation (currently placeholder)
+2. Additional ability integrations using proven pattern
+3. Memory system implementation (black-tinted animations)
+4. Final balance tuning
 
 ---
-*Ready to scale from MVP to full ability ecosystem using proven modular architecture.*
+*Key: Debug animations first, verify names exactly, test incrementally, follow proven patterns.*

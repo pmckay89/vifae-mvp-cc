@@ -83,6 +83,17 @@ var animation_library = {
 		"fail_animation": "ninja_hitstun", # Use ninja hitstun for Player1
 		"spawn_offset": Vector2(-200, 0), # Left side positioning
 		"sprite_scale": Vector2(2.25, 2.25) # Custom scale for this ability
+	},
+	"ghost_attack": {
+		"scene_path": "res://testing animations.tscn",
+		"controller_node_path": "HeroRoot/Hero", # The AnimatedSprite2D to control
+		"animation_player_path": "HeroRoot/Hero/AnimationPlayer", # The AnimationPlayer
+		"windup_animation": "BE_Test1_Windup",
+		"success_animation": "BE_Test1_Finish",
+		"fail_animation": "ninja_hitstun", # Use ninja hitstun for Player1
+		"spawn_offset": Vector2(-200, 0), # Left side positioning
+		"sprite_scale": Vector2(2.25, 2.25), # Custom scale for this ability
+		"modulate_color": Color.BLACK # Black silhouette effect
 	}
 }
 
@@ -124,6 +135,13 @@ func spawn_ability_animation(ability_name: String, spawn_position: Vector2, play
 		if hero_sprite:
 			hero_sprite.scale = config.sprite_scale
 			print("🎬 [AnimationBridge] Applied custom scale: ", config.sprite_scale)
+
+	# Apply custom modulation if specified (for special effects like Ghost Attack)
+	if config.has("modulate_color"):
+		var hero_sprite = animation_instance.get_node_or_null(config.controller_node_path)
+		if hero_sprite:
+			hero_sprite.modulate = config.modulate_color
+			print("🎬 [AnimationBridge] Applied custom modulation: ", config.modulate_color)
 	
 	# Hide the camera and enemy dummy from the testing scene
 	var camera = animation_instance.get_node_or_null("Camera2D")
@@ -205,7 +223,8 @@ func play_windup_animation(ability_name: String):
 	
 	# Wait for windup to finish, then signal ready for QTE
 	await animation_player.animation_finished
-	print("🎬 [AnimationBridge] Windup complete, ready for QTE")
+	animation_player.pause()  # Freeze on last frame until QTE resolves
+	print("🎬 [AnimationBridge] Windup complete, paused for QTE")
 	animation_ready_for_qte.emit(ability_name)
 
 func play_result_animation(ability_name: String, qte_result: String):
@@ -241,7 +260,7 @@ func play_result_animation(ability_name: String, qte_result: String):
 	print("🎬 [AnimationBridge] Result animation complete")
 	
 	# Return to appropriate idle animation
-	if ability_name in ["basic_attack_p1", "2x_cut", "whirlwind", "poison"]:
+	if ability_name in ["basic_attack_p1", "2x_cut", "whirlwind", "poison", "ghost_attack"]:
 		# Player1 returns to idle_p1 animation
 		animation_player.play("idle_p1")
 		print("🎬 [AnimationBridge] Player1 returning to idle_p1")
@@ -283,17 +302,17 @@ func register_ability_animation(ability_name: String, config: Dictionary):
 # Universal idle sprite hiding system
 func hide_player_idle_sprites(player_node: Node2D) -> Array:
 	var hidden_sprites = []
-	
+
 	# Common idle sprite node names to check
-	var idle_node_names = ["idle", "IdleAnimatedSprite", "Idle", "idle_sprite"]
-	
+	var idle_node_names = ["idle", "IdleAnimatedSprite", "Idle", "idle_sprite", "idle_p1"]
+
 	for node_name in idle_node_names:
 		var idle_sprite = player_node.get_node_or_null(node_name)
 		if idle_sprite and idle_sprite.visible:
 			idle_sprite.visible = false
 			hidden_sprites.append(idle_sprite)
 			print("🎬 [AnimationBridge] Hidden idle sprite: ", node_name)
-	
+
 	return hidden_sprites
 
 # Debug helper to print scene tree

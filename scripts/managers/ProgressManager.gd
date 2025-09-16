@@ -32,7 +32,9 @@ var active_buffs = {
 # Map structure: array of fork choices (what comes after each battle)
 var map_structure = [
 	{"battle_name": "Tutorial Boss", "fork_a": NodeType.SHOP, "fork_b": NodeType.UPGRADE},
-	{"battle_name": "Shadow Beast", "fork_a": NodeType.SHOP, "fork_b": NodeType.UPGRADE}, 
+	{"battle_name": "Shadow Beast", "fork_a": NodeType.SHOP, "fork_b": NodeType.UPGRADE},
+	{"battle_name": "Elite Guardian", "fork_a": NodeType.SHOP, "fork_b": NodeType.UPGRADE},
+	{"battle_name": "Ancient Warden", "fork_a": NodeType.SHOP, "fork_b": NodeType.UPGRADE},
 	{"battle_name": "Final Boss", "fork_a": NodeType.SHOP, "fork_b": NodeType.UPGRADE}
 ]
 
