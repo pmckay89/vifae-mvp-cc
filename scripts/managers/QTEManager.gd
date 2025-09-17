@@ -850,7 +850,7 @@ func start_multishot_qte(prompt_text: String, target_player) -> String:
 	goal_indicator.color = Color.GREEN
 
 	# Each player uses their own position with appropriate offset
-	var parry_line_y = player_pos.y - 40  # Default offset for Player1
+	var parry_line_y = player_pos.y + 110  # Player1 moved down 150px (was -40, now +110)
 	if target_player and target_player.name == "Player2":
 		parry_line_y = player_pos.y + 10  # Player2's adjusted position (moved down 50px)
 

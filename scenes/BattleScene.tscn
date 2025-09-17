@@ -93,7 +93,6 @@ position = Vector2(121, 389)
 position = Vector2(939, 199)
 
 [node name="UILayer" type="CanvasLayer" parent="."]
-visible = false
 
 [node name="CoinDisplay" type="HBoxContainer" parent="UILayer"]
 z_index = 100

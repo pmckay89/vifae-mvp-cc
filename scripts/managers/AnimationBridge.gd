@@ -355,19 +355,35 @@ func play_hitstun_animation(animation_name: String, player_name: String):
 		# Get the player node and hide their idle sprite
 		if player_name == "Player1":
 			player_node = get_tree().current_scene.get_node_or_null("Player1")
-			hero_root.position = Vector2(77, 233)  # Player1's battle position
+			hero_root.position = Vector2(35, 330)  # Player1's battle position
 		elif player_name == "Player2":
 			player_node = get_tree().current_scene.get_node_or_null("Player2")
-			hero_root.position = Vector2(121, 389)  # Player2's battle position
+			hero_root.position = Vector2(40, 430)
 
 		# Hide the player's idle sprite during hitstun
 		if player_node:
-			var idle_sprite = player_node.get_node_or_null("idle")
-			if idle_sprite:
-				idle_sprite.visible = false
-				print("🎬 [AnimationBridge] Hidden ", player_name, " idle sprite during hitstun")
+			if player_name == "Player1":
+				var idle_sprite = player_node.get_node_or_null("idle")
+				if idle_sprite:
+					idle_sprite.visible = false
+					print("🎬 [AnimationBridge] Hidden Player1 idle sprite during hitstun")
+			elif player_name == "Player2":
+				# Player2 has different sprite node names
+				var idle_animated = player_node.get_node_or_null("IdleAnimatedSprite")
+				var main_sprite = player_node.get_node_or_null("Sprite2D")
 
-		hero_root.scale = Vector2(1.0, 1.0)  # Normal scale
+				if idle_animated:
+					idle_animated.visible = false
+					print("🎬 [AnimationBridge] Hidden Player2 IdleAnimatedSprite during hitstun")
+				if main_sprite:
+					main_sprite.visible = false
+					print("🎬 [AnimationBridge] Hidden Player2 main Sprite2D during hitstun")
+
+		# Apply scale based on player
+		if player_name == "Player1":
+			hero_root.scale = Vector2(1.25, 1.25)  # Larger for Player1
+		else:
+			hero_root.scale = Vector2(1.20, 1.20)  # Larger scale for Player2
 
 	# Get the AnimationPlayer and play the hitstun animation
 	var animation_player = animation_instance.get_node_or_null("HeroRoot/Hero/AnimationPlayer")
@@ -381,10 +397,22 @@ func play_hitstun_animation(animation_name: String, player_name: String):
 
 			# Restore the player's idle sprite
 			if player_node:
-				var idle_sprite = player_node.get_node_or_null("idle")
-				if idle_sprite:
-					idle_sprite.visible = true
-					print("🎬 [AnimationBridge] Restored ", player_name, " idle sprite after hitstun")
+				if player_name == "Player1":
+					var idle_sprite = player_node.get_node_or_null("idle")
+					if idle_sprite:
+						idle_sprite.visible = true
+						print("🎬 [AnimationBridge] Restored Player1 idle sprite after hitstun")
+				elif player_name == "Player2":
+					# Player2 has different sprite node names - restore them
+					var idle_animated = player_node.get_node_or_null("IdleAnimatedSprite")
+					var main_sprite = player_node.get_node_or_null("Sprite2D")
+
+					if idle_animated:
+						idle_animated.visible = true
+						print("🎬 [AnimationBridge] Restored Player2 IdleAnimatedSprite after hitstun")
+					if main_sprite:
+						main_sprite.visible = true
+						print("🎬 [AnimationBridge] Restored Player2 main Sprite2D after hitstun")
 
 			animation_instance.queue_free()
 		)

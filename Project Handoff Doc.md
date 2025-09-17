@@ -314,3 +314,6 @@ Attack → Skills → Memory → Items
 
 ---
 *Key: Debug animations first, verify names exactly, test incrementally, follow proven patterns.*
+
+● Perfect! Now Player2's hitstun animation will always appear at the fixed coordinates Vector2(207, 463). You can     
+  easily edit that line 361 in AnimationBridge.gd to adjust the position to exactly where you want it.  (animationbridge.)
