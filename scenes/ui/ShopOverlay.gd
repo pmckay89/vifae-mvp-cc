@@ -32,7 +32,7 @@ var upgrades_pool := [
 ]
 
 var abilities_p1_pool := ["2x_cut", "moonfall_slash", "spirit_wave", "whirlwind", "ghost_attack"]
-var abilities_p2_pool := ["big_shot", "scatter_shot", "focus", "grenade", "bullet_rain"]
+var abilities_p2_pool := ["big_shot", "scatter_shot", "grenade", "bullet_rain"]
 var abilities_shared_pool := ["poison", "burn_strike", "shield_boost", "mark_target", "freezing_shot", "armor_piercing", "bleeding_shot", "berserker_rage", "healing_touch", "curse_strike", "time_shift", "energy_barrier"]
 
 # Current shop offerings (randomized each visit)

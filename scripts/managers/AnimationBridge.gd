@@ -210,21 +210,21 @@ func play_windup_animation(ability_name: String):
 	# Debug AnimationPlayer animations
 	print("🎬 [AnimationBridge] AnimationPlayer available animations: ", animation_player.get_animation_list())
 	
-	# Play windup animation
+	# Use AnimationPlayer for all abilities (standard system)
+	var windup_anim = animation_player.get_animation(config.windup_animation)
+	if windup_anim:
+		windup_anim.loop_mode = Animation.LOOP_NONE
+		print("🔧 [AnimationBridge] Disabled looping for: ", config.windup_animation)
+
 	animation_player.play(config.windup_animation)
-	print("🎬 [AnimationBridge] Playing: ", config.windup_animation)
-	
-	# Check if animation actually changed
-	await get_tree().process_frame
-	if hero_sprite:
-		print("🎬 [AnimationBridge] Hero sprite animation after play: ", hero_sprite.animation)
-		print("🎬 [AnimationBridge] Hero sprite position after play: ", hero_sprite.global_position)
-		print("🎬 [AnimationBridge] Hero sprite frame after play: ", hero_sprite.frame)
-	
-	# Wait for windup to finish, then signal ready for QTE
+	print("🎬 [AnimationBridge] Playing AnimationPlayer: ", config.windup_animation)
+
+	# Wait for windup to finish, then pause and signal ready for QTE
 	await animation_player.animation_finished
-	animation_player.pause()  # Freeze on last frame until QTE resolves
-	print("🎬 [AnimationBridge] Windup complete, paused for QTE")
+
+	# Pause the animation player to freeze on last frame during QTE
+	animation_player.pause()
+	print("🎬 [AnimationBridge] Windup complete, animation paused for QTE")
 	animation_ready_for_qte.emit(ability_name)
 
 func play_result_animation(ability_name: String, qte_result: String):
@@ -250,13 +250,20 @@ func play_result_animation(ability_name: String, qte_result: String):
 		animation_name = config.success_animation
 	else:
 		animation_name = config.fail_animation
-	
-	# Play result animation
+
+	# Use AnimationPlayer for all abilities (standard system)
+	var result_anim = animation_player.get_animation(animation_name)
+	if result_anim:
+		result_anim.loop_mode = Animation.LOOP_NONE
+		print("🔧 [AnimationBridge] Disabled looping for: ", animation_name)
+
+	# Play result animation (this will resume from paused state)
 	animation_player.play(animation_name)
-	print("🎬 [AnimationBridge] Playing result: ", animation_name)
-	
+	print("🎬 [AnimationBridge] Playing AnimationPlayer result: ", animation_name)
+
 	# Wait for result animation to finish
 	await animation_player.animation_finished
+
 	print("🎬 [AnimationBridge] Result animation complete")
 	
 	# Return to appropriate idle animation
@@ -360,7 +367,7 @@ func play_hitstun_animation(animation_name: String, player_name: String):
 			player_node = get_tree().current_scene.get_node_or_null("Player2")
 			hero_root.position = Vector2(40, 430)
 
-		# Hide the player's idle sprite during hitstun
+		# Hide the player's sprites during hitstun
 		if player_node:
 			if player_name == "Player1":
 				var idle_sprite = player_node.get_node_or_null("idle")
@@ -368,9 +375,11 @@ func play_hitstun_animation(animation_name: String, player_name: String):
 					idle_sprite.visible = false
 					print("🎬 [AnimationBridge] Hidden Player1 idle sprite during hitstun")
 			elif player_name == "Player2":
-				# Player2 has different sprite node names
+				# Player2 has multiple sprites that need to be hidden
 				var idle_animated = player_node.get_node_or_null("IdleAnimatedSprite")
 				var main_sprite = player_node.get_node_or_null("Sprite2D")
+				var idle2_sprite = player_node.get_node_or_null("idle2")
+				var attack_sprite = player_node.get_node_or_null("attack")
 
 				if idle_animated:
 					idle_animated.visible = false
@@ -378,6 +387,12 @@ func play_hitstun_animation(animation_name: String, player_name: String):
 				if main_sprite:
 					main_sprite.visible = false
 					print("🎬 [AnimationBridge] Hidden Player2 main Sprite2D during hitstun")
+				if idle2_sprite:
+					idle2_sprite.visible = false
+					print("🎬 [AnimationBridge] Hidden Player2 idle2 sprite during hitstun")
+				if attack_sprite:
+					attack_sprite.visible = false
+					print("🎬 [AnimationBridge] Hidden Player2 attack sprite during hitstun")
 
 		# Apply scale based on player
 		if player_name == "Player1":
@@ -388,14 +403,22 @@ func play_hitstun_animation(animation_name: String, player_name: String):
 	# Get the AnimationPlayer and play the hitstun animation
 	var animation_player = animation_instance.get_node_or_null("HeroRoot/Hero/AnimationPlayer")
 	if animation_player:
+		# Debug: Check what animation is currently playing before we change it
+		var current_anim = animation_player.current_animation
+		print("🔍 [AnimationBridge] Current animation before play: ", current_anim)
+
 		animation_player.play(animation_name)
 		print("🎬 [AnimationBridge] Playing hitstun: ", animation_name)
+
+		# Debug: Confirm what's now playing
+		var new_current_anim = animation_player.current_animation
+		print("🔍 [AnimationBridge] Current animation after play: ", new_current_anim)
 
 		# Clean up after animation finishes
 		animation_player.animation_finished.connect(func(anim_name):
 			print("🎬 [AnimationBridge] Hitstun animation finished: ", anim_name)
 
-			# Restore the player's idle sprite
+			# Restore the player's sprites after hitstun
 			if player_node:
 				if player_name == "Player1":
 					var idle_sprite = player_node.get_node_or_null("idle")
@@ -403,7 +426,7 @@ func play_hitstun_animation(animation_name: String, player_name: String):
 						idle_sprite.visible = true
 						print("🎬 [AnimationBridge] Restored Player1 idle sprite after hitstun")
 				elif player_name == "Player2":
-					# Player2 has different sprite node names - restore them
+					# Player2 has multiple sprites - restore the main ones
 					var idle_animated = player_node.get_node_or_null("IdleAnimatedSprite")
 					var main_sprite = player_node.get_node_or_null("Sprite2D")
 
@@ -413,6 +436,8 @@ func play_hitstun_animation(animation_name: String, player_name: String):
 					if main_sprite:
 						main_sprite.visible = true
 						print("🎬 [AnimationBridge] Restored Player2 main Sprite2D after hitstun")
+
+					# Note: Don't restore idle2 or attack sprites - they should stay hidden unless specifically needed
 
 			animation_instance.queue_free()
 		)

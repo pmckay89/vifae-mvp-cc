@@ -226,7 +226,7 @@ func reset_for_new_combat():
 	print("RESET→ " + name + " fully restored")
 
 func get_ability_list() -> Array:
-	return ["big_shot", "scatter_shot", "focus", "grenade", "bullet_rain", "freezing_shot", "armor_piercing", "bleeding_shot", "berserker_rage", "healing_touch", "curse_strike", "time_shift", "energy_barrier"]
+	return ["big_shot", "scatter_shot", "grenade", "bullet_rain", "freezing_shot", "armor_piercing", "bleeding_shot", "berserker_rage", "healing_touch", "curse_strike", "time_shift", "energy_barrier"]
 
 func get_ability_display_name(ability_name: String) -> String:
 	match ability_name:
@@ -234,8 +234,6 @@ func get_ability_display_name(ability_name: String) -> String:
 			return "Big Shot"
 		"scatter_shot":
 			return "Scatter Shot"
-		"focus":
-			return "Focus"
 		"grenade":
 			return "Grenade"
 		"bullet_rain":
@@ -263,11 +261,6 @@ func execute_ability(ability_name: String, target):
 	selected_ability = ability_name
 	print("🔫 " + name + " prepares " + get_ability_display_name(ability_name) + "!")
 	
-	# Handle focus ability without QTE
-	if ability_name == "focus":
-		await get_tree().create_timer(0.5).timeout
-		activate_focus()
-		return
 	
 	# Handle modular status abilities (new system)
 	if ability_name == "freezing_shot":

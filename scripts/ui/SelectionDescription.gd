@@ -17,7 +17,6 @@ var descriptions = {
     # Player2 (Gun Girl) abilities
     "big_shot": "Powerful shot dealing 50-70 damage. Confirm Attack QTE.",
     "scatter_shot": "Spread shot hitting multiple areas. Confirm Attack QTE.",
-    "focus": "Doubles damage of next attack. No QTE.",
     "grenade": "Explosive area damage. Confirm Attack QTE.",
     "bullet_rain": "Fires multiple shots for 7-10 damage each. Confirm Attack QTE.",
     "freezing_shot": "Ice bullet that slows the enemy. Confirm Attack QTE.",

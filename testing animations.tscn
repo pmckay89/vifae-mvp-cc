@@ -950,9 +950,6 @@ animations = [{
 "texture": ExtResource("42_yepev")
 }, {
 "duration": 1.0,
-"texture": ExtResource("19_thh4a")
-}, {
-"duration": 1.0,
 "texture": ExtResource("43_c0min")
 }, {
 "duration": 1.0,
@@ -1017,6 +1014,88 @@ animations = [{
 "loop": true,
 "name": &"drink",
 "speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("15_jk2j7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_mqsde")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_wseta")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_45tey")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_jvcih")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_8ipib")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_bkjk3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_b7qjs")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_qe48y")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_ah32m")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_2d1xl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("26_8e5ig")
+}, {
+"duration": 1.0,
+"texture": ExtResource("27_ec6wc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("28_ov8xa")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29_swtcx")
+}],
+"loop": true,
+"name": &"grenade_throw",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("9_uajox")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_qveeu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_coxcj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_uajox")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_qveeu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_coxcj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_d2rb4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_m3rx5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_6o376")
+}],
+"loop": true,
+"name": &"grenade_windup",
+"speed": 12.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1830,7 +1909,7 @@ tracks/1/path = NodePath("HeroRoot/Hero:position")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.333333, 1.16667, 5.33333, 5.74552, 6.5546, 6.83333, 7.08333, 7.32274, 7.58333),
+"times": PackedFloat32Array(0, 0.333333, 1.16667, 4.30814, 4.72033, 5.52941, 5.80814, 6.05814, 6.29755, 6.55814),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 0,
 "values": [Vector2(121, 36), Vector2(121, 36), Vector2(664.815, 36), Vector2(664.815, 36), Vector2(808.333, -393), Vector2(812.037, -235), Vector2(812.037, -235), Vector2(598.148, -294), Vector2(346.296, -188), Vector2(121, 36)]
@@ -1842,10 +1921,10 @@ tracks/2/path = NodePath("HeroRoot/Hero:frame")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
-"times": PackedFloat32Array(0, 0.102651, 0.166667, 0.25, 0.333333, 0.416667, 0.583333, 0.75, 0.916667, 1.16667, 1.30952, 1.5074, 1.82169, 2.1709, 2.50846, 2.86931, 3.33333, 3.68505, 4.06408, 4.45664, 4.66646, 4.84244, 5.02519, 5.323, 5.65465, 6.08333, 6.16667, 6.25, 6.33333, 6.5546, 6.7253, 6.83333, 7.58333),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.102651, 0.166667, 0.25, 0.333333, 0.416667, 0.583333, 0.75, 0.916667, 1.16667, 1.30952, 1.5074, 1.82169, 2.1709, 2.50846, 2.86931, 3.33333, 3.68505, 4, 4.29781, 4.62946, 5.05814, 5.14148, 5.22481, 5.30814, 5.52941, 5.70011, 5.80814, 6.55814),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
-"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 13, 17, 20, 21, 23, 22, 26, 28, 30, 31, 32, 33, 35, 36, 38, 38, 39, 40, 47, 46, 48, 50]
+"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 13, 17, 20, 21, 23, 22, 26, 33, 35, 36, 38, 38, 39, 40, 47, 46, 48, 50]
 }
 tracks/3/type = "value"
 tracks/3/imported = false
@@ -1854,7 +1933,7 @@ tracks/3/path = NodePath("HeroRoot/Hero:rotation")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
-"times": PackedFloat32Array(6, 6.08103, 6.08408, 6.53857, 6.54162),
+"times": PackedFloat32Array(4.97481, 5.05584, 5.05889, 5.51338, 5.51643),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1),
 "update": 0,
 "values": [0.0, 0.0, 1.4399, 1.4399, 0.0]
@@ -1866,7 +1945,7 @@ tracks/4/path = NodePath("HeroRoot/flash:frame")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
-"times": PackedFloat32Array(1.83333, 1.90877, 2.5, 2.57544, 3.33333, 3.40877, 5.66667, 5.69187, 5.86538, 5.89058, 6.05899, 6.08419, 6.28128, 6.30649),
+"times": PackedFloat32Array(1.83333, 1.90877, 2.5, 2.57544, 3.33333, 3.40877, 4.64148, 4.66668, 4.84019, 4.86539, 5.0338, 5.059, 5.25609, 5.2813),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
 "values": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
@@ -1878,7 +1957,7 @@ tracks/5/path = NodePath("HeroRoot/flash:visible")
 tracks/5/interp = 1
 tracks/5/loop_wrap = true
 tracks/5/keys = {
-"times": PackedFloat32Array(0.25, 1.82031, 1.92097, 2.5, 2.60066, 3.33333, 3.43399, 5.66667, 5.74508, 5.86538, 5.94379, 6.05899, 6.1374, 6.28128, 6.35969),
+"times": PackedFloat32Array(0.25, 1.82031, 1.92097, 2.5, 2.60066, 3.33333, 3.43399, 4.64148, 4.71989, 4.84019, 4.9186, 5.0338, 5.11221, 5.25609, 5.3345),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
 "values": [false, true, false, true, false, true, false, true, false, true, false, true, false, true, false]
@@ -1890,7 +1969,7 @@ tracks/6/path = NodePath("HeroRoot/flash:position")
 tracks/6/interp = 1
 tracks/6/loop_wrap = true
 tracks/6/keys = {
-"times": PackedFloat32Array(1.82031, 2.4595, 3.29284, 3.40618, 5.6375, 5.6765, 5.74391, 5.83788, 5.84028, 5.87541, 5.87771, 5.91244, 6.0623, 6.08579, 6.29109, 6.33032),
+"times": PackedFloat32Array(1.82031, 2.4595, 3.29284, 3.40618, 4.61231, 4.65131, 4.71872, 4.81269, 4.81509, 4.85022, 4.85252, 4.88725, 5.03711, 5.0606, 5.2659, 5.30513),
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 0,
 "values": [Vector2(712.963, 31), Vector2(722.222, 26), Vector2(722.222, 26), Vector2(722.222, 26), Vector2(787.037, -179), Vector2(799.074, -269), Vector2(821.296, -331), Vector2(822.199, -314.091), Vector2(822.222, -271), Vector2(825.926, -259), Vector2(826.852, -311), Vector2(823.148, -300), Vector2(827.778, -278), Vector2(822.222, -261), Vector2(825, -203), Vector2(823.148, -197)]
@@ -1931,7 +2010,7 @@ tracks/7/keys = {
 "start_offset": 0.0,
 "stream": ExtResource("74_l3pi7")
 }],
-"times": PackedFloat32Array(1.8556, 2.51594, 3.29397, 5.6563, 5.86522, 6.08067, 6.2983)
+"times": PackedFloat32Array(1.8556, 2.51594, 3.29397, 4.63111, 4.84003, 5.05548, 5.27311)
 }
 tracks/7/use_blend = true
 
