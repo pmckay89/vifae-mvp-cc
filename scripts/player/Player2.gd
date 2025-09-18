@@ -41,81 +41,103 @@ func start_turn():
 	print(name, "is ready to act.")
 
 func show_block_animation(duration: float = 1.0):
-	# Pause breathing during block animation
-	var was_breathing = breathing_enabled
-	stop_breathing_animation()
-	
-	# Get references to all sprites
-	var main_sprite = $Sprite2D
-	var idle2_sprite = $idle2
-	var attack_sprite = $attack
-	var block_sprite = $"p2-block"  # Use quotes for the dash
-	
+	# No longer uses breathing animation system
+
+	# Get references to all sprites with null checks
+	var main_sprite = get_node_or_null("Sprite2D")
+	var idle2_sprite = get_node_or_null("idle2")
+	var attack_sprite = get_node_or_null("attack")
+	var block_sprite = get_node_or_null("p2-block")
+
 	# Hide all other sprites and show block sprite
-	main_sprite.visible = false
-	idle2_sprite.visible = false
-	attack_sprite.visible = false
-	block_sprite.visible = true
+	if is_instance_valid(main_sprite):
+		main_sprite.visible = false
+	if is_instance_valid(idle2_sprite):
+		idle2_sprite.visible = false
+	if is_instance_valid(attack_sprite):
+		attack_sprite.visible = false
+	if is_instance_valid(block_sprite):
+		block_sprite.visible = true
 	
 	# Hold for specified duration
 	await get_tree().create_timer(duration).timeout
 	
 	# Switch back to main sprite and hide block sprite
-	block_sprite.visible = false
-	main_sprite.visible = true
-	idle2_sprite.visible = false
-	attack_sprite.visible = false
+	if is_instance_valid(block_sprite):
+		block_sprite.visible = false
+	if is_instance_valid(main_sprite):
+		main_sprite.visible = true
+	if is_instance_valid(idle2_sprite):
+		idle2_sprite.visible = false
+	if is_instance_valid(attack_sprite):
+		attack_sprite.visible = false
 	
-	# Resume breathing if it was enabled
-	if was_breathing:
-		resume_breathing_animation()
+	# No longer resumes breathing animation
 
 func show_death_sprite():
-	# Stop breathing when dead
-	stop_breathing_animation()
-	
-	# Hide all other sprites
-	$Sprite2D.visible = false
-	$attack.visible = false
-	$"p2-block".visible = false
-	
+	# No longer uses breathing animation system
+
+	# Hide all other sprites - with null checks
+	var sprite2d = get_node_or_null("Sprite2D")
+	var attack = get_node_or_null("attack")
+	var block = get_node_or_null("p2-block")
+	var dead = get_node_or_null("p2-dead")
+
+	if is_instance_valid(sprite2d):
+		sprite2d.visible = false
+	if is_instance_valid(attack):
+		attack.visible = false
+	if is_instance_valid(block):
+		block.visible = false
+
 	# Show death sprite
-	$"p2-dead".visible = true
+	if is_instance_valid(dead):
+		dead.visible = true
 	print("DEATH→ " + name + " death sprite displayed")
 
 func hide_death_sprite():
-	# Hide death sprite and restore main sprite
-	$"p2-dead".visible = false
-	$Sprite2D.visible = true
-	$attack.visible = false
-	$"p2-block".visible = false
-	
-	# Resume breathing when revived
-	resume_breathing_animation()
+	# Hide death sprite and restore main sprite - with null checks
+	var dead = get_node_or_null("p2-dead")
+	var sprite2d = get_node_or_null("Sprite2D")
+	var attack = get_node_or_null("attack")
+	var block = get_node_or_null("p2-block")
+
+	if is_instance_valid(dead):
+		dead.visible = false
+	if is_instance_valid(sprite2d):
+		sprite2d.visible = true
+	if is_instance_valid(attack):
+		attack.visible = false
+	if is_instance_valid(block):
+		block.visible = false
+
+	# No longer resumes breathing animation
 	print("REVIVE→ " + name + " restored to life")
 
 func show_attack_windup():
-	# Show windup pose during QTE - stop breathing and show attack sprite
-	stop_breathing_animation()
-	
+	# Show windup pose during QTE - no longer uses breathing animation
+
 	# Hide all idle sprites and show attack sprite (p2.png windup pose)
-	var main_sprite = $Sprite2D
-	var idle2_sprite = $idle2
-	var attack_sprite = $attack
-	
-	main_sprite.visible = false
-	idle2_sprite.visible = false
-	attack_sprite.visible = true
+	var main_sprite = get_node_or_null("Sprite2D")
+	var idle2_sprite = get_node_or_null("idle2")
+	var attack_sprite = get_node_or_null("attack")
+
+	if is_instance_valid(main_sprite):
+		main_sprite.visible = false
+	if is_instance_valid(idle2_sprite):
+		idle2_sprite.visible = false
+	if is_instance_valid(attack_sprite):
+		attack_sprite.visible = true
 	
 	print("[Player2] Showing attack windup pose (p2.png)")
 
 func hide_attack_windup():
-	# Hide attack sprite and return to breathing animation
-	var attack_sprite = $attack
-	attack_sprite.visible = false
-	
-	resume_breathing_animation()
-	print("[Player2] Hiding attack windup pose, resuming breathing")
+	# Hide attack sprite - no longer uses breathing animation
+	var attack_sprite = get_node_or_null("attack")
+	if is_instance_valid(attack_sprite):
+		attack_sprite.visible = false
+
+	print("[Player2] Hiding attack windup pose")
 
 # LEGACY ATTACK SYSTEM - Player2 Implementation
 # NOTE: Player2 now uses AnimationBridge system for basic attacks
@@ -422,26 +444,28 @@ func _breathing_loop() -> void:
 func _swap_to_idle2() -> void:
 	if not breathing_enabled:
 		return
-		
+
 	var main_sprite = get_node_or_null("Sprite2D")
 	var idle2_sprite = get_node_or_null("idle2")
-	
-	if main_sprite and idle2_sprite:
+
+	if is_instance_valid(main_sprite):
 		main_sprite.visible = false
-		idle2_sprite.visible = true
 		main_sprite_visible = false
+	if is_instance_valid(idle2_sprite):
+		idle2_sprite.visible = true
 
 func _swap_to_main() -> void:
 	if not breathing_enabled:
 		return
-		
+
 	var main_sprite = get_node_or_null("Sprite2D")
 	var idle2_sprite = get_node_or_null("idle2")
-	
-	if main_sprite and idle2_sprite:
+
+	if is_instance_valid(main_sprite):
 		main_sprite.visible = true
-		idle2_sprite.visible = false
 		main_sprite_visible = true
+	if is_instance_valid(idle2_sprite):
+		idle2_sprite.visible = false
 
 func stop_breathing_animation() -> void:
 	breathing_enabled = false
@@ -452,11 +476,12 @@ func stop_breathing_animation() -> void:
 	# Reset to main sprite visible
 	var main_sprite = get_node_or_null("Sprite2D")
 	var idle2_sprite = get_node_or_null("idle2")
-	
-	if main_sprite and idle2_sprite:
+
+	if is_instance_valid(main_sprite):
 		main_sprite.visible = true
-		idle2_sprite.visible = false
 		main_sprite_visible = true
+	if is_instance_valid(idle2_sprite):
+		idle2_sprite.visible = false
 	
 	print("[Player2] Breathing animation stopped")
 
@@ -610,21 +635,31 @@ func _safe_audio_call(method_name: String, param: String = "") -> void:
 
 func _setup_new_idle_animation():
 	print("[Player2] Setting up new idle animation")
-	
-	# Simply hide old sprites and show new one
-	$Sprite2D.visible = false
-	$attack.visible = false
-	$"p2-block".visible = false
-	$"p2-dead".visible = false
-	
+
+	# Simply hide old sprites and show new one - with null checks
+	var sprite2d = get_node_or_null("Sprite2D")
+	var attack = get_node_or_null("attack")
+	var block = get_node_or_null("p2-block")
+	var dead = get_node_or_null("p2-dead")
+
+	if is_instance_valid(sprite2d):
+		sprite2d.visible = false
+	if is_instance_valid(attack):
+		attack.visible = false
+	if is_instance_valid(block):
+		block.visible = false
+	if is_instance_valid(dead):
+		dead.visible = false
+
 	# Show new idle animation
-	var idle_animated = $IdleAnimatedSprite
-	idle_animated.visible = true
-	idle_animated.play("idle")
-	
+	var idle_animated = get_node_or_null("IdleAnimatedSprite")
+	if is_instance_valid(idle_animated):
+		idle_animated.visible = true
+		idle_animated.play("idle")
+
 	# Disable old breathing system
 	breathing_enabled = false
-	
+
 	print("[Player2] New idle animation should now be playing")
 
 # ===== ANIMATION BRIDGE SYSTEM =====
@@ -912,13 +947,29 @@ func _play_bleeding_shot_sound_effect(qte_result: String):
 	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
 	if not sfx_player:
 		return
-		
+
 	match qte_result:
 		"crit":
 			sfx_player.stream = preload("res://assets/sfx/crit.wav")
 			sfx_player.play()
 		"normal":
 			sfx_player.stream = preload("res://assets/sfx/attack.wav")  # Regular attack sound
+			sfx_player.play()
+		"fail":
+			sfx_player.stream = preload("res://assets/sfx/miss.wav")
+			sfx_player.play()
+
+func _play_healing_touch_sound_effect(qte_result: String):
+	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+	if not sfx_player:
+		return
+
+	match qte_result:
+		"crit":
+			sfx_player.stream = preload("res://assets/sfx/crit.wav")
+			sfx_player.play()
+		"normal":
+			sfx_player.stream = preload("res://assets/sfx/attack.wav")
 			sfx_player.play()
 		"fail":
 			sfx_player.stream = preload("res://assets/sfx/miss.wav")
@@ -973,7 +1024,8 @@ func execute_healing_touch_sequence(target):
 	print("💚 Channeling healing energy...")
 	var result = await QTEManager.start_qte("confirm attack", 600, "Press Z to heal!")
 
-	# Step 3: IMMEDIATE - Apply regeneration status effect to self
+	# Step 3: IMMEDIATE - Sound + Apply regeneration status effect to self
+	_play_healing_touch_sound_effect(result)
 	var total_damage = _apply_healing_touch_immediate(self, result)
 
 	# Step 4: Play result animation (pure visual feedback)

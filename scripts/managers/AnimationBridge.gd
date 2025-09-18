@@ -267,15 +267,20 @@ func play_result_animation(ability_name: String, qte_result: String):
 	print("🎬 [AnimationBridge] Result animation complete")
 	
 	# Return to appropriate idle animation
+	print("🔍 [AnimationBridge] Checking return idle for ability: ", ability_name)
 	if ability_name in ["basic_attack_p1", "2x_cut", "whirlwind", "poison", "ghost_attack"]:
 		# Player1 returns to idle_p1 animation
 		animation_player.play("idle_p1")
 		print("🎬 [AnimationBridge] Player1 returning to idle_p1")
 	elif ability_name == "basic_attack":
 		# Player2 returns to appropriate idle - check if idle animation exists
+		print("🔍 [AnimationBridge] Player2 basic_attack - checking idle animation")
 		if animation_player.has_animation("idle"):
+			print("🔍 [AnimationBridge] Playing idle animation for Player2")
 			animation_player.play("idle")
 			print("🎬 [AnimationBridge] Player2 returning to idle")
+		else:
+			print("⚠️ [AnimationBridge] No idle animation found for Player2")
 	
 	# Clean up
 	cleanup_animation(ability_name)
@@ -289,8 +294,12 @@ func cleanup_animation(ability_name: String):
 		# Restore player idle animations
 		var idle_sprites = anim_data.get("player_idle_sprites", [])
 		for sprite in idle_sprites:
-			if sprite and is_instance_valid(sprite):
+			print("🔍 [AnimationBridge] Trying to restore sprite: ", sprite, " valid: ", is_instance_valid(sprite))
+			if is_instance_valid(sprite):
+				print("🔍 [AnimationBridge] Restoring sprite: ", sprite.name if sprite.has_method("get") else "unknown")
 				sprite.visible = true
+			else:
+				print("❌ [AnimationBridge] Skipping invalid sprite during restore")
 		if idle_sprites.size() > 0:
 			print("🎬 [AnimationBridge] Restored ", idle_sprites.size(), " idle sprite(s)")
 		
@@ -315,7 +324,7 @@ func hide_player_idle_sprites(player_node: Node2D) -> Array:
 
 	for node_name in idle_node_names:
 		var idle_sprite = player_node.get_node_or_null(node_name)
-		if idle_sprite and idle_sprite.visible:
+		if is_instance_valid(idle_sprite) and idle_sprite.visible:
 			idle_sprite.visible = false
 			hidden_sprites.append(idle_sprite)
 			print("🎬 [AnimationBridge] Hidden idle sprite: ", node_name)
@@ -371,7 +380,7 @@ func play_hitstun_animation(animation_name: String, player_name: String):
 		if player_node:
 			if player_name == "Player1":
 				var idle_sprite = player_node.get_node_or_null("idle")
-				if idle_sprite:
+				if is_instance_valid(idle_sprite):
 					idle_sprite.visible = false
 					print("🎬 [AnimationBridge] Hidden Player1 idle sprite during hitstun")
 			elif player_name == "Player2":
@@ -381,16 +390,16 @@ func play_hitstun_animation(animation_name: String, player_name: String):
 				var idle2_sprite = player_node.get_node_or_null("idle2")
 				var attack_sprite = player_node.get_node_or_null("attack")
 
-				if idle_animated:
+				if is_instance_valid(idle_animated):
 					idle_animated.visible = false
 					print("🎬 [AnimationBridge] Hidden Player2 IdleAnimatedSprite during hitstun")
-				if main_sprite:
+				if is_instance_valid(main_sprite):
 					main_sprite.visible = false
 					print("🎬 [AnimationBridge] Hidden Player2 main Sprite2D during hitstun")
-				if idle2_sprite:
+				if is_instance_valid(idle2_sprite):
 					idle2_sprite.visible = false
 					print("🎬 [AnimationBridge] Hidden Player2 idle2 sprite during hitstun")
-				if attack_sprite:
+				if is_instance_valid(attack_sprite):
 					attack_sprite.visible = false
 					print("🎬 [AnimationBridge] Hidden Player2 attack sprite during hitstun")
 
@@ -422,7 +431,7 @@ func play_hitstun_animation(animation_name: String, player_name: String):
 			if player_node:
 				if player_name == "Player1":
 					var idle_sprite = player_node.get_node_or_null("idle")
-					if idle_sprite:
+					if is_instance_valid(idle_sprite):
 						idle_sprite.visible = true
 						print("🎬 [AnimationBridge] Restored Player1 idle sprite after hitstun")
 				elif player_name == "Player2":
@@ -430,10 +439,10 @@ func play_hitstun_animation(animation_name: String, player_name: String):
 					var idle_animated = player_node.get_node_or_null("IdleAnimatedSprite")
 					var main_sprite = player_node.get_node_or_null("Sprite2D")
 
-					if idle_animated:
+					if is_instance_valid(idle_animated):
 						idle_animated.visible = true
 						print("🎬 [AnimationBridge] Restored Player2 IdleAnimatedSprite after hitstun")
-					if main_sprite:
+					if is_instance_valid(main_sprite):
 						main_sprite.visible = true
 						print("🎬 [AnimationBridge] Restored Player2 main Sprite2D after hitstun")
 
