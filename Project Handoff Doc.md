@@ -162,6 +162,9 @@ Battle 5: 3.0x stats (Final Boss)
 - ✅ Modular ability architecture
 - ✅ Ghost Attack with black silhouette
 - ✅ Streamlined UI (no quit buttons, "Continue" flow)
+- ✅ Multishot hitstun animations with perfect positioning
+- ✅ Mirror Strike QTE improvements (now first attack in cycle)
+- ✅ Player2 sprite cleanup (legacy idle2 sprite removed)
 
 ## 🎪 PROVEN ABILITY IMPLEMENTATIONS
 
@@ -259,12 +262,30 @@ animation_player.pause()  // Critical for clean stops
 
 ## 🎮 QTE MECHANICS
 
+### Enemy Attack Cycle (Updated)
+```gdscript
+Turn 0: Mirror Strike (6-button sequence QTE)
+Turn 1: Multishot (projectile deflect QTE)
+Turn 2: Arc Slash (single parry QTE)
+Turn 3: Lightning Surge (3-window multi-parry QTE)
+Turn 4: Phase Slam (hold-release QTE)
+[Repeats]
+```
+
 ### QTE Result Values (CRITICAL)
 ```gdscript
 // AnimationBridge expects these EXACT values:
 "crit" or "normal" → plays success_animation
 "fail" → plays fail_animation
 // NEVER use "success" - breaks the system!
+```
+
+### Mirror Strike Details
+```gdscript
+// QTE: 6-button sequence (Z/X/W/A/D/S) within 7 seconds
+// Success: 0 damage, +1 resolve
+// Failure: 30 damage + laser animation + laserimpact.wav (0.5s delay)
+// Includes hitstun animations for both players
 ```
 
 ### Turn Flow Integration
@@ -312,8 +333,34 @@ Attack → Skills → Memory → Items
 3. Memory system implementation (black-tinted animations)
 4. Final balance tuning
 
+## 🎬 HITSTUN ANIMATION SYSTEM
+
+### Current Positioning (AnimationBridge.gd)
+```gdscript
+// Player1 hitstun positioning and scaling
+hero_root.position = Vector2(35, 330)
+hero_root.scale = Vector2(1.25, 1.25)  // 25% larger
+
+// Player2 hitstun positioning and scaling
+hero_root.position = Vector2(40, 430)
+hero_root.scale = Vector2(1.20, 1.20)  // 20% larger
+```
+
+### Animation Triggers
+```gdscript
+// Multishot projectile hits
+if target_player.name == "Player1":
+    animation_bridge.play_hitstun_animation("ninja_hitstun", "Player1")
+elif target_player.name == "Player2":
+    animation_bridge.play_hitstun_animation("hitstun", "Player2")
+
+// Mirror Strike failures (same positioning)
+```
+
+### Sprite Management
+- **Player1**: Uses "idle" sprite node
+- **Player2**: Uses "IdleAnimatedSprite" and "Sprite2D" nodes
+- Legacy "idle2" sprite completely removed from Player2
+
 ---
 *Key: Debug animations first, verify names exactly, test incrementally, follow proven patterns.*
-
-● Perfect! Now Player2's hitstun animation will always appear at the fixed coordinates Vector2(207, 463). You can     
-  easily edit that line 361 in AnimationBridge.gd to adjust the position to exactly where you want it.  (animationbridge.)

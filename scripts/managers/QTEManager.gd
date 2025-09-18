@@ -731,7 +731,12 @@ func start_sniper_qte(action_name: String, prompt_text: String, _target_player =
 	_ensure_qte_container()
 	
 	var sfx_player := get_node_or_null("/root/BattleScene/SFXPlayer")
-	
+
+	# Play pre-bigshot sound at windup beginning
+	if sfx_player:
+		sfx_player.stream = preload("res://assets/sfx/pre-bigshot.wav")
+		sfx_player.play()
+
 	# Show QTE UI using new method
 	show_qte("press", prompt_text, 3000)  # 3 second window
 	
@@ -740,15 +745,19 @@ func start_sniper_qte(action_name: String, prompt_text: String, _target_player =
 		qte_circle.visible = false
 	
 	# Create sweet spot (stationary target over enemy)
-	var sweet_spot = ColorRect.new()
-	sweet_spot.size = Vector2(30, 30)
-	sweet_spot.color = Color.RED
+	var sweet_spot = Sprite2D.new()
+	sweet_spot.texture = load("res://assets/ui/hitbox.png")
+	sweet_spot.modulate = Color(3.0, 0.0, 0.0)  # Ultra-bright glowing red
+	# Scale it to match the original 30x30 size
+	var target_size = Vector2(90, 90)  # 3x bigger (30 * 3 = 90)
+	var texture_size = sweet_spot.texture.get_size()
+	sweet_spot.scale = target_size / texture_size
 	var screen_center = get_viewport().get_visible_rect().size / 2
 
 	# Position horizontally over the enemy, vertically at screen center
 	var enemy_node = get_node_or_null("/root/BattleScene/Enemy")
 	var enemy_pos = enemy_node.global_position if enemy_node else Vector2(900, 300)
-	sweet_spot.position = Vector2(enemy_pos.x - sweet_spot.size.x / 2, screen_center.y - sweet_spot.size.y / 2)
+	sweet_spot.position = Vector2(enemy_pos.x, screen_center.y)  # Center both horizontally and vertically
 	qte_container.add_child(sweet_spot)
 	
 	# Create crosshair (moving bullet)
@@ -759,7 +768,7 @@ func start_sniper_qte(action_name: String, prompt_text: String, _target_player =
 	
 	# Movement variables
 	var start_time = Time.get_ticks_msec()
-	var duration = 1500  # 3 seconds total
+	var duration = 1000  # 1 second total - faster projectile
 	var screen_width = get_viewport().get_visible_rect().size.x
 	var movement_distance = screen_width - 90  # Account for crosshair width + margins
 	var movement_speed = movement_distance / (duration / 1000.0)  # pixels per second
@@ -784,15 +793,23 @@ func start_sniper_qte(action_name: String, prompt_text: String, _target_player =
 			
 			# Check hit detection
 			var crosshair_center_x = crosshair.position.x  # Sprite2D position is already centered
-			var sweet_spot_center_x = sweet_spot.position.x + sweet_spot.size.x / 2
+			var sweet_spot_center_x = sweet_spot.position.x  # Sprite2D position is already centered
 			var distance = abs(crosshair_center_x - sweet_spot_center_x)
 			
 			if distance <= 5:  # Center zone (±5px)
 				hit_result = "crit"
 				print("🎯 PERFECT SNIPER SHOT! Bullseye!")
+				# Play bigshot sound for successful hit
+				if sfx_player:
+					sfx_player.stream = preload("res://assets/sfx/bigshot.wav")
+					sfx_player.play()
 			elif distance <= 15:  # Outer zone (±15px)
 				hit_result = "normal"
 				print("🎯 Good sniper shot! Hit the target!")
+				# Play bigshot sound for successful hit
+				if sfx_player:
+					sfx_player.stream = preload("res://assets/sfx/bigshot.wav")
+					sfx_player.play()
 			else:
 				hit_result = "fail"
 				print("💨 Sniper shot missed the target...")
@@ -801,6 +818,7 @@ func start_sniper_qte(action_name: String, prompt_text: String, _target_player =
 		
 		await get_tree().process_frame
 	
+
 	# Clean up
 	sweet_spot.queue_free()
 	crosshair.queue_free()
@@ -1444,32 +1462,35 @@ func start_mirror_strike_qte(prompt_text: String, target_player) -> String:
 	print("🪞 Mirror Strike result: ", result)
 	return result
 
-# Play laser animation twice for failed mirror strike
+# Play laser animation once for failed mirror strike
 func play_laser_animation_twice(enemy: Node) -> void:
-	print("🔫 Playing laser animation twice for failed mirror strike")
-	
+	print("🔫 Playing laser animation for failed mirror strike")
+
 	var animated_sprite = enemy.get_node_or_null("Sprite2D") as AnimatedSprite2D
 	if not animated_sprite:
 		print("❌ Could not find enemy AnimatedSprite2D for laser animation")
 		return
-	
-	# Play laser animation twice
-	for i in 2:
-		print("🔫 Playing laser animation ", i + 1, "/2")
-		animated_sprite.play("laser")
-		
-		# Wait for animation to complete (11 frames at 10 FPS = 1.1 seconds)
-		await get_tree().create_timer(1.1).timeout
-		
-		# Brief pause between animations
-		if i == 0:  # Only pause between first and second
-			await get_tree().create_timer(0.2).timeout
-	
+
+	# Play laser animation once
+	print("🔫 Playing laser animation")
+	animated_sprite.play("laser")
+
+	# Play laser impact sound effect after 0.5 second delay
+	await get_tree().create_timer(0.5).timeout
+	var sfx_player = get_node_or_null("/root/BattleScene/SFXPlayer")
+	if sfx_player:
+		sfx_player.stream = preload("res://assets/sfx/laserimpact.wav")
+		sfx_player.play()
+		print("🎵 Playing laserimpact.wav (delayed) for failed mirror strike")
+
+	# Wait for remaining animation time (1.1 seconds total - 0.5 already waited = 0.6 seconds)
+	await get_tree().create_timer(0.6).timeout
+
 	# Return to appropriate idle animation based on HP
 	if enemy.has_method("_update_idle_animation"):
 		enemy._update_idle_animation()
-	
-	print("🔫 Laser animation sequence complete")
+
+	print("🔫 Laser animation complete")
 
 # Show the button sequence to the player
 func show_mirror_sequence(sequence: Array) -> void:

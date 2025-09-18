@@ -867,11 +867,11 @@ func enemy_think():
 	
 	match attack_index:
 		0:
-			selected_action = "multishot"
-			print("ENEMY→ Multishot (projectile deflect QTE)")
-		1:
 			selected_action = "mirror_strike"
 			print("ENEMY→ Mirror Strike (copy-cat QTE)")
+		1:
+			selected_action = "multishot"
+			print("ENEMY→ Multishot (projectile deflect QTE)")
 		2:
 			selected_action = "arc_slash"
 			print("ENEMY→ Arc Slash (single-tap QTE)")
@@ -1175,6 +1175,16 @@ func resolve_action():
 				else:
 					print("DEBUG→ Calling take_damage(" + str(damage) + ") on " + selected_target.name)
 					selected_target.take_damage(damage)
+
+					# Trigger hitstun animation using AnimationBridge
+					var animation_bridge = get_node_or_null("/root/AnimationBridge")
+					if animation_bridge and animation_bridge.has_method("play_hitstun_animation"):
+						if selected_target.name == "Player1":
+							animation_bridge.play_hitstun_animation("ninja_hitstun", "Player1")
+							print("🪞 Playing ninja_hitstun animation for Player1 mirror strike hit")
+						elif selected_target.name == "Player2":
+							animation_bridge.play_hitstun_animation("hitstun", "Player2")
+							print("🪞 Playing hitstun animation for Player2 mirror strike hit")
 			else:
 				print("DEBUG→ No mirror strike damage to apply (perfect defense)")
 			

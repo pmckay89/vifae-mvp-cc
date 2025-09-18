@@ -76,7 +76,6 @@ func show_death_sprite():
 	
 	# Hide all other sprites
 	$Sprite2D.visible = false
-	$idle2.visible = false
 	$attack.visible = false
 	$"p2-block".visible = false
 	
@@ -88,7 +87,6 @@ func hide_death_sprite():
 	# Hide death sprite and restore main sprite
 	$"p2-dead".visible = false
 	$Sprite2D.visible = true
-	$idle2.visible = false
 	$attack.visible = false
 	$"p2-block".visible = false
 	
@@ -622,7 +620,6 @@ func _setup_new_idle_animation():
 	
 	# Simply hide old sprites and show new one
 	$Sprite2D.visible = false
-	$idle2.visible = false
 	$attack.visible = false
 	$"p2-block".visible = false
 	$"p2-dead".visible = false

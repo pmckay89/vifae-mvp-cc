@@ -1,15 +1,13 @@
-[gd_scene load_steps=38 format=3 uid="uid://c8rlmnvaxhyuc"]
+[gd_scene load_steps=36 format=3 uid="uid://c8rlmnvaxhyuc"]
 
 [ext_resource type="Script" uid="uid://ddlnogaisv00" path="res://scripts/player/Player2.gd" id="1_2adyw"]
-[ext_resource type="Texture2D" uid="uid://cmlogkyxy6j8e" path="res://assets/characters/p2.png" id="2_safxn"]
-[ext_resource type="Texture2D" uid="uid://pqx0ofex00kd" path="res://assets/characters/p2-block.png" id="3_wr50v"]
+[ext_resource type="Texture2D" uid="uid://cm0nuw5opbnav" path="res://assets/animations/individual pngs/Vifae_block3.png" id="2_2p2cm"]
+[ext_resource type="Texture2D" uid="uid://l1ukmkps6rrq" path="res://assets/animations/individual pngs/Vifae_death7.png" id="3_x0ane"]
 [ext_resource type="Texture2D" uid="uid://b3xfeaynwohjh" path="res://assets/vfx/buff2.png" id="4_3o6np"]
-[ext_resource type="Texture2D" uid="uid://bneqgr27elwcc" path="res://assets/characters/p2-dead.png" id="4_s8145"]
 [ext_resource type="Texture2D" uid="uid://bw8us2f5s8w1n" path="res://assets/vfx/buff1.png" id="5_y5wyn"]
 [ext_resource type="Texture2D" uid="uid://1ub1rsii5bnj" path="res://assets/vfx/buff3.png" id="6_y5wyn"]
-[ext_resource type="Texture2D" uid="uid://dswagp1u44mft" path="res://assets/characters/p2_idle2.png" id="7_idle2"]
-[ext_resource type="Texture2D" uid="uid://dhndmb27scvvf" path="res://assets/characters/p2_idle.png" id="7_u3gjl"]
 [ext_resource type="Texture2D" uid="uid://cwr4rn6e6cl4r" path="res://assets/animations/individual pngs/vifae-idle00.png" id="8_idle00"]
+[ext_resource type="Texture2D" uid="uid://dx51ucdp85y5c" path="res://assets/animations/individual pngs/Vifae_atk_w3.png" id="9_ecxw0"]
 [ext_resource type="Texture2D" uid="uid://dy38cvt3istbt" path="res://assets/animations/individual pngs/vifae-idle01.png" id="9_idle01"]
 [ext_resource type="Texture2D" uid="uid://bm1v1jypv2ts1" path="res://assets/animations/individual pngs/vifae-idle02.png" id="10_idle02"]
 [ext_resource type="Texture2D" uid="uid://c4irisncbgrks" path="res://assets/animations/individual pngs/vifae-idle03.png" id="11_idle03"]
@@ -239,13 +237,13 @@ script = ExtResource("1_2adyw")
 visible = false
 position = Vector2(76, 48)
 scale = Vector2(0.201953, 0.189258)
-texture = ExtResource("3_wr50v")
+texture = ExtResource("2_2p2cm")
 
 [node name="p2-dead" type="Sprite2D" parent="."]
 visible = false
 position = Vector2(6.4, 47.4)
 scale = Vector2(0.180469, 0.172656)
-texture = ExtResource("4_s8145")
+texture = ExtResource("3_x0ane")
 
 [node name="buff2" type="Sprite2D" parent="."]
 visible = false
@@ -267,19 +265,13 @@ texture = ExtResource("6_y5wyn")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 position = Vector2(86, 74)
 scale = Vector2(0.15, 0.15)
-texture = ExtResource("7_u3gjl")
-
-[node name="idle2" type="Sprite2D" parent="."]
-visible = false
-position = Vector2(89.45, 70.7)
-scale = Vector2(0.149316, 0.151758)
-texture = ExtResource("7_idle2")
+texture = ExtResource("8_idle00")
 
 [node name="attack" type="Sprite2D" parent="."]
 visible = false
 position = Vector2(115, 79)
 scale = Vector2(0.14, 0.14)
-texture = ExtResource("2_safxn")
+texture = ExtResource("9_ecxw0")
 
 [node name="IdleAnimatedSprite" type="AnimatedSprite2D" parent="."]
 z_index = 10
