@@ -18,7 +18,8 @@ extends Control
 var items_pool := [
 	{"name": "Health Potion", "cost": 1, "description": "Restores 50 HP instantly"},
 	{"name": "Resolve Potion", "cost": 1, "description": "Restores 2 Resolve points"},
-	{"name": "Antidote", "cost": 1, "description": "Removes poison/bleeding effects"},
+	{"name": "Rage Potion", "cost": 2, "description": "Gain rage status: +100% damage, +25% incoming damage for 3 turns"},
+	{"name": "Speed Boost", "cost": 2, "description": "Gain haste status: act twice per turn for 2 turns"},
 	{"name": "Pain Killer", "cost": 2, "description": "Immune to damage for 1 hit"},
 	{"name": "Bandages", "cost": 1, "description": "Heal 15 HP at start of each turn for 3 turns"},
 	{"name": "Phoenix Feather", "cost": 2, "description": "Revive with 50% HP if you die this battle"}
@@ -40,6 +41,9 @@ var current_items := []
 var current_upgrades := []
 var current_abilities := []
 
+# Track purchases for this shop visit (reset each visit)
+var purchased_items := []
+
 # RNG for randomization
 @onready var rng := RandomNumberGenerator.new()
 
@@ -57,6 +61,9 @@ func _ready():
 
 func show_shop():
 	print("SHOP→ Showing shop overlay")
+
+	# Reset purchases for new shop visit
+	purchased_items.clear()
 
 	# Randomize shop offerings for this visit
 	_randomize_shop_offerings()
@@ -181,8 +188,15 @@ func _populate_items_tab():
 
 	for item in current_items:
 		var button = Button.new()
-		button.text = "%s (%d coins) - %s" % [item.name, item.cost, item.description]
-		button.pressed.connect(_buy_item.bind(item.name))
+
+		# Check if item already purchased this visit
+		if item.name in purchased_items:
+			button.text = "%s - SOLD" % item.name
+			button.disabled = true
+		else:
+			button.text = "%s (%d coins) - %s" % [item.name, item.cost, item.description]
+			button.pressed.connect(_buy_item.bind(item.name))
+
 		items_container.add_child(button)
 
 func _populate_upgrades_tab():
@@ -221,8 +235,59 @@ func _control_tab_access(completed_battle: int):
 	print("SHOP→ Tab access after battle ", completed_battle, ": Items=true, Upgrades=", completed_battle >= 2, ", Abilities=", completed_battle >= 3)
 
 func _buy_item(item_name: String):
-	print("SHOP→ [PLACEHOLDER] Buying: ", item_name)
-	# TODO: Implement actual purchase logic
+	print("SHOP→ Attempting to buy: ", item_name)
+
+	# Map shop display names to inventory keys
+	var item_mapping = {
+		"Health Potion": "hp_potion",
+		"Resolve Potion": "resolve_potion",
+		"Rage Potion": "rage_potion",
+		"Speed Boost": "speed_boost",
+		"Pain Killer": "pain_killer",
+		"Bandages": "bandages",
+		"Phoenix Feather": "phoenix_feather"
+	}
+
+	# Find the item data to get cost
+	var item_data = null
+	for item in current_items:
+		if item.name == item_name:
+			item_data = item
+			break
+
+	if not item_data:
+		print("ERROR→ Item not found: ", item_name)
+		return
+
+	var cost = item_data.cost
+	var inventory_key = item_mapping.get(item_name)
+
+	if not inventory_key:
+		print("ERROR→ No inventory mapping for: ", item_name)
+		return
+
+	# Check if item already purchased this visit
+	if item_name in purchased_items:
+		print("SHOP→ Already purchased ", item_name, " this visit!")
+		return
+
+	# Check if player has enough coins
+	if ProgressManager.player_coins < cost:
+		print("SHOP→ Not enough coins! Need ", cost, ", have ", ProgressManager.player_coins)
+		return
+
+	# Purchase successful - deduct coins and add item
+	ProgressManager.spend_coins(cost)
+	ProgressManager.party_inventory[inventory_key] += 1
+
+	# Track this purchase for current shop visit
+	purchased_items.append(item_name)
+
+	print("SHOP→ Successfully bought ", item_name, " for ", cost, " coins")
+	print("SHOP→ ", inventory_key, " count now: ", ProgressManager.party_inventory[inventory_key])
+
+	# Update the display to show new coin amount (preserve current tab)
+	_update_display_after_purchase()
 
 func _buy_upgrade(upgrade_name: String):
 	print("SHOP→ [PLACEHOLDER] Buying upgrade: ", upgrade_name)
@@ -238,6 +303,20 @@ func _on_close_pressed():
 	
 	# Advance progression and start next battle
 	_start_next_battle()
+
+func _update_display_after_purchase():
+	# Save current tab before updating
+	var current_tab_index = -1
+	if tab_container:
+		current_tab_index = tab_container.current_tab
+
+	# Update the full display (includes refreshing items with SOLD status)
+	_update_display()
+
+	# Restore the previously selected tab
+	if tab_container and current_tab_index >= 0:
+		tab_container.current_tab = current_tab_index
+		print("SHOP→ Restored tab selection to index: ", current_tab_index)
 
 func _start_next_battle():
 	print("SHOP→ Starting next battle")

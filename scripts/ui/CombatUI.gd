@@ -108,7 +108,7 @@ func show_status_applied_popup(target_node: Node, effect_type: String):
 	# Check if target is a player and route player-compatible effects to FF-style status area
 	if target_node.name == "Player1" or target_node.name == "Player2":
 		# Only show certain effects on players (not enemy-specific effects)
-		var player_effects = ["burn", "poison", "bleed", "shield", "mark", "vulnerable", "stun", "regeneration", "frozen", "damage_boost", "critical_boost", "armor_up", "reflect", "focus", "resolve_gain", "confusion", "rage", "haste", "barrier"]
+		var player_effects = ["burn", "poison", "bleed", "shield", "mark", "vulnerable", "stun", "regeneration", "frozen", "damage_boost", "critical_boost", "armor_up", "reflect", "focus", "resolve_gain", "confusion", "rage", "haste", "barrier", "phoenix_feather", "pain_killer"]
 		if effect_type in player_effects:
 			show_player_status_icon(target_node.name, effect_type)
 			print("🎯 [CombatUI] Routed " + effect_type + " status to " + target_node.name + " FF-style container")
@@ -185,7 +185,9 @@ func _show_popup_immediately(popup_data: Dictionary):
 			"reflect": "REFLECTING!",
 			"focus": "FOCUSED!",
 			"resolve_gain": "ENERGIZED!",
-			"bleed": "BLEEDING!"
+			"bleed": "BLEEDING!",
+			"phoenix_feather": "PROTECTED!",
+			"pain_killer": "IMMUNE!"
 		}
 		
 		var message = messages.get(effect_type, effect_type.to_upper() + "!")
@@ -348,7 +350,9 @@ func _get_status_icon_data(effect_type: String) -> Dictionary:
 		"rage": {"icon": "😡", "color": Color(1.0, 0.2, 0.2, 1.0)},
 		"weakness": {"icon": "💀", "color": Color(0.6, 0.3, 0.8, 1.0)},
 		"haste": {"icon": "💨", "color": Color(0.0, 1.0, 1.0, 1.0)},
-		"barrier": {"icon": "🔵", "color": Color(0.8, 0.8, 1.0, 1.0)}
+		"barrier": {"icon": "🔵", "color": Color(0.8, 0.8, 1.0, 1.0)},
+		"phoenix_feather": {"icon": "👼", "color": Color(1.0, 1.0, 0.8, 1.0)},
+		"pain_killer": {"icon": "🔵", "color": Color(0.8, 0.8, 1.0, 1.0)}
 	}
 	return icon_data.get(effect_type, {"icon": "⚡", "color": Color.WHITE})
 

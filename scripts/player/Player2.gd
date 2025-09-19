@@ -4,6 +4,7 @@ var hp_max: int = 100
 var hp: int = 100
 var is_defeated = false
 var selected_ability = ""
+var has_phoenix_feather = false  # Revival item
 
 @onready var rng := RandomNumberGenerator.new()
 @onready var status_effects := StatusEffectManager.new()
@@ -224,6 +225,16 @@ func take_damage(amount):
 			CombatUI.show_damage_popup(self, absorbed)
 			status_effects.remove_effect("barrier")  # Remove after any damage
 
+	# Check for pain killer immunity (one-time damage negation)
+	if status_effects.has_effect("pain_killer"):
+		var pain_killer_effect = status_effects.find_effect("pain_killer")
+		var absorbed = min(final_damage, pain_killer_effect.get("absorb_amount", 0))
+		if absorbed > 0:
+			final_damage -= absorbed
+			print("🛡️ PAIN KILLER: Absorbed " + str(absorbed) + " damage")
+			CombatUI.show_damage_popup(self, absorbed)
+			status_effects.remove_effect("pain_killer")  # Always remove after any damage
+
 	hp -= final_damage
 	print(name, "takes", final_damage, "damage. HP:", hp)
 
@@ -231,9 +242,21 @@ func take_damage(amount):
 
 	if hp <= 0:
 		hp = 0
-		is_defeated = true
-		print(name, "has been defeated!")
-		show_death_sprite()
+
+		# Check for Phoenix Feather revival
+		if has_phoenix_feather:
+			has_phoenix_feather = false  # Consume the feather
+			hp = hp_max / 2  # Revive with 50% HP
+			print("🔥 PHOENIX FEATHER: ", name, " revives with 50% HP!")
+			CombatUI.update_hp_bar("Player2", hp, hp_max)
+			CombatUI.show_damage_popup(self, -(hp_max / 2))  # Show healing popup
+
+			# Remove phoenix feather status effect since it's consumed
+			status_effects.remove_effect("phoenix_feather")
+		else:
+			is_defeated = true
+			print(name, "has been defeated!")
+			show_death_sprite()
 
 	CombatUI.show_damage_popup(self, final_damage)
 
@@ -1251,3 +1274,110 @@ func get_resolve() -> int:
 func set_resolve(new_resolve: int):
 	ResolveManager.player2_resolve = clamp(new_resolve, 0, ResolveManager.MAX_RESOLVE)
 	print("[Player2] Resolve set to: ", ResolveManager.player2_resolve)
+
+# ===== ITEM SYSTEM =====
+
+func heal(amount: int):
+	"""Heal the player by the specified amount"""
+	if is_defeated:
+		return
+
+	var old_hp = hp
+	hp = clamp(hp + amount, 0, hp_max)
+	var actual_heal = hp - old_hp
+
+	print("[Player2] Healed for ", actual_heal, " HP (", old_hp, " → ", hp, ")")
+	CombatUI.update_hp_bar("Player2", hp, hp_max)
+
+	if actual_heal > 0:
+		CombatUI.show_damage_popup(self, -actual_heal)  # Negative damage = healing
+
+func use_bandages():
+	"""Apply regeneration effect (heal 15 HP/turn for 3 turns)"""
+	var regen_effect = {
+		"type": "regeneration",
+		"target": self,
+		"caster": self,
+		"duration": 3,
+		"heal_per_turn": 15
+	}
+	status_effects.apply_effect(regen_effect)
+	print("🩹 [Player2] Used Bandages - regeneration applied")
+
+	# Show status applied popup
+	CombatUI.show_status_applied_popup(self, "regeneration")
+	VFXManager.play_status_effect_vfx(self, "regeneration", 1)
+
+func use_health_potion():
+	"""Instantly restore 50 HP"""
+	heal(50)
+	print("💊 [Player2] Used Health Potion")
+
+func use_resolve_potion():
+	"""Restore 2 Resolve points"""
+	ResolveManager.add_resolve("Player2", 2)
+	print("🔋 [Player2] Used Resolve Potion")
+
+func use_phoenix_feather():
+	"""Grant one-time revival protection"""
+	has_phoenix_feather = true
+
+	# Apply phoenix feather status effect for visual display
+	var phoenix_effect = {
+		"type": "phoenix_feather",
+		"target": self,
+		"caster": self,
+		"duration": 99  # Lasts until consumed
+	}
+	status_effects.apply_effect(phoenix_effect)
+	print("🔥 [Player2] Used Phoenix Feather - revival protection active")
+
+	# Show status applied popup
+	CombatUI.show_status_applied_popup(self, "phoenix_feather")
+	VFXManager.play_status_effect_vfx(self, "phoenix_feather", 1)
+
+func use_rage_potion():
+	"""Apply rage status effect (+100% damage, +25% incoming damage)"""
+	var rage_effect = {
+		"type": "rage",
+		"target": self,
+		"caster": self,
+		"duration": 3  # 3 turns
+	}
+	status_effects.apply_effect(rage_effect)
+	print("😡 [Player2] Used Rage Potion - rage status applied")
+
+	# Show status applied popup
+	CombatUI.show_status_applied_popup(self, "rage")
+	VFXManager.play_status_effect_vfx(self, "rage", 1)
+
+func use_speed_boost():
+	"""Apply haste status effect (act twice per turn)"""
+	var haste_effect = {
+		"type": "haste",
+		"target": self,
+		"caster": self,
+		"duration": 2  # 2 turns
+	}
+	status_effects.apply_effect(haste_effect)
+	print("⚡ [Player2] Used Speed Boost - haste status applied")
+
+	# Show status applied popup
+	CombatUI.show_status_applied_popup(self, "haste")
+	VFXManager.play_status_effect_vfx(self, "haste", 1)
+
+func use_pain_killer():
+	"""Apply damage immunity for next hit"""
+	var immunity_effect = {
+		"type": "pain_killer",
+		"target": self,
+		"caster": self,
+		"duration": 1,  # Only lasts 1 turn but removed on damage
+		"absorb_amount": 999  # Absorbs all damage
+	}
+	status_effects.apply_effect(immunity_effect)
+	print("🛡️ [Player2] Used Pain Killer - damage immunity active")
+
+	# Show status applied popup
+	CombatUI.show_status_applied_popup(self, "pain_killer")
+	VFXManager.play_status_effect_vfx(self, "pain_killer", 1)

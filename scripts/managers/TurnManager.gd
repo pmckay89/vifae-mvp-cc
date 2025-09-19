@@ -65,9 +65,9 @@ const GAME_OVER_THEME = "res://assets/music/closer.wav"
 @onready var skills_menu := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu")
 @onready var items_menu := get_node_or_null("/root/BattleScene/UILayer/ItemsMenu")
 @onready var skills_display := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu/SkillsDisplay")
+@onready var items_display := get_node_or_null("/root/BattleScene/UILayer/ItemsMenu/ItemsDisplay")
 @onready var bigshot_button := get_node_or_null("/root/BattleScene/UILayer/SkillsMenu/BigShotButton")
-@onready var hp_potion_button := get_node_or_null("/root/BattleScene/UILayer/ItemsMenu/HPPotionButton")
-@onready var resolve_potion_button := get_node_or_null("/root/BattleScene/UILayer/ItemsMenu/ResolvePotionButton")
+# Remove individual item buttons - using text display instead
 @onready var bgm_player := get_node("../BGMPlayer")
 @onready var result_overlay := get_node_or_null("/root/BattleScene/UILayer/ResultOverlay")
 @onready var victory_overlay := get_node_or_null("/root/BattleScene/UILayer/VictoryOverlay")
@@ -89,6 +89,8 @@ var in_items_menu: bool = false
 var skill_selection: int = 0  # For cycling through skills
 var skill_scroll_offset: int = 0  # For scrolling window
 const SKILLS_VISIBLE_COUNT: int = 4  # How many skills to show at once
+var item_scroll_offset: int = 0  # For scrolling items window
+const ITEMS_VISIBLE_COUNT: int = 4  # How many items to show at once
 var item_selection: int = 0  # For cycling through items
 
 # Inventory now managed by ProgressManager (shared party inventory)
@@ -189,8 +191,7 @@ func _ready():
 		skills_button.focus_entered.connect(func(): selection_description.hide_description())
 	if bigshot_button and selection_description:
 		bigshot_button.focus_entered.connect(func(): selection_description.show_description("big_shot"))
-	if hp_potion_button and selection_description:
-		hp_potion_button.focus_entered.connect(func(): selection_description.show_description("hp_potion"))
+	# Items now use text display instead of buttons
 	# Item button if added later
 
 	# Apply any pending save data after everything is initialized
@@ -312,8 +313,12 @@ func handle_action_menu_input(event):
 			print("MENU→ Opening Skills submenu")
 			open_skills_menu()
 		elif menu_selection == 2:
-			print("MENU→ Opening Items submenu")
-			open_items_menu()
+			# Only open items menu if player has any items
+			if has_any_items():
+				print("MENU→ Opening Items submenu")
+				open_items_menu()
+			else:
+				print("MENU→ No items available - ignoring item button press")
 			
 	elif event.is_action_pressed("cancel dodge"):  # C cancels
 		print("MENU→ Cancel pressed (no effect at top level)")
@@ -394,6 +399,8 @@ func update_skills_menu_display():
 		# Fallback - hide display and button
 		if skills_display:
 			skills_display.visible = false
+		if items_display:
+			items_display.visible = false
 		if bigshot_button:
 			bigshot_button.visible = false
 		return
@@ -462,6 +469,8 @@ func close_skills_menu():
 	# Hide skills display and button
 	if skills_display:
 		skills_display.visible = false
+	if items_display:
+		items_display.visible = false
 	if bigshot_button:
 		bigshot_button.visible = false
 	# Restore action menu and update highlighting
@@ -470,31 +479,69 @@ func close_skills_menu():
 	update_menu_highlight()
 
 func handle_items_menu_input(event):
+	# Get actual available items (filtered for discovery)
+	var all_items = [
+		{"name": "hp_potion", "display": "HP Potion", "count": get_player_potion_count(current_actor.name, "hp_potion")},
+		{"name": "resolve_potion", "display": "Resolve Potion", "count": get_player_potion_count(current_actor.name, "resolve_potion")},
+		{"name": "bandages", "display": "Bandages", "count": get_player_potion_count(current_actor.name, "bandages")},
+		{"name": "phoenix_feather", "display": "Phoenix Feather", "count": get_player_potion_count(current_actor.name, "phoenix_feather")},
+		{"name": "rage_potion", "display": "Rage Potion", "count": get_player_potion_count(current_actor.name, "rage_potion")},
+		{"name": "speed_boost", "display": "Speed Boost", "count": get_player_potion_count(current_actor.name, "speed_boost")},
+		{"name": "pain_killer", "display": "Pain Killer", "count": get_player_potion_count(current_actor.name, "pain_killer")}
+	]
+
+	# Filter out items with 0 count
+	var available_items = []
+	for item in all_items:
+		if item.count > 0:
+			available_items.append(item)
+
+	if available_items.size() == 0:
+		return  # No items available, ignore input
+
 	if event.is_action_pressed("move up"):  # W moves up in items menu
 		item_selection = max(0, item_selection - 1)
+		_update_item_scroll()
 		update_items_menu_display()
 		_safe_audio_call("play_ui_move")
-		print("MENU→ Item selection: " + str(item_selection))
-		
+		print("MENU→ Item selection: " + str(item_selection) + ", scroll_offset: " + str(item_scroll_offset))
+
 	elif event.is_action_pressed("move down"):  # S moves down in items menu
-		item_selection = min(1, item_selection + 1)  # 0=HP Potion, 1=Resolve Potion
+		item_selection = min(available_items.size() - 1, item_selection + 1)
+		_update_item_scroll()
 		update_items_menu_display()
 		_safe_audio_call("play_ui_move")
-		print("MENU→ Item selection: " + str(item_selection))
+		print("MENU→ Item selection: " + str(item_selection) + ", scroll_offset: " + str(item_scroll_offset))
 		
 	elif event.is_action_pressed("confirm attack"):  # Z confirms
 		_safe_audio_call("play_ui_confirm")
-		
+
 		var current_player_name = current_actor.name
-		var potion_type = ""
-		var potion_count = 0
-		
-		if item_selection == 0:  # HP Potion
-			potion_type = "hp_potion"
-		elif item_selection == 1:  # Resolve Potion
-			potion_type = "resolve_potion"
-		
-		potion_count = get_player_potion_count(current_player_name, potion_type)
+
+		# Get the same filtered items array as in update_items_menu_display
+		var all_items_list = [
+			{"name": "hp_potion", "display": "HP Potion", "count": get_player_potion_count(current_player_name, "hp_potion")},
+			{"name": "resolve_potion", "display": "Resolve Potion", "count": get_player_potion_count(current_player_name, "resolve_potion")},
+			{"name": "bandages", "display": "Bandages", "count": get_player_potion_count(current_player_name, "bandages")},
+			{"name": "phoenix_feather", "display": "Phoenix Feather", "count": get_player_potion_count(current_player_name, "phoenix_feather")},
+			{"name": "rage_potion", "display": "Rage Potion", "count": get_player_potion_count(current_player_name, "rage_potion")},
+			{"name": "speed_boost", "display": "Speed Boost", "count": get_player_potion_count(current_player_name, "speed_boost")},
+			{"name": "pain_killer", "display": "Pain Killer", "count": get_player_potion_count(current_player_name, "pain_killer")}
+		]
+
+		# Filter to only available items (same as display logic)
+		var available_items_list = []
+		for item in all_items_list:
+			if item.count > 0:
+				available_items_list.append(item)
+
+		if item_selection >= available_items_list.size():
+			print("ERROR→ Invalid item selection: " + str(item_selection))
+			return
+
+		var selected_item = available_items_list[item_selection]
+		var potion_type = selected_item.name
+		var potion_count = get_player_potion_count(current_player_name, potion_type)
 		
 		if potion_count <= 0:
 			print("MENU→ " + current_player_name + " has no " + potion_type + " left!")
@@ -522,61 +569,115 @@ func open_items_menu():
 	_safe_audio_call("play_ui_confirm")  # Play sound when opening items menu
 	in_items_menu = true
 	item_selection = 0  # Reset to first item
+	item_scroll_offset = 0  # Reset scroll to top
 	if action_menu:
 		action_menu.visible = false
 	if items_menu:
 		items_menu.visible = true
-	
+
+	# Hide any old buttons that might still exist in the scene
+	var old_hp_button = get_node_or_null("/root/BattleScene/UILayer/ItemsMenu/HPPotionButton")
+	var old_resolve_button = get_node_or_null("/root/BattleScene/UILayer/ItemsMenu/ResolvePotionButton")
+	if old_hp_button:
+		old_hp_button.visible = false
+	if old_resolve_button:
+		old_resolve_button.visible = false
+
 	update_items_menu_display()
 
 func update_items_menu_display():
 	var current_player_name = current_actor.name
-	var hp_count = get_player_potion_count(current_player_name, "hp_potion")
-	var resolve_count = get_player_potion_count(current_player_name, "resolve_potion")
-	
-	var hp_text = "HP Potion " + str(hp_count)
-	var resolve_text = "Resolve Potion " + str(resolve_count)
-	
-	# Add usage indicator if item was already used this turn
-	if item_used_this_turn:
-		hp_text += " (USED)"
-		resolve_text += " (USED)"
-	
-	# Update HP Potion button
-	if hp_potion_button:
-		hp_potion_button.visible = true
-		hp_potion_button.text = hp_text
-		hp_potion_button.disabled = (hp_count <= 0 or item_used_this_turn)
-		
-		# Highlight selected item
-		if item_selection == 0:
-			hp_potion_button.grab_focus()
-	
-	# Update Resolve Potion button
-	if resolve_potion_button:
-		resolve_potion_button.visible = true
-		resolve_potion_button.text = resolve_text
-		resolve_potion_button.disabled = (resolve_count <= 0 or item_used_this_turn)
-		
-		# Highlight selected item
-		if item_selection == 1:
-			resolve_potion_button.grab_focus()
-	
+
+	# Get all potential items and filter out 0-count ones for discovery gameplay
+	var all_items = [
+		{"name": "hp_potion", "display": "HP Potion", "count": get_player_potion_count(current_player_name, "hp_potion")},
+		{"name": "resolve_potion", "display": "Resolve Potion", "count": get_player_potion_count(current_player_name, "resolve_potion")},
+		{"name": "bandages", "display": "Bandages", "count": get_player_potion_count(current_player_name, "bandages")},
+		{"name": "phoenix_feather", "display": "Phoenix Feather", "count": get_player_potion_count(current_player_name, "phoenix_feather")},
+		{"name": "rage_potion", "display": "Rage Potion", "count": get_player_potion_count(current_player_name, "rage_potion")},
+		{"name": "speed_boost", "display": "Speed Boost", "count": get_player_potion_count(current_player_name, "speed_boost")},
+		{"name": "pain_killer", "display": "Pain Killer", "count": get_player_potion_count(current_player_name, "pain_killer")}
+	]
+
+	# Filter out items with 0 count for discovery gameplay
+	var items = []
+	for item in all_items:
+		if item.count > 0:
+			items.append(item)
+
+	# Build text display with scrolling like Skills menu
+	var items_text = ""
+
+	# Calculate visible range based on scroll offset
+	var start_index = item_scroll_offset
+	var end_index = min(item_scroll_offset + ITEMS_VISIBLE_COUNT, items.size())
+
+	# Show scroll indicators if needed
+	if item_scroll_offset > 0:
+		items_text += "[center]↑[/center]\n"
+
+	# Display visible items only
+	for i in range(start_index, end_index):
+		var item = items[i]
+		var item_display = item.display + " (" + str(item.count) + ")"
+
+		# Add usage indicator if item was used this turn
+		if item_used_this_turn:
+			item_display += " (USED)"
+
+		# Gray out items with 0 count or if already used
+		if item.count <= 0 or item_used_this_turn:
+			item_display = "[color=gray]" + item_display + "[/color]"
+
+		# Add selection indicator for current item
+		if i == item_selection:
+			items_text += "→ " + item_display + " ←\n"
+		else:
+			items_text += "  " + item_display + "\n"
+
+	# Show down scroll indicator if more items below
+	if item_scroll_offset + ITEMS_VISIBLE_COUNT < items.size():
+		items_text += "[center]↓[/center]\n"
+
+	# Display items in the RichTextLabel with BBCode support
+	if not items_display and items_menu:
+		# Create the ItemsDisplay node dynamically if it doesn't exist
+		items_display = RichTextLabel.new()
+		items_display.name = "ItemsDisplay"
+		items_display.bbcode_enabled = true
+		items_display.fit_content = true
+		# Copy position from skills_display since they can't both be open
+		if skills_display:
+			items_display.position = skills_display.position
+			items_display.size = skills_display.size
+		else:
+			items_display.position = Vector2(50, 50)  # Fallback position
+			items_display.size = Vector2(400, 300)    # Fallback size
+		items_menu.add_child(items_display)
+		print("ITEMS→ Created ItemsDisplay node dynamically")
+
+	if items_display:
+		items_display.visible = true
+		items_display.bbcode_enabled = true
+		# Always match skills_display position
+		if skills_display:
+			items_display.position = skills_display.position
+		items_display.text = items_text.strip_edges()
+		print("ITEMS→ Updated display text: ", items_text.strip_edges())
+	else:
+		print("ERROR→ Could not create or find items_display")
+
 	# Show selection description
-	if selection_description:
-		if item_selection == 0:
-			selection_description.show_description("hp_potion")
-		elif item_selection == 1:
-			selection_description.show_description("resolve_potion")
+	if selection_description and item_selection < items.size():
+		var selected_item = items[item_selection]
+		selection_description.show_description(selected_item.name)
 
 func close_items_menu():
 	in_items_menu = false
 	if items_menu:
 		items_menu.visible = false
-	if hp_potion_button:
-		hp_potion_button.visible = false
-	if resolve_potion_button:
-		resolve_potion_button.visible = false
+	if items_display:
+		items_display.visible = false
 	if selection_description:
 		selection_description.hide_description()
 	if action_menu:
@@ -586,7 +687,10 @@ func close_items_menu():
 # Inventory helper functions - now use shared ProgressManager inventory
 func get_player_potion_count(player_name: String, potion_type: String) -> int:
 	# All players share the same party inventory
-	return ProgressManager.get_party_item_count(potion_type)
+	var count = ProgressManager.get_party_item_count(potion_type)
+	print("DEBUG→ ", player_name, " checking ", potion_type, " count: ", count)
+	print("DEBUG→ Full party inventory: ", ProgressManager.party_inventory)
+	return count
 
 func use_player_potion(player_name: String, potion_type: String) -> bool:
 	# Use from shared party inventory
@@ -678,6 +782,81 @@ func use_item_immediately(item_name: String):
 				item_used_this_turn = true
 			else:
 				print("ERROR→ " + current_player_name + " tried to use Resolve Potion but had none!")
+		"bandages":
+			var current_player_name = current_actor.name
+			var used_successfully = use_player_potion(current_player_name, "bandages")
+
+			if used_successfully:
+				# Use the player's bandages function
+				if current_actor.has_method("use_bandages"):
+					current_actor.use_bandages()
+				else:
+					print("ERROR→ " + current_player_name + " does not have use_bandages method!")
+
+				# Mark item as used this turn
+				item_used_this_turn = true
+			else:
+				print("ERROR→ " + current_player_name + " tried to use Bandages but had none!")
+		"phoenix_feather":
+			var current_player_name = current_actor.name
+			var used_successfully = use_player_potion(current_player_name, "phoenix_feather")
+
+			if used_successfully:
+				# Use the player's phoenix feather function
+				if current_actor.has_method("use_phoenix_feather"):
+					current_actor.use_phoenix_feather()
+				else:
+					print("ERROR→ " + current_player_name + " does not have use_phoenix_feather method!")
+
+				# Mark item as used this turn
+				item_used_this_turn = true
+			else:
+				print("ERROR→ " + current_player_name + " tried to use Phoenix Feather but had none!")
+		"rage_potion":
+			var current_player_name = current_actor.name
+			var used_successfully = use_player_potion(current_player_name, "rage_potion")
+
+			if used_successfully:
+				# Use the player's rage potion function
+				if current_actor.has_method("use_rage_potion"):
+					current_actor.use_rage_potion()
+				else:
+					print("ERROR→ " + current_player_name + " does not have use_rage_potion method!")
+
+				# Mark item as used this turn
+				item_used_this_turn = true
+			else:
+				print("ERROR→ " + current_player_name + " tried to use Rage Potion but had none!")
+		"speed_boost":
+			var current_player_name = current_actor.name
+			var used_successfully = use_player_potion(current_player_name, "speed_boost")
+
+			if used_successfully:
+				# Use the player's speed boost function
+				if current_actor.has_method("use_speed_boost"):
+					current_actor.use_speed_boost()
+				else:
+					print("ERROR→ " + current_player_name + " does not have use_speed_boost method!")
+
+				# Mark item as used this turn
+				item_used_this_turn = true
+			else:
+				print("ERROR→ " + current_player_name + " tried to use Speed Boost but had none!")
+		"pain_killer":
+			var current_player_name = current_actor.name
+			var used_successfully = use_player_potion(current_player_name, "pain_killer")
+
+			if used_successfully:
+				# Use the player's pain killer function
+				if current_actor.has_method("use_pain_killer"):
+					current_actor.use_pain_killer()
+				else:
+					print("ERROR→ " + current_player_name + " does not have use_pain_killer method!")
+
+				# Mark item as used this turn
+				item_used_this_turn = true
+			else:
+				print("ERROR→ " + current_player_name + " tried to use Pain Killer but had none!")
 		_:
 			print("WARNING→ Unknown item: " + item_name)
 
@@ -813,10 +992,11 @@ func show_menu():
 		items_menu.visible = false
 	if skills_display:
 		skills_display.visible = false
+	if items_display:
+		items_display.visible = false
 	if bigshot_button:
 		bigshot_button.visible = false
-	if hp_potion_button:
-		hp_potion_button.visible = false
+	# Old button references removed - using text display now
 	
 	# Hide any lingering descriptions with node validation
 	if selection_description and is_instance_valid(selection_description):
@@ -1793,5 +1973,45 @@ func _update_scroll_window():
 	
 	# Ensure scroll offset stays within bounds
 	skill_scroll_offset = max(0, min(skill_scroll_offset, abilities.size() - SKILLS_VISIBLE_COUNT))
-	
+
 	print("SCROLL→ skill_selection: ", skill_selection, ", scroll_offset: ", skill_scroll_offset, ", abilities: ", abilities.size())
+
+# Update scroll window to keep selected item visible
+func _update_item_scroll():
+	# Get actual available items count (filtered for discovery)
+	var current_player_name = current_actor.name if current_actor else "Player1"
+	var all_items = ["hp_potion", "resolve_potion", "bandages", "phoenix_feather", "rage_potion", "speed_boost", "pain_killer"]
+	var available_items_count = 0
+	for item_name in all_items:
+		if get_player_potion_count(current_player_name, item_name) > 0:
+			available_items_count += 1
+
+	if available_items_count <= ITEMS_VISIBLE_COUNT:
+		# No scrolling needed if all items fit
+		item_scroll_offset = 0
+		return
+
+	# Adjust scroll offset to keep selected item visible
+	if item_selection < item_scroll_offset:
+		# Selected item is above visible window - scroll up
+		item_scroll_offset = item_selection
+	elif item_selection >= item_scroll_offset + ITEMS_VISIBLE_COUNT:
+		# Selected item is below visible window - scroll down
+		item_scroll_offset = item_selection - ITEMS_VISIBLE_COUNT + 1
+
+	# Ensure scroll offset stays within bounds
+	item_scroll_offset = max(0, min(item_scroll_offset, available_items_count - ITEMS_VISIBLE_COUNT))
+
+	print("SCROLL→ item_selection: ", item_selection, ", scroll_offset: ", item_scroll_offset, ", items: ", available_items_count)
+
+# Check if player has any items available (for discovery gameplay)
+func has_any_items() -> bool:
+	var current_player_name = current_actor.name if current_actor else "Player1"
+
+	var all_items = ["hp_potion", "resolve_potion", "bandages", "phoenix_feather", "rage_potion", "speed_boost", "pain_killer"]
+
+	for item_name in all_items:
+		if get_player_potion_count(current_player_name, item_name) > 0:
+			return true
+
+	return false

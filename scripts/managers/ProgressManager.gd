@@ -16,10 +16,15 @@ enum NodeType {
 var current_position: int = 0
 var player_coins: int = 0  # Currency earned from battles
 
-# Shared party inventory (simplified from per-player)
+# Shared party inventory (empty for discovery gameplay)
 var party_inventory = {
-	"hp_potion": 2,        # Start with 2 HP potions
-	"resolve_potion": 2     # Start with 2 Resolve potions
+	"hp_potion": 0,        # Hidden until purchased
+	"resolve_potion": 0,   # Hidden until purchased
+	"bandages": 0,         # Hidden until purchased
+	"phoenix_feather": 0,  # Hidden until purchased
+	"rage_potion": 0,      # Hidden until purchased
+	"speed_boost": 0,      # Hidden until purchased
+	"pain_killer": 0       # Hidden until purchased
 }
 
 # Temporary battle buffs from shop

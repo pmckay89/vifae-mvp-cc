@@ -108,10 +108,19 @@ func _handle_existing_effect(existing_effect: Dictionary, new_effect: Dictionary
 		# Duration-based effects: refresh duration, keep strongest values
 		"vulnerable", "armor_up", "stun", "confusion", "regeneration", "resolve_gain", "rage", "weakness", "haste":
 			existing_effect["duration"] = new_effect.get("duration", existing_effect.get("duration", 3))
-			# Keep the stronger effect values
+			# Keep the stronger effect values (only for numeric values)
 			for key in new_effect.keys():
-				if key != "duration" and key != "type":
-					existing_effect[key] = max(existing_effect.get(key, 0), new_effect.get(key, 0))
+				if key != "duration" and key != "type" and key != "target" and key != "caster":
+					var existing_val = existing_effect.get(key, 0)
+					var new_val = new_effect.get(key, 0)
+					# Only use max() if both values are numbers
+					if typeof(existing_val) == TYPE_INT or typeof(existing_val) == TYPE_FLOAT:
+						if typeof(new_val) == TYPE_INT or typeof(new_val) == TYPE_FLOAT:
+							existing_effect[key] = max(existing_val, new_val)
+						else:
+							existing_effect[key] = existing_val  # Keep existing value
+					else:
+						existing_effect[key] = new_val  # Use new value
 			print("🧪 [StatusEffectManager] ", effect_type.capitalize(), " refreshed - duration: ", existing_effect["duration"])
 
 		# Barrier: add absorption amounts

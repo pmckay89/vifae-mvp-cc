@@ -328,10 +328,117 @@ Attack → Skills → Memory → Items
 ```
 
 ## 🎯 NEXT PRIORITIES
-1. Shop purchase implementation (currently placeholder)
-2. Additional ability integrations using proven pattern
-3. Memory system implementation (black-tinted animations)
-4. Final balance tuning
+1. ✅ ~~Shop purchase implementation~~ **COMPLETED** - Full 7-item system with discovery mechanics
+2. Per-player upgrade system implementation (37 upgrades designed, only 1 functional)
+3. Character stats/upgrade display system (prevent information overload during combat)
+4. Additional ability integrations using proven pattern
+5. Memory system implementation (black-tinted animations)
+6. Final balance tuning
+
+---
+
+# Recent Progress Updates
+
+## January 15, 2025 - Complete Item System & Shop Integration
+
+### ✅ **MAJOR COMPLETIONS**
+
+**Complete 7-Item System Implemented:**
+- HP Potion (50 HP instant) - 1 coin
+- Resolve Potion (3 Resolve) - 1 coin
+- Rage Potion (rage status: +100% damage, +25% incoming, 3 turns) - 2 coins
+- Speed Boost (haste status: act twice per turn, 2 turns) - 2 coins
+- Pain Killer (damage immunity for 1 hit) - 2 coins
+- Bandages (regeneration: 15 HP/turn for 3 turns) - 1 coin
+- Phoenix Feather (revive with 50% HP on death) - 2 coins
+
+**Discovery-Based Progression:**
+- Items hidden until purchased from shop (no more free starting items)
+- Items button non-responsive when no items owned
+- Only discovered items appear in inventory menu
+- Creates "what else exists?" motivation to visit shops
+
+**Shop Purchase System:**
+- Full purchase logic implemented with coin deduction
+- 1 purchase per item per shop visit limit
+- Visual "SOLD" feedback for purchased items
+- Tab selection preserved after purchases (no more forced tab switching)
+
+**Dynamic Items Menu:**
+- Scrolling system (4 items visible, handles any count)
+- Positioned same as Skills menu (no screen overflow)
+- Filters to show only owned items
+- Proper selection mapping (fixed crash bug)
+
+### 🔧 **CRITICAL BUG FIXES**
+
+**Parser Errors (Variable Conflicts):**
+- Multiple `current_player_name` declarations in same scope
+- Conflicting `items` vs `items_list` arrays
+- **Lesson**: Check for variable name conflicts in function scope
+
+**Item Selection Mapping Bug:**
+- Display logic used filtered array (only items with count > 0)
+- Selection logic used full hardcoded array (all 7 items)
+- Result: Player selects "Pain Killer" but system uses wrong item
+- **Fix**: Both display AND selection now use same filtered array
+
+**Regeneration Stacking Crash:**
+- `max()` function called on Object types (Player references) instead of numbers
+- Crash: `max(Player_object, 0)` when applying bandages with existing regen
+- **Fix**: Type checking - only use `max()` on numeric values, exclude "target"/"caster"
+
+**Pain Killer Barrier Persistence:**
+- Used regular "barrier" effect which has duration management
+- Created separate "pain_killer" effect to avoid conflicts with ability barriers
+- **Lesson**: Don't reuse complex status effects - create specific ones
+
+### 🏗️ **DISCOVERED ASSETS**
+
+**Massive Upgrade Library Found (37 total!):**
+- ShopOverlay.gd: 4 upgrades (currently implemented)
+- UpgradeOverlay.tscn: 33 additional upgrades (designed but not functional)
+- Comprehensive upgrade system waiting for implementation
+- **Decision**: Per-player upgrades (not party-wide) for strategic depth
+
+### 📚 **LESSONS LEARNED (Time-Savers)**
+
+**1. Variable Scope Conflicts:**
+- Always check for existing variable names in function scope
+- Use unique names like `items_list` vs `items` when needed
+- GDScript parser errors are specific - read them carefully
+
+**2. Array Consistency:**
+- When filtering arrays for display, ensure selection logic uses SAME filtered array
+- Don't mix filtered display with hardcoded selection indices
+- Test edge cases (empty arrays, single items)
+
+**3. Status Effect Isolation:**
+- Don't reuse complex status effects for simple items
+- Create specific effect types to avoid system conflicts
+- "barrier" vs "pain_killer" - different behaviors need different types
+
+**4. Type Safety in Utility Functions:**
+- `max()`, `min()` require same types
+- Check `typeof()` before using math functions on dictionary values
+- Objects vs numbers cause silent crashes
+
+**5. UI State Preservation:**
+- Tab containers reset when content refreshed
+- Save/restore UI state around major updates
+- User experience trumps code simplicity
+
+**6. Asset Discovery:**
+- Use agents for comprehensive codebase searches
+- Design documents may exist in scene files, not just .gd files
+- Look beyond obvious locations for complete feature sets
+
+### 🎮 **CURRENT GAME STATE**
+- **Items**: Fully functional 7-item system with discovery progression
+- **Shop**: Complete purchase system with limits and visual feedback
+- **Combat**: All existing abilities work with new item effects
+- **Progression**: Battle → Shop → Items discovered → Strategic choices
+- **Upgrades**: 37 designed (only iron_will functional) - major expansion opportunity
 
 ## 🎬 HITSTUN ANIMATION SYSTEM
 

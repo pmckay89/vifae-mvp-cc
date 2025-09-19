@@ -37,7 +37,12 @@ var descriptions = {
 
     # Items
     "hp_potion": "Restores 50 HP. Uses drink animation. One per turn.",
-    "resolve_potion": "Restores 3 Resolve. Uses drink animation. One per turn."
+    "resolve_potion": "Restores 3 Resolve. Uses drink animation. One per turn.",
+    "bandages": "Heal 15 HP per turn for 3 turns. Regeneration effect.",
+    "phoenix_feather": "Revive with 50% HP if you die this battle. One-time use.",
+    "rage_potion": "Gain rage status: +100% damage, +25% incoming damage for 3 turns.",
+    "speed_boost": "Gain haste status: act twice per turn for 2 turns.",
+    "pain_killer": "Immune to next damage taken. One-time protection."
 }
 
 func show_description(key: String):
