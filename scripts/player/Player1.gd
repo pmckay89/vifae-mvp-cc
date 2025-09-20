@@ -349,6 +349,7 @@ func take_damage(amount):
 			print("🛡️ BARRIER: Absorbed " + str(absorbed) + " damage")
 			CombatUI.show_damage_popup(self, absorbed)
 			status_effects.remove_effect("barrier")  # Remove after any damage
+			CombatUI.hide_player_status_icon("Player1", "barrier")
 
 	# Check for pain killer immunity (one-time damage negation)
 	if status_effects.has_effect("pain_killer"):
@@ -378,6 +379,7 @@ func take_damage(amount):
 
 			# Remove phoenix feather status effect since it's consumed
 			status_effects.remove_effect("phoenix_feather")
+			CombatUI.hide_player_status_icon("Player1", "phoenix_feather")
 		else:
 			is_defeated = true
 			print(name, "has been defeated!")
@@ -1361,7 +1363,7 @@ func _apply_time_shift_immediate(target, qte_result: String) -> int:
 			"type": "haste",
 			"target": target,
 			"caster": self,
-			"duration": 2
+			"turns_remaining": 2
 		}
 		target.status_effects.apply_effect(haste_effect)
 		print("💨 IMMEDIATE: Applied haste to ", target.name, " (extra turn for 2 turns)")
@@ -1577,7 +1579,7 @@ func use_speed_boost():
 		"type": "haste",
 		"target": self,
 		"caster": self,
-		"duration": 2  # 2 turns
+		"turns_remaining": 2  # 2 consecutive turns after full rotation
 	}
 	status_effects.apply_effect(haste_effect)
 	print("⚡ [Player1] Used Speed Boost - haste status applied")

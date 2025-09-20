@@ -641,11 +641,14 @@ func _process_weakness_effect(effect: Dictionary, effect_index: int):
 		print("💀 [StatusEffectManager] Weakness effect ended")
 
 func _process_haste_effect(effect: Dictionary, effect_index: int):
-	var duration = effect.get("duration", 2)
-	effect["duration"] = duration - 1
-	if effect["duration"] <= 0:
+	# Haste is now managed by TurnManager, not by turn processing
+	# Just check if turns_remaining is 0 and clean up
+	var turns_remaining = effect.get("turns_remaining", 0)
+	if turns_remaining <= 0:
 		active_effects.remove_at(effect_index)
-		print("💨 [StatusEffectManager] Haste effect ended")
+		print("💨 [StatusEffectManager] Haste effect cleaned up")
+		# Hide the status icon when effect ends
+		CombatUI.hide_status_icon("haste")
 
 func _process_barrier_effect(effect: Dictionary, effect_index: int):
 	# Barrier persists until absorbed, no duration countdown

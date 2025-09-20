@@ -1635,19 +1635,24 @@ func _initialize_hp_displays():
 func end_turn():
 	current_turn_index = (current_turn_index + 1) % turn_order.size()
 
-	# Check for haste effect - give extra turn to previous actor
+	# Check for haste effect - give 2 consecutive turns after full rotation
 	var previous_actor = turn_order[(current_turn_index - 1 + turn_order.size()) % turn_order.size()]
 	if previous_actor.status_effects.has_effect("haste"):
-		# Reduce haste duration by 1
 		var haste_effect = previous_actor.status_effects.find_effect("haste")
-		haste_effect["duration"] = haste_effect.get("duration", 2) - 1
-		if haste_effect["duration"] <= 0:
-			previous_actor.status_effects.remove_effect("haste")
-			print("💨 HASTE: Effect expired for " + previous_actor.name)
+		var turns_remaining = haste_effect.get("turns_remaining", 0)
 
-		# Give them another turn immediately
-		current_turn_index = (current_turn_index - 1 + turn_order.size()) % turn_order.size()
-		print("💨 HASTE: " + previous_actor.name + " gets extra turn!")
+		if turns_remaining > 0:
+			# Give them another turn immediately
+			current_turn_index = (current_turn_index - 1 + turn_order.size()) % turn_order.size()
+			haste_effect["turns_remaining"] = turns_remaining - 1
+			print("💨 HASTE: " + previous_actor.name + " gets extra turn! (" + str(haste_effect["turns_remaining"]) + " remaining)")
+
+			# Remove effect if no turns remaining
+			if haste_effect["turns_remaining"] <= 0:
+				previous_actor.status_effects.remove_effect("haste")
+				print("💨 HASTE: Effect expired for " + previous_actor.name)
+				# Hide the status icon
+				CombatUI.hide_player_status_icon(previous_actor.name, "haste")
 
 	change_state(State.BEGIN_TURN)
 

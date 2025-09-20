@@ -586,6 +586,9 @@ func start_phase_slam_qte(action_name: String, prompt_text: String, target_playe
 	
 	# Show QTE UI using pressure bar system
 	show_qte("hold_release", prompt_text, 2000)  # 2 second total time limit
+
+	# Show large central X button visual
+	show_phase_slam_button_visual()
 	
 	var total_time_limit = 2000  # 2 seconds max to complete QTE
 	var qte_start_time = Time.get_ticks_msec()
@@ -686,9 +689,10 @@ func start_phase_slam_qte(action_name: String, prompt_text: String, target_playe
 		release_time = fill_duration
 		release_detected = true
 		print("💥 Held to maximum - forced release!")
-	
+
 	qte_active = false
 	hide_qte()
+	hide_phase_slam_button()  # Clean up X button visual
 	
 	# Determine result based on release timing
 	var result = "fail"
@@ -1628,8 +1632,8 @@ func collect_mirror_input(target_sequence: Array, player_sequence: Array) -> Str
 			
 			print("🪞 Player pressed: ", pressed_key, " Expected: ", expected_key)
 			
-			# Show button press animation
-			await show_button_press(player_sequence.size() - 1, pressed_key)
+			# Show button press animation (non-blocking)
+			show_button_press(player_sequence.size() - 1, pressed_key)
 			
 			# Check if this input is correct
 			if pressed_key != expected_key:
@@ -2136,3 +2140,40 @@ func _play_random_multishot_parry_sound():
 			parry_player.queue_free()
 	else:
 		print("🎯 Warning: Could not find BattleScene for multishot parry sound")
+
+# Show large central X button for phase slam QTE
+func show_phase_slam_button_visual():
+	# Create central button display
+	var button_display = TextureRect.new()
+	button_display.name = "PhaseSlamButtonDisplay"
+
+	# Load X static texture
+	var x_static = load("res://assets/ui/x_static.png")
+	var x_press = load("res://assets/ui/x_press.png")
+
+	if x_static:
+		button_display.texture = x_static
+		# Make it large and center it
+		button_display.size = Vector2(128, 128)  # Large size
+		button_display.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+
+		# Add to QTE container
+		qte_container.add_child(button_display)
+
+		print("💥 Phase Slam: Showing X static button")
+
+		# Show static for 0.2s, then switch to press and hold
+		await get_tree().create_timer(0.2).timeout
+
+		if x_press and button_display and is_instance_valid(button_display):
+			button_display.texture = x_press
+			print("💥 Phase Slam: Switched to X press (held)")
+	else:
+		print("💥 Warning: Could not load X button textures for phase slam")
+
+# Clean up phase slam button when QTE ends
+func hide_phase_slam_button():
+	var button = qte_container.get_node_or_null("PhaseSlamButtonDisplay")
+	if button:
+		button.queue_free()
+		print("💥 Phase Slam: Button visual cleaned up")

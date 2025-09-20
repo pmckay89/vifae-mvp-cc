@@ -1,7 +1,7 @@
 extends Node2D
 
 # Enemy stats only - no turn management
-var base_hp_max: int = 300  # Base HP for Battle 1
+var base_hp_max: int = 125  # Base HP for Battle 1 (Tutorial Boss)
 var hp_max: int = base_hp_max  # Will be scaled based on progression
 var hp: int = hp_max
 var is_defeated: bool = false

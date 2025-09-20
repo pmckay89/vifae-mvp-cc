@@ -45,8 +45,8 @@ var upgrades_pool := [
 	{"name": "Thick Skin", "cost": 2, "description": "Permanent -10% damage taken"}
 ]
 
-var abilities_p1_pool := ["2x_cut", "moonfall_slash", "spirit_wave", "whirlwind", "ghost_attack"]
-var abilities_p2_pool := ["big_shot", "scatter_shot", "grenade", "bullet_rain"]
+var abilities_p1_pool := ["moonfall_slash", "spirit_wave", "whirlwind", "ghost_attack"]
+var abilities_p2_pool := ["scatter_shot", "grenade", "bullet_rain"]
 var abilities_shared_pool := ["poison", "burn_strike", "shield_boost", "mark_target", "freezing_shot", "armor_piercing", "bleeding_shot", "berserker_rage", "healing_touch", "curse_strike", "time_shift", "energy_barrier"]
 
 # Current shop offerings (randomized each visit)
@@ -113,36 +113,74 @@ func _randomize_shop_offerings():
 			current_items.append(available_items[random_index])
 			available_items.remove_at(random_index)
 
-	# Randomize Upgrades (2-3 upgrades)
+	# Randomize Upgrades (2-3 upgrades) - Filter out already purchased ones
 	current_upgrades.clear()
 	var upgrade_count = rng.randi_range(2, 3)
-	var available_upgrades = upgrades_pool.duplicate()
+	var available_upgrades = []
+
+	# Filter out purchased upgrades
+	for upgrade in upgrades_pool:
+		var display_name_mapping = {
+			"Berserker's Might": "berserker_might",
+			"Guardian's Blessing": "guardian_blessing",
+			"Battle Veteran": "battle_veteran",
+			"Legendary Resilience": "legendary_resilience",
+			"Master Combatant": "master_combatant",
+			"Unbreakable Will": "unbreakable_will",
+			"Dual Wielding": "dual_wielding",
+			"Vampire Fang": "vampire_fang",
+			"Finishing Blow": "finishing_blow",
+			"First Strike": "first_strike",
+			"Last Stand": "last_stand",
+			"Treasure Hunter": "treasure_hunter",
+			"Battle Economist": "battle_economist",
+			"Bloodlust": "bloodlust",
+			"Weapon Master": "weapon_master"
+		}
+		var upgrade_key = display_name_mapping.get(upgrade.name, upgrade.name.replace(" ", "_").replace("'", "").to_lower())
+		if not ProgressManager.is_upgrade_purchased(upgrade_key):
+			available_upgrades.append(upgrade)
+
 	for i in range(upgrade_count):
 		if available_upgrades.size() > 0:
 			var random_index = rng.randi() % available_upgrades.size()
 			current_upgrades.append(available_upgrades[random_index])
 			available_upgrades.remove_at(random_index)
 
-	# Randomize Abilities (4 total: 2 shared, 1 P1, 1 P2)
+	# Randomize Abilities (4 total: 2 shared, 1 P1, 1 P2) - Filter out already purchased ones
 	current_abilities.clear()
 
-	# 2 shared status abilities
-	var shared_pool = abilities_shared_pool.duplicate()
+	# 2 shared status abilities - filter out purchased ones
+	var shared_pool = []
+	for ability in abilities_shared_pool:
+		if not ProgressManager.is_ability_purchased(ability):
+			shared_pool.append(ability)
+
 	for i in range(2):
 		if shared_pool.size() > 0:
 			var random_index = rng.randi() % shared_pool.size()
 			current_abilities.append(shared_pool[random_index])
 			shared_pool.remove_at(random_index)
 
-	# 1 Player1 ability
-	if abilities_p1_pool.size() > 0:
-		var p1_index = rng.randi() % abilities_p1_pool.size()
-		current_abilities.append(abilities_p1_pool[p1_index])
+	# 1 Player1 ability - filter out purchased ones
+	var p1_pool = []
+	for ability in abilities_p1_pool:
+		if not ProgressManager.is_ability_purchased(ability):
+			p1_pool.append(ability)
 
-	# 1 Player2 ability
-	if abilities_p2_pool.size() > 0:
-		var p2_index = rng.randi() % abilities_p2_pool.size()
-		current_abilities.append(abilities_p2_pool[p2_index])
+	if p1_pool.size() > 0:
+		var p1_index = rng.randi() % p1_pool.size()
+		current_abilities.append(p1_pool[p1_index])
+
+	# 1 Player2 ability - filter out purchased ones
+	var p2_pool = []
+	for ability in abilities_p2_pool:
+		if not ProgressManager.is_ability_purchased(ability):
+			p2_pool.append(ability)
+
+	if p2_pool.size() > 0:
+		var p2_index = rng.randi() % p2_pool.size()
+		current_abilities.append(p2_pool[p2_index])
 
 	print("SHOP→ Items: ", current_items.size())
 	print("SHOP→ Upgrades: ", current_upgrades.size())
@@ -168,7 +206,7 @@ func _update_display():
 	if completed_battle >= 2:  # After battle 2, unlock upgrades
 		_populate_upgrades_tab()
 
-	if completed_battle >= 1:  # After battle 1, unlock abilities (TEMP for testing)
+	if completed_battle >= 3:  # After battle 3, unlock abilities
 		_populate_abilities_tab()
 
 	title_label.text = "Shop"
@@ -275,9 +313,9 @@ func _control_tab_access(completed_battle: int):
 		upgrades_tab.visible = completed_battle >= 2  # Unlock after battle 2
 
 	if abilities_tab:
-		abilities_tab.visible = completed_battle >= 1  # Unlock after battle 1 (TEMP for testing)
+		abilities_tab.visible = completed_battle >= 3  # Unlock after battle 3
 
-	print("SHOP→ Tab access after battle ", completed_battle, ": Items=true, Upgrades=", completed_battle >= 2, ", Abilities=", completed_battle >= 1)
+	print("SHOP→ Tab access after battle ", completed_battle, ": Items=true, Upgrades=", completed_battle >= 2, ", Abilities=", completed_battle >= 3)
 
 func _buy_item(item_name: String):
 	print("SHOP→ Attempting to buy: ", item_name)

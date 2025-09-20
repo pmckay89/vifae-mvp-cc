@@ -19,13 +19,22 @@ func update_hp_bar(actor_name: String, hp: int, max_hp: int):
 		"Player2":
 			update_player_hp_display("Player2", hp, max_hp)
 		"Enemy":
-			# Keep old enemy HP system for now
-			var path = "/root/BattleScene/UILayer/EnemyHUD/EnemyHPLabel"
-			var label = get_node_or_null(path)
+			# Update enemy HP label
+			var label_path = "/root/BattleScene/UILayer/EnemyHUD/EnemyHPLabel"
+			var label = get_node_or_null(label_path)
 			if label:
 				label.text = "BOSS HP: " + str(hp) + "/" + str(max_hp)
 			else:
-				print("⚠️ Could not find enemy HP bar at " + path)
+				print("⚠️ Could not find enemy HP label at " + label_path)
+
+			# Update enemy HP bar
+			var bar_path = "/root/BattleScene/UILayer/EnemyHUD/EnemyHPBar"
+			var bar = get_node_or_null(bar_path)
+			if bar:
+				bar.max_value = max_hp
+				bar.value = hp
+			else:
+				print("⚠️ Could not find enemy HP bar at " + bar_path)
 		_:
 			print("⚠️ Unknown actor name: " + actor_name)
 
