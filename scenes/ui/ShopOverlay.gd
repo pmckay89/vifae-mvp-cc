@@ -17,6 +17,10 @@ var assignment_dialog: Control = null
 var pending_upgrade_name: String = ""
 var pending_upgrade_data: Dictionary = {}
 
+# Ability assignment variables
+var pending_ability_name: String = ""
+var pending_ability_cost: int = 0
+
 # TabContainer will handle tab selection automatically
 
 # Shop data pools
@@ -164,7 +168,7 @@ func _update_display():
 	if completed_battle >= 2:  # After battle 2, unlock upgrades
 		_populate_upgrades_tab()
 
-	if completed_battle >= 3:  # After battle 3, unlock abilities
+	if completed_battle >= 1:  # After battle 1, unlock abilities (TEMP for testing)
 		_populate_abilities_tab()
 
 	title_label.text = "Shop"
@@ -254,8 +258,15 @@ func _populate_abilities_tab():
 	for ability in current_abilities:
 		var button = Button.new()
 		var ability_name = ability.replace("_", " ").capitalize()
-		button.text = "%s (3 coins) - Unlock new combat ability" % ability_name
-		button.pressed.connect(_buy_ability.bind(ability))
+
+		# Check if ability already purchased this campaign
+		if ProgressManager.is_ability_purchased(ability):
+			button.text = "%s - PURCHASED" % ability_name
+			button.disabled = true
+		else:
+			button.text = "%s (3 coins) - Unlock new combat ability" % ability_name
+			button.pressed.connect(_buy_ability.bind(ability))
+
 		abilities_container.add_child(button)
 
 func _control_tab_access(completed_battle: int):
@@ -264,9 +275,9 @@ func _control_tab_access(completed_battle: int):
 		upgrades_tab.visible = completed_battle >= 2  # Unlock after battle 2
 
 	if abilities_tab:
-		abilities_tab.visible = completed_battle >= 3  # Unlock after battle 3
+		abilities_tab.visible = completed_battle >= 1  # Unlock after battle 1 (TEMP for testing)
 
-	print("SHOP→ Tab access after battle ", completed_battle, ": Items=true, Upgrades=", completed_battle >= 2, ", Abilities=", completed_battle >= 3)
+	print("SHOP→ Tab access after battle ", completed_battle, ": Items=true, Upgrades=", completed_battle >= 2, ", Abilities=", completed_battle >= 1)
 
 func _buy_item(item_name: String):
 	print("SHOP→ Attempting to buy: ", item_name)
@@ -403,8 +414,140 @@ func _assign_dual_wielding_to_both_players():
 	_assign_party_upgrade_to_both_players()
 
 func _buy_ability(ability_name: String):
-	print("SHOP→ [PLACEHOLDER] Buying ability: ", ability_name)
-	# TODO: Implement actual ability unlock logic
+	print("SHOP→ Attempting to buy ability: ", ability_name)
+
+	var cost = 3  # All abilities cost 3 coins
+
+	# Check if player has enough coins
+	if ProgressManager.player_coins < cost:
+		print("SHOP→ Not enough coins! Need ", cost, ", have ", ProgressManager.player_coins)
+		return
+
+	# Check ability pools to determine assignment type
+	var is_p1_specific = ability_name in abilities_p1_pool
+	var is_p2_specific = ability_name in abilities_p2_pool
+	var is_shared = ability_name in abilities_shared_pool
+
+	# Complete the purchase
+	ProgressManager.spend_coins(cost)
+
+	if is_p1_specific:
+		# Auto-assign to Player1
+		ProgressManager.assign_ability_to_player(ability_name, "Player1")
+		print("SHOP→ Assigned ", ability_name, " to Player1 (Player1-specific ability)")
+	elif is_p2_specific:
+		# Auto-assign to Player2
+		ProgressManager.assign_ability_to_player(ability_name, "Player2")
+		print("SHOP→ Assigned ", ability_name, " to Player2 (Player2-specific ability)")
+	elif is_shared:
+		# Show assignment dialog for shared abilities
+		pending_ability_name = ability_name
+		pending_ability_cost = cost
+		_show_ability_assignment_dialog()
+		return  # Don't update display yet, wait for assignment
+	else:
+		print("ERROR→ Unknown ability: ", ability_name)
+		ProgressManager.add_coins(cost)  # Refund
+		return
+
+	print("SHOP→ Successfully bought ", ability_name, " for ", cost, " coins")
+	_update_display_after_purchase()
+
+# Show ability assignment dialog for shared abilities
+func _show_ability_assignment_dialog():
+	# Create modal overlay
+	assignment_dialog = ColorRect.new()
+	assignment_dialog.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	assignment_dialog.color = Color(0, 0, 0, 0.7)  # Semi-transparent background
+
+	# Create dialog panel
+	var dialog_panel = Panel.new()
+	dialog_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	dialog_panel.size = Vector2(400, 300)
+	assignment_dialog.add_child(dialog_panel)
+
+	# Create content container
+	var vbox = VBoxContainer.new()
+	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	vbox.add_theme_constant_override("separation", 20)
+	dialog_panel.add_child(vbox)
+
+	# Add margin
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 20)
+	margin.add_theme_constant_override("margin_right", 20)
+	margin.add_theme_constant_override("margin_top", 20)
+	margin.add_theme_constant_override("margin_bottom", 20)
+	vbox.add_child(margin)
+
+	var content_vbox = VBoxContainer.new()
+	content_vbox.add_theme_constant_override("separation", 15)
+	margin.add_child(content_vbox)
+
+	# Title
+	var title = Label.new()
+	title.text = "ASSIGN ABILITY"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 18)
+	content_vbox.add_child(title)
+
+	# Ability info
+	var ability_info = Label.new()
+	ability_info.text = pending_ability_name.replace("_", " ").capitalize() + "\nCost: " + str(pending_ability_cost) + " coins\nShared combat ability"
+	ability_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ability_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content_vbox.add_child(ability_info)
+
+	# Assignment question
+	var question = Label.new()
+	question.text = "Assign to which player?"
+	question.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	content_vbox.add_child(question)
+
+	# Player buttons
+	var button_container = HBoxContainer.new()
+	button_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	button_container.add_theme_constant_override("separation", 20)
+	content_vbox.add_child(button_container)
+
+	var player1_button = Button.new()
+	player1_button.text = "Player1"
+	player1_button.pressed.connect(_assign_ability_to_player.bind("Player1"))
+	button_container.add_child(player1_button)
+
+	var player2_button = Button.new()
+	player2_button.text = "Player2"
+	player2_button.pressed.connect(_assign_ability_to_player.bind("Player2"))
+	button_container.add_child(player2_button)
+
+	# Cancel button
+	var cancel_button = Button.new()
+	cancel_button.text = "Cancel"
+	cancel_button.pressed.connect(_cancel_ability_assignment)
+	content_vbox.add_child(cancel_button)
+
+	# Add to scene
+	add_child(assignment_dialog)
+	print("SHOP→ Showing ability assignment dialog for: ", pending_ability_name)
+
+# Assign ability to selected player
+func _assign_ability_to_player(player_name: String):
+	print("SHOP→ Assigning ability ", pending_ability_name, " to ", player_name)
+
+	# Assign the ability
+	ProgressManager.assign_ability_to_player(pending_ability_name, player_name)
+
+	print("SHOP→ Successfully bought ", pending_ability_name, " for ", player_name, " (", pending_ability_cost, " coins)")
+
+	# Close dialog and update shop display
+	_close_assignment_dialog()
+	_update_display_after_purchase()
+
+# Cancel ability assignment dialog
+func _cancel_ability_assignment():
+	print("SHOP→ Ability assignment cancelled - refunding coins")
+	ProgressManager.add_coins(pending_ability_cost)  # Refund
+	_close_assignment_dialog()
 
 # Show modal assignment dialog
 func _show_assignment_dialog():
@@ -514,6 +657,8 @@ func _close_assignment_dialog():
 		assignment_dialog = null
 	pending_upgrade_name = ""
 	pending_upgrade_data = {}
+	pending_ability_name = ""
+	pending_ability_cost = 0
 
 func _on_close_pressed():
 	print("SHOP→ Leaving shop")

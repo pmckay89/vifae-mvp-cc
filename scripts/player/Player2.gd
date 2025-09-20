@@ -331,7 +331,16 @@ func reset_for_new_combat():
 	print("RESET→ " + name + " fully restored")
 
 func get_ability_list() -> Array:
-	return ["big_shot", "scatter_shot", "grenade", "bullet_rain", "freezing_shot", "armor_piercing", "bleeding_shot", "berserker_rage", "healing_touch", "curse_strike", "time_shift", "energy_barrier"]
+	# All possible abilities for Player2
+	var all_abilities = ["big_shot", "scatter_shot", "grenade", "bullet_rain", "freezing_shot", "armor_piercing", "bleeding_shot", "berserker_rage", "healing_touch", "curse_strike", "time_shift", "energy_barrier"]
+
+	# Filter to only unlocked abilities
+	var unlocked_abilities = []
+	for ability in all_abilities:
+		if ProgressManager.has_player_ability("Player2", ability):
+			unlocked_abilities.append(ability)
+
+	return unlocked_abilities
 
 func get_ability_display_name(ability_name: String) -> String:
 	match ability_name:

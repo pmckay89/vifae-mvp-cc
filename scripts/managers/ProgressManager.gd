@@ -43,8 +43,50 @@ var player_upgrades = {
 	}
 }
 
+# Player abilities (unlocked combat skills)
+var player_abilities = {
+	"Player1": {
+		"attack": true,        # Always available
+		"2x_cut": true,        # Starting skill
+		"moonfall_slash": false,
+		"spirit_wave": false,
+		"whirlwind": false,
+		"ghost_attack": false,
+		"poison": false,
+		"burn_strike": false,
+		"shield_boost": false,
+		"mark_target": false,
+		"freezing_shot": false,
+		"armor_piercing": false,
+		"bleeding_shot": false,
+		"berserker_rage": false,
+		"healing_touch": false,
+		"curse_strike": false,
+		"time_shift": false,
+		"energy_barrier": false
+	},
+	"Player2": {
+		"attack": true,        # Always available
+		"big_shot": true,      # Starting skill
+		"scatter_shot": false,
+		"grenade": false,
+		"bullet_rain": false,
+		"freezing_shot": false,
+		"armor_piercing": false,
+		"bleeding_shot": false,
+		"berserker_rage": false,
+		"healing_touch": false,
+		"curse_strike": false,
+		"time_shift": false,
+		"energy_barrier": false
+	}
+}
+
 # Track purchased upgrades to prevent duplicates (once per campaign)
 var purchased_upgrades = []
+
+# Track purchased abilities to prevent duplicates (once per campaign)
+var purchased_abilities = []
 
 # Battle flags for tracking per-battle effects (reset each battle)
 var battle_flags = {}
@@ -253,6 +295,36 @@ func get_player_upgrade_list(player_name: String) -> Array:
 			upgrade_names.append(upgrade_name.replace("_", " ").capitalize())
 	return upgrade_names
 
+# Ability management functions
+func assign_ability_to_player(ability_name: String, player_name: String):
+	if player_name in player_abilities:
+		player_abilities[player_name][ability_name] = true
+		purchased_abilities.append(ability_name)
+		print("PROGRESS→ Assigned ability ", ability_name, " to ", player_name)
+	else:
+		print("ERROR→ Invalid player name: ", player_name)
+
+func get_player_abilities(player_name: String) -> Dictionary:
+	if player_name in player_abilities:
+		return player_abilities[player_name]
+	return {}
+
+func has_player_ability(player_name: String, ability_name: String) -> bool:
+	if player_name in player_abilities:
+		return player_abilities[player_name].get(ability_name, false)
+	return false
+
+func get_unlocked_abilities_list(player_name: String) -> Array:
+	var abilities = get_player_abilities(player_name)
+	var unlocked_abilities = []
+	for ability_name in abilities:
+		if abilities[ability_name]:
+			unlocked_abilities.append(ability_name)
+	return unlocked_abilities
+
+func is_ability_purchased(ability_name: String) -> bool:
+	return ability_name in purchased_abilities
+
 # Battle flag functions for per-battle tracking
 func set_battle_flag(flag_name: String, value: bool):
 	battle_flags[flag_name] = value
@@ -350,5 +422,17 @@ func reset_progress():
 	selected_path = ""
 	party_inventory = {"hp_potion": 2, "resolve_potion": 2}
 	active_buffs = {"power_boost": false, "quick_reflexes": false}
+
+	# Reset abilities to defaults (attack + starting skill)
+	for player in player_abilities:
+		for ability in player_abilities[player]:
+			if ability in ["attack", "2x_cut", "big_shot"]:
+				player_abilities[player][ability] = true  # Keep defaults
+			else:
+				player_abilities[player][ability] = false  # Reset purchased abilities
+
+	# Clear purchased abilities tracking
+	purchased_abilities.clear()
+
 	coins_changed.emit(player_coins)  # Emit signal for UI update
 	print("PROGRESS→ Progress reset to start")

@@ -49,7 +49,9 @@
       "Bash(git push:*)",
       "Read(/C:\\Users\\yow_g\\Documents\\vifae mvp\\vifae-mvp-cc/**)",
       "Bash(dir:*)",
-      "Bash(\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.exe\" --headless --quit-after 2 project.godot)"
+      "Bash(\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.exe\" --headless --quit-after 2 project.godot)",
+      "Bash(\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.exe\" --headless --quit-after 2 \"C:\\Users\\yow_g\\Documents\\vifae mvp\\vifae-mvp-cc\\project.godot\")",
+      "Bash(\"C:\\Users\\yow_g\\Downloads\\Godot_v4.4.1-stable_win64.exe\" --headless --quit-after 2)"
     ],
     "deny": [],
     "ask": [],
