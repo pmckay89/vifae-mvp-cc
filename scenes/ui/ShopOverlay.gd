@@ -12,6 +12,11 @@ extends Control
 @onready var upgrades_tab := $Panel/VBoxContainer/TabContainer/Upgrades
 @onready var abilities_tab := $Panel/VBoxContainer/TabContainer/Abilities
 
+# Assignment dialog (created dynamically)
+var assignment_dialog: Control = null
+var pending_upgrade_name: String = ""
+var pending_upgrade_data: Dictionary = {}
+
 # TabContainer will handle tab selection automatically
 
 # Shop data pools
@@ -29,7 +34,11 @@ var upgrades_pool := [
 	{"name": "Iron Skin", "cost": 3, "description": "Permanent +10 damage reduction"},
 	{"name": "Vampire Fang", "cost": 6, "description": "Permanent lifesteal on all attacks"},
 	{"name": "Guardian Angel", "cost": 6, "description": "One-time revive protection"},
-	{"name": "Lucky Coin", "cost": 1, "description": "Gain +2 coins if you win battles"}
+	{"name": "Lucky Coin", "cost": 1, "description": "Gain +2 coins if you win battles"},
+	# TEMP: Testing upgrades - remove after implementation
+	{"name": "Strong Body", "cost": 2, "description": "Permanent +25 max HP"},
+	{"name": "Combat Training", "cost": 2, "description": "Permanent +10% damage to all attacks"},
+	{"name": "Thick Skin", "cost": 2, "description": "Permanent -10% damage taken"}
 ]
 
 var abilities_p1_pool := ["2x_cut", "moonfall_slash", "spirit_wave", "whirlwind", "ghost_attack"]
@@ -207,8 +216,33 @@ func _populate_upgrades_tab():
 
 	for upgrade in current_upgrades:
 		var button = Button.new()
-		button.text = "%s (%d coins) - %s" % [upgrade.name, upgrade.cost, upgrade.description]
-		button.pressed.connect(_buy_upgrade.bind(upgrade.name))
+
+		# Check if upgrade already purchased this campaign
+		var display_name_mapping = {
+			"Berserker's Might": "berserker_might",
+			"Guardian's Blessing": "guardian_blessing",
+			"Battle Veteran": "battle_veteran",
+			"Legendary Resilience": "legendary_resilience",
+			"Master Combatant": "master_combatant",
+			"Unbreakable Will": "unbreakable_will",
+			"Dual Wielding": "dual_wielding",
+			"Vampire Fang": "vampire_fang",
+			"Finishing Blow": "finishing_blow",
+			"First Strike": "first_strike",
+			"Last Stand": "last_stand",
+			"Treasure Hunter": "treasure_hunter",
+			"Battle Economist": "battle_economist",
+			"Bloodlust": "bloodlust",
+			"Weapon Master": "weapon_master"
+		}
+		var upgrade_key = display_name_mapping.get(upgrade.name, upgrade.name.replace(" ", "_").replace("'", "").to_lower())
+		if ProgressManager.is_upgrade_purchased(upgrade_key):
+			button.text = "%s - PURCHASED" % upgrade.name
+			button.disabled = true
+		else:
+			button.text = "%s (%d coins) - %s" % [upgrade.name, upgrade.cost, upgrade.description]
+			button.pressed.connect(_buy_upgrade.bind(upgrade.name))
+
 		upgrades_container.add_child(button)
 
 func _populate_abilities_tab():
@@ -290,12 +324,196 @@ func _buy_item(item_name: String):
 	_update_display_after_purchase()
 
 func _buy_upgrade(upgrade_name: String):
-	print("SHOP→ [PLACEHOLDER] Buying upgrade: ", upgrade_name)
-	# TODO: Implement actual upgrade logic
+	print("SHOP→ Attempting to buy upgrade: ", upgrade_name)
+
+	# Find the upgrade data to get cost
+	var upgrade_data = null
+	for upgrade in current_upgrades:
+		if upgrade.name == upgrade_name:
+			upgrade_data = upgrade
+			break
+
+	if not upgrade_data:
+		print("ERROR→ Upgrade not found: ", upgrade_name)
+		return
+
+	# Convert display names to internal keys
+	var upgrade_name_mapping = {
+		"Berserker's Might": "berserker_might",
+		"Guardian's Blessing": "guardian_blessing",
+		"Battle Veteran": "battle_veteran",
+		"Legendary Resilience": "legendary_resilience",
+		"Master Combatant": "master_combatant",
+		"Unbreakable Will": "unbreakable_will",
+		"Dual Wielding": "dual_wielding",
+		"Vampire Fang": "vampire_fang",
+		"Finishing Blow": "finishing_blow",
+		"First Strike": "first_strike",
+		"Last Stand": "last_stand",
+		"Treasure Hunter": "treasure_hunter",
+		"Battle Economist": "battle_economist",
+		"Bloodlust": "bloodlust",
+		"Weapon Master": "weapon_master"
+	}
+	var upgrade_key = upgrade_name_mapping.get(upgrade_name, upgrade_name.replace(" ", "_").replace("'", "").to_lower())
+
+	# Check if already purchased (once per campaign)
+	if ProgressManager.is_upgrade_purchased(upgrade_key):
+		print("SHOP→ Already purchased ", upgrade_name, " this campaign!")
+		return
+
+	# Check if player has enough coins
+	if ProgressManager.player_coins < upgrade_data.cost:
+		print("SHOP→ Not enough coins! Need ", upgrade_data.cost, ", have ", ProgressManager.player_coins)
+		return
+
+	# Store pending purchase and show assignment dialog
+	pending_upgrade_name = upgrade_key
+	pending_upgrade_data = upgrade_data
+
+	# Special cases: Party-wide upgrades apply to both players automatically
+	if upgrade_key in ["dual_wielding", "treasure_hunter", "battle_economist"]:
+		_assign_party_upgrade_to_both_players()
+	else:
+		_show_assignment_dialog()
+
+func _assign_party_upgrade_to_both_players():
+	print("SHOP→ ", pending_upgrade_data.name, ": assigning to both players automatically (party-wide upgrade)")
+
+	# Complete the purchase
+	ProgressManager.spend_coins(pending_upgrade_data.cost)
+
+	# Assign to both players
+	ProgressManager.assign_upgrade_to_player(pending_upgrade_name, "Player1")
+	ProgressManager.assign_upgrade_to_player(pending_upgrade_name, "Player2")
+
+	print("SHOP→ Successfully bought ", pending_upgrade_data.name, " for both players (", pending_upgrade_data.cost, " coins)")
+
+	# Update combat UI to show new upgrade for both players
+	var combat_ui = get_node_or_null("/root/BattleScene/CombatUI")
+	if combat_ui and combat_ui.has_method("update_player_upgrades_display"):
+		combat_ui.update_player_upgrades_display("Player1")
+		combat_ui.update_player_upgrades_display("Player2")
+
+	# Update shop display
+	_update_display_after_purchase()
+
+# Legacy function name for compatibility
+func _assign_dual_wielding_to_both_players():
+	_assign_party_upgrade_to_both_players()
 
 func _buy_ability(ability_name: String):
 	print("SHOP→ [PLACEHOLDER] Buying ability: ", ability_name)
 	# TODO: Implement actual ability unlock logic
+
+# Show modal assignment dialog
+func _show_assignment_dialog():
+	# Create modal overlay
+	assignment_dialog = ColorRect.new()
+	assignment_dialog.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	assignment_dialog.color = Color(0, 0, 0, 0.7)  # Semi-transparent background
+
+	# Create dialog panel
+	var dialog_panel = Panel.new()
+	dialog_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	dialog_panel.size = Vector2(400, 300)
+	assignment_dialog.add_child(dialog_panel)
+
+	# Create content container
+	var vbox = VBoxContainer.new()
+	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	vbox.add_theme_constant_override("separation", 20)
+	dialog_panel.add_child(vbox)
+
+	# Add margin
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 20)
+	margin.add_theme_constant_override("margin_right", 20)
+	margin.add_theme_constant_override("margin_top", 20)
+	margin.add_theme_constant_override("margin_bottom", 20)
+	vbox.add_child(margin)
+
+	var content_vbox = VBoxContainer.new()
+	content_vbox.add_theme_constant_override("separation", 15)
+	margin.add_child(content_vbox)
+
+	# Title
+	var title = Label.new()
+	title.text = "ASSIGN UPGRADE"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 18)
+	content_vbox.add_child(title)
+
+	# Upgrade info
+	var upgrade_info = Label.new()
+	upgrade_info.text = pending_upgrade_data.name + "\nCost: " + str(pending_upgrade_data.cost) + " coins\n" + pending_upgrade_data.description
+	upgrade_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	upgrade_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content_vbox.add_child(upgrade_info)
+
+	# Assignment question
+	var question = Label.new()
+	question.text = "Assign to which player?"
+	question.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	content_vbox.add_child(question)
+
+	# Player buttons
+	var button_container = HBoxContainer.new()
+	button_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	button_container.add_theme_constant_override("separation", 20)
+	content_vbox.add_child(button_container)
+
+	var player1_button = Button.new()
+	player1_button.text = "Player1"
+	player1_button.pressed.connect(_assign_to_player.bind("Player1"))
+	button_container.add_child(player1_button)
+
+	var player2_button = Button.new()
+	player2_button.text = "Player2"
+	player2_button.pressed.connect(_assign_to_player.bind("Player2"))
+	button_container.add_child(player2_button)
+
+	# Cancel button
+	var cancel_button = Button.new()
+	cancel_button.text = "Cancel"
+	cancel_button.pressed.connect(_cancel_assignment)
+	content_vbox.add_child(cancel_button)
+
+	# Add to scene
+	add_child(assignment_dialog)
+	print("SHOP→ Showing assignment dialog for: ", pending_upgrade_data.name)
+
+# Assign upgrade to selected player
+func _assign_to_player(player_name: String):
+	print("SHOP→ Assigning ", pending_upgrade_name, " to ", player_name)
+
+	# Complete the purchase
+	ProgressManager.spend_coins(pending_upgrade_data.cost)
+	ProgressManager.assign_upgrade_to_player(pending_upgrade_name, player_name)
+
+	print("SHOP→ Successfully bought ", pending_upgrade_data.name, " for ", player_name, " (", pending_upgrade_data.cost, " coins)")
+
+	# Update combat UI to show new upgrade
+	var combat_ui = get_node_or_null("/root/BattleScene/CombatUI")
+	if combat_ui and combat_ui.has_method("update_player_upgrades_display"):
+		combat_ui.update_player_upgrades_display(player_name)
+
+	# Close dialog and update shop display
+	_close_assignment_dialog()
+	_update_display_after_purchase()
+
+# Cancel assignment dialog
+func _cancel_assignment():
+	print("SHOP→ Assignment cancelled")
+	_close_assignment_dialog()
+
+# Close and cleanup assignment dialog
+func _close_assignment_dialog():
+	if assignment_dialog:
+		assignment_dialog.queue_free()
+		assignment_dialog = null
+	pending_upgrade_name = ""
+	pending_upgrade_data = {}
 
 func _on_close_pressed():
 	print("SHOP→ Leaving shop")

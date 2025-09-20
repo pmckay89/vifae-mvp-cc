@@ -5,6 +5,7 @@ var hp: int = 100
 var is_defeated: bool = false
 var selected_ability = ""
 var has_phoenix_feather = false  # Revival item
+var applied_upgrades: Array = []  # Track which HP upgrades have been applied
 
 @onready var rng := RandomNumberGenerator.new()
 @onready var status_effects := StatusEffectManager.new()
@@ -12,15 +13,45 @@ var has_phoenix_feather = false  # Revival item
 func _ready():
 	rng.randomize()
 	add_to_group("players")
-	
+
+	# Apply upgrade effects to base stats
+	print("🔍 [DEBUG] Player1 _ready() calling _apply_upgrade_effects...")
+	_apply_upgrade_effects()
+
 	# Hide main sprite - using idle_p1 animation through AnimationBridge now
 	# $Sprite2D.visible = false  # COMMENTED OUT - AnimationBridge handles this now
-	
+
 	# Add StatusEffectManager as child
 	add_child(status_effects)
 	status_effects.name = "StatusEffects"
-	
+
 	ScreenShake.shake(5.0, 0.3)
+
+func _apply_upgrade_effects():
+	# Apply HP upgrades (only once per upgrade)
+	print("🔍 [DEBUG] Checking Strong Body for Player1...")
+	var has_strong_body = ProgressManager.has_player_upgrade("Player1", "strong_body")
+	print("🔍 [DEBUG] Has strong body: ", has_strong_body)
+	if has_strong_body and not "strong_body" in applied_upgrades:
+		hp_max += 25
+		hp += 25  # Also heal current HP
+		applied_upgrades.append("strong_body")
+		print("UPGRADE→ Player1 Strong Body applied: +25 max HP (now ", hp_max, ")")
+
+	print("🔍 [DEBUG] Checking Guardian's Blessing for Player1...")
+	var has_guardian_blessing = ProgressManager.has_player_upgrade("Player1", "guardian_blessing")
+	print("🔍 [DEBUG] Has guardian_blessing: ", has_guardian_blessing)
+	if has_guardian_blessing and not "guardian_blessing" in applied_upgrades:
+		hp_max += 50
+		hp += 50
+		applied_upgrades.append("guardian_blessing")
+		print("UPGRADE→ Player1 Guardian Blessing applied: +50 max HP (now ", hp_max, ")")
+
+	if ProgressManager.has_player_upgrade("Player1", "legendary_resilience") and not "legendary_resilience" in applied_upgrades:
+		hp_max += 100
+		hp += 100
+		applied_upgrades.append("legendary_resilience")
+		print("UPGRADE→ Player1 Legendary Resilience applied: +100 max HP (now ", hp_max, ")")
 
 func start_turn():
 	if is_defeated:
@@ -28,6 +59,34 @@ func start_turn():
 		get_node("/root/BattleScene/TurnManager").end_turn()
 		return
 	print(name, "is ready to act.")
+
+# Universal damage system - routes through centralized calculation for upgrade bonuses
+func apply_damage(target: Node, base_damage: int) -> Dictionary:
+	if not target or not "status_effects" in target:
+		print("⚠️ Target has no status_effects, using fallback damage")
+		if target and target.has_method("take_damage"):
+			target.take_damage(base_damage)
+		return {"final_damage": base_damage, "absorbed": 0, "effects_triggered": []}
+
+	# Use centralized damage calculation system for upgrade bonuses
+	var damage_result = target.status_effects.calculate_final_damage(self, target, base_damage)
+	var final_damage = damage_result.final_damage
+
+	# Apply damage directly (bypassing target.take_damage to avoid double-processing)
+	target.hp = max(target.hp - final_damage, 0)
+
+	# Update UI and effects
+	CombatUI.update_hp_bar(target.name, target.hp, target.hp_max)
+	CombatUI.show_damage_popup(target, final_damage)
+
+	# Check for defeat
+	if target.hp <= 0:
+		target.is_defeated = true
+		print(target.name + " has been defeated!")
+
+	print("🎯 [" + self.name + "] Applied " + str(final_damage) + " damage to " + target.name + " (base: " + str(base_damage) + ")")
+
+	return damage_result
 
 func show_block_animation(duration: float = 1.0):
 	# Stop breathing animation during block
@@ -267,7 +326,7 @@ func attack_critical(target):
 	var damage = rng.randi_range(15, 25)
 	print(name, "CRITICAL ATTACK on", target.name, "for", damage, "damage!")
 	VFXManager.play_hit_effects(target)
-	target.take_damage(damage)
+	apply_damage(target, damage)
 
 func take_damage(amount):
 	if is_defeated:
@@ -328,6 +387,10 @@ func take_damage(amount):
 
 func reset_for_new_combat():
 	# Called by TurnManager when combat resets
+
+	# Apply upgrade effects first (before setting hp = hp_max)
+	_apply_upgrade_effects()
+
 	hp = hp_max
 	is_defeated = false
 	hide_death_sprite()
@@ -442,7 +505,7 @@ func execute_2x_cut_dual_qte(target):
 	var first_damage = 0
 	if result1 in ["crit", "normal"]:
 		first_damage = 6 if result1 == "crit" else 4
-		target.take_damage(first_damage)
+		apply_damage(target, first_damage)
 		VFXManager.play_hit_effects(target)
 
 	# Start finish animation after first QTE for better feel
@@ -463,7 +526,7 @@ func execute_2x_cut_dual_qte(target):
 	var second_damage = 0
 	if result2 in ["crit", "normal"]:
 		second_damage = 6 if result2 == "crit" else 4
-		target.take_damage(second_damage)
+		apply_damage(target, second_damage)
 		VFXManager.play_hit_effects(target)
 
 	# Handle case where first failed but second succeeded
@@ -512,23 +575,25 @@ func execute_whirlwind_sequence(target):
 	
 	# IMMEDIATE DAMAGE - Apply damage right after QTE
 	var total_damage = 0
+	var final_damage = 0
 	if result in ["crit", "normal"]:
 		total_damage = 30 if result == "crit" else 25  # Crit gets 1.5x multiplier from base 25
-		target.take_damage(total_damage)
+		var damage_result = apply_damage(target, total_damage)
+		final_damage = damage_result.final_damage
 		VFXManager.play_hit_effects(target)
-		print("🌪️ IMMEDIATE: Whirlwind deals " + str(total_damage) + " damage")
-	
+		print("🌪️ IMMEDIATE: Whirlwind deals " + str(final_damage) + " damage")
+
 	# Step 3: Play result animation (pure visual feedback)
 	AnimationBridge.play_result_animation("whirlwind", result)
 	await AnimationBridge.animation_sequence_complete
-	
-	print("🌪️ Whirlwind complete - damage already applied: ", total_damage)
-	
+
+	print("🌪️ Whirlwind complete - damage already applied: ", final_damage)
+
 	# Return info for TurnManager (damage already applied)
 	return {
-		"damage": total_damage,
+		"damage": final_damage,
 		"qte_result": result,
-		"success": total_damage > 0,
+		"success": final_damage > 0,
 		"handled_damage": true  # Flag that damage was already applied
 	}
 
@@ -555,7 +620,7 @@ func execute_poison_sequence(target):
 	var total_damage = 0
 	if result in ["crit", "normal"]:
 		total_damage = 23 if result == "crit" else 15  # Crit gets 1.5x multiplier from base 15
-		target.take_damage(total_damage)
+		apply_damage(target, total_damage)
 		VFXManager.play_hit_effects(target)
 		
 		# Apply poison effect to target
@@ -572,7 +637,7 @@ func execute_poison_sequence(target):
 	else:
 		# Failed QTE - still deal minimal damage like other abilities
 		total_damage = 5
-		target.take_damage(total_damage)
+		apply_damage(target, total_damage)
 		VFXManager.play_hit_effects(target)
 		print("☠️ IMMEDIATE: Poison QTE failed - weak strike for ", total_damage, " damage")
 	
@@ -706,7 +771,7 @@ func execute_burn_strike_sequence(target):
 	var total_damage = 0
 	if result in ["crit", "normal"]:
 		total_damage = 20 if result == "crit" else 12
-		target.take_damage(total_damage)
+		apply_damage(target, total_damage)
 		VFXManager.play_hit_effects(target)
 		
 		# Apply burn effect to target
@@ -725,7 +790,7 @@ func execute_burn_strike_sequence(target):
 		CombatUI.show_status_applied_popup(target, "burn")
 	else:
 		total_damage = 4
-		target.take_damage(total_damage)
+		apply_damage(target, total_damage)
 		VFXManager.play_hit_effects(target)
 		print("🔥 IMMEDIATE: Burn QTE failed - weak strike for ", total_damage, " damage")
 	
@@ -827,7 +892,7 @@ func execute_mark_target_sequence(target):
 		total_damage = 0
 	else:
 		total_damage = 2
-		target.take_damage(total_damage)
+		apply_damage(target, total_damage)
 		VFXManager.play_hit_effects(target)
 		print("🎯 IMMEDIATE: Mark QTE failed - weak strike for ", total_damage, " damage")
 	
@@ -853,21 +918,21 @@ func process_ninja_attack_result(result: String, target):
 			damage = 15
 			print("✨ PERFECT NINJA STRIKE! " + str(damage) + " damage!")
 			VFXManager.play_hit_effects(target)
-			target.take_damage(damage)
+			apply_damage(target, damage)
 			sfx_player.stream = preload("res://assets/sfx/crit.wav")
 			sfx_player.play()
 		"normal":
 			damage = 10
 			print("⚔️ Good ninja attack! " + str(damage) + " damage!")
 			VFXManager.play_hit_effects(target)
-			target.take_damage(damage)
+			apply_damage(target, damage)
 			sfx_player.stream = preload("res://assets/sfx/attack.wav")
 			sfx_player.play()
 		"fail":
 			damage = 5
 			print("💫 Weak ninja strike... " + str(damage) + " damage.")
 			VFXManager.play_hit_effects(target)
-			target.take_damage(damage)
+			apply_damage(target, damage)
 			sfx_player.stream = preload("res://assets/sfx/miss.wav")
 			sfx_player.play()
 
@@ -950,14 +1015,14 @@ func process_uppercut_result(result: String, target):
 			damage = 25
 			print("✨ PERFECT UPPERCUT! " + str(damage) + " damage!")
 			VFXManager.play_hit_effects(target)
-			target.take_damage(damage)
+			apply_damage(target, damage)
 			sfx_player.stream = preload("res://assets/sfx/crit.wav")
 			sfx_player.play()
 		"normal":
 			damage = 18
 			print("👊 Good uppercut! " + str(damage) + " damage!")
 			VFXManager.play_hit_effects(target)
-			target.take_damage(damage)
+			apply_damage(target, damage)
 			sfx_player.stream = preload("res://assets/sfx/attack.wav")
 			sfx_player.play()
 
@@ -970,21 +1035,21 @@ func process_2x_cut_result(result: String, target, strike_number: int):
 			damage = 10
 			print("✨ Strike " + str(strike_number) + " - PERFECT! " + str(damage) + " damage!")
 			VFXManager.play_hit_effects(target)
-			target.take_damage(damage)
+			apply_damage(target, damage)
 			sfx_player.stream = preload("res://assets/sfx/crit.wav")
 			sfx_player.play()
 		"normal":
 			damage = 7
 			print("⚔️ Strike " + str(strike_number) + " - Good hit! " + str(damage) + " damage!")
 			VFXManager.play_hit_effects(target)
-			target.take_damage(damage)
+			apply_damage(target, damage)
 			sfx_player.stream = preload("res://assets/sfx/attack.wav")
 			sfx_player.play()
 		"fail":
 			damage = 5
 			print("💫 Strike " + str(strike_number) + " - Weak hit... " + str(damage) + " damage.")
 			VFXManager.play_hit_effects(target)
-			target.take_damage(damage)
+			apply_damage(target, damage)
 			sfx_player.stream = preload("res://assets/sfx/miss.wav")
 			sfx_player.play()
 
@@ -1021,21 +1086,21 @@ func on_qte_result(result: String, target):
 					damage = 30
 					print("👻 " + name + " unleashes a PERFECT Spirit Wave! Spectral resonance!")
 					print("  → Ethereal echo devastates for " + str(damage) + " damage!")
-					target.take_damage(damage)
+					apply_damage(target, damage)
 					sfx_player.stream = preload("res://assets/sfx/crit.wav")
 					sfx_player.play()
 				"normal":
 					damage = 20
 					print("👻 " + name + " channels Spirit Wave!")
 					print("  → Spectral energy strikes for " + str(damage) + " damage!")
-					target.take_damage(damage)
+					apply_damage(target, damage)
 					sfx_player.stream = preload("res://assets/sfx/attack.wav")
 					sfx_player.play()
 				"fail":
 					damage = 10
 					print("💫 " + name + " loses focus on Spirit Wave...")
 					print("  → Weak echo deals only " + str(damage) + " damage.")
-					target.take_damage(damage)
+					apply_damage(target, damage)
 					sfx_player.stream = preload("res://assets/sfx/miss.wav")
 					sfx_player.play()
 		
@@ -1349,23 +1414,25 @@ func execute_ghost_attack_sequence(target):
 
 	# IMMEDIATE DAMAGE - Apply damage right after QTE
 	var total_damage = 0
+	var final_damage = 0
 	if result in ["crit", "normal"]:
 		total_damage = 36 if result == "crit" else 18  # Crit gets 2x multiplier from base 18
-		target.take_damage(total_damage)
+		var damage_result = apply_damage(target, total_damage)
+		final_damage = damage_result.final_damage
 		VFXManager.play_hit_effects(target)
-		print("👻 IMMEDIATE: Ghost Attack deals " + str(total_damage) + " damage")
+		print("👻 IMMEDIATE: Ghost Attack deals " + str(final_damage) + " damage")
 
 	# Step 3: Play result animation (pure visual feedback)
 	AnimationBridge.play_result_animation("ghost_attack", result)
 	await AnimationBridge.animation_sequence_complete
 
-	print("👻 Ghost Attack complete - damage already applied: ", total_damage)
+	print("👻 Ghost Attack complete - damage already applied: ", final_damage)
 
 	# Return info for TurnManager (damage already applied)
 	return {
-		"damage": total_damage,
+		"damage": final_damage,
 		"qte_result": result,
-		"success": total_damage > 0,
+		"success": final_damage > 0,
 		"handled_damage": true  # Flag that damage was already applied
 	}
 

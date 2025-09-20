@@ -267,6 +267,7 @@ func _input(event):
 			else:
 				print("DEBUG→ Enemy already at 1 HP or less")
 		return
+
 		
 	match current_state:
 		State.SHOW_MENU:
@@ -1574,7 +1575,12 @@ func reset_combat():
 		CombatUI.update_hp_bar("Player2", player2.hp, player2.hp_max)
 	if enemy:
 		CombatUI.update_hp_bar("Enemy", enemy.hp, enemy.hp_max)
-	
+
+	# Initialize upgrade displays for both players
+	if CombatUI.has_method("initialize_upgrade_displays"):
+		CombatUI.initialize_upgrade_displays()
+		print("RESET→ Initialized upgrade displays")
+
 	# Reset Resolve system
 	ResolveManager.reset_all_resolve()
 	ProgressManager.apply_battle_buffs()  # Apply buffs after resolve reset
@@ -1782,12 +1788,25 @@ func _apply_basic_attack_damage(qte_result: String, target: Node, attacker: Node
 			damage = 0  # Fail = no damage
 	
 	print("DMG→ IMMEDIATE: " + attacker.name + " deals " + str(damage) + " to " + target.name + " (QTE: " + qte_result + ")")
-	
-	# Apply damage and hit effects immediately
+
+	# Apply damage through player's centralized apply_damage system
 	if damage > 0:
-		target.take_damage(damage)
-		VFXManager.play_hit_effects(target)
-		print("DMG→ Applied " + str(damage) + " damage immediately after QTE")
+		# Use the attacker's apply_damage function for full upgrade bonus integration
+		if attacker.has_method("apply_damage"):
+			var damage_result = attacker.apply_damage(target, damage)
+			print("DMG→ Applied " + str(damage_result.final_damage) + " damage via player's apply_damage system")
+		else:
+			# Fallback to old system if apply_damage not available
+			var damage_result = target.status_effects.calculate_final_damage(attacker, target, damage)
+			var final_damage = damage_result.final_damage
+			target.hp = max(target.hp - final_damage, 0)
+			CombatUI.update_hp_bar(target.name, target.hp, target.hp_max)
+			CombatUI.show_damage_popup(target, final_damage)
+			VFXManager.play_hit_effects(target)
+			if target.hp <= 0:
+				target.is_defeated = true
+				print(target.name + " has been defeated!")
+			print("DMG→ Applied " + str(final_damage) + " damage via fallback system")
 	
 	# Set flag to prevent duplicate damage in resolve_action
 	set_meta("basic_attack_damage_applied", true)

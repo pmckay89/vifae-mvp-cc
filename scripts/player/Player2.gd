@@ -5,6 +5,7 @@ var hp: int = 100
 var is_defeated = false
 var selected_ability = ""
 var has_phoenix_feather = false  # Revival item
+var applied_upgrades: Array = []  # Track which HP upgrades have been applied
 
 @onready var rng := RandomNumberGenerator.new()
 @onready var status_effects := StatusEffectManager.new()
@@ -25,14 +26,41 @@ var focus_stacks: int = 0
 func _ready():
 	rng.randomize()
 	add_to_group("players")
-	
+
+	# Apply upgrade effects to base stats
+	print("🔍 [DEBUG] Player2 _ready() calling _apply_upgrade_effects...")
+	_apply_upgrade_effects()
+
 	# Add StatusEffectManager as child
 	add_child(status_effects)
 	status_effects.name = "StatusEffects"
-	
+
 	_setup_muzzle_flash()
 	_ensure_buff_animation_hidden()
 	_setup_new_idle_animation()
+
+func _apply_upgrade_effects():
+	# Apply HP upgrades
+	print("🔍 [DEBUG] Checking Strong Body for Player2...")
+	var has_strong_body = ProgressManager.has_player_upgrade("Player2", "strong_body")
+	print("🔍 [DEBUG] Has strong body: ", has_strong_body)
+	if has_strong_body and not "strong_body" in applied_upgrades:
+		hp_max += 25
+		hp += 25  # Also heal current HP
+		applied_upgrades.append("strong_body")
+		print("UPGRADE→ Player2 Strong Body applied: +25 max HP (now ", hp_max, ")")
+
+	if ProgressManager.has_player_upgrade("Player2", "guardian_blessing") and not "guardian_blessing" in applied_upgrades:
+		hp_max += 50
+		hp += 50
+		applied_upgrades.append("guardian_blessing")
+		print("UPGRADE→ Player2 Guardian Blessing applied: +50 max HP (now ", hp_max, ")")
+
+	if ProgressManager.has_player_upgrade("Player2", "legendary_resilience") and not "legendary_resilience" in applied_upgrades:
+		hp_max += 100
+		hp += 100
+		applied_upgrades.append("legendary_resilience")
+		print("UPGRADE→ Player2 Legendary Resilience applied: +100 max HP (now ", hp_max, ")")
 
 func start_turn():
 	if is_defeated:
@@ -40,6 +68,34 @@ func start_turn():
 		get_node("/root/BattleScene/TurnManager").end_turn()
 		return
 	print(name, "is ready to act.")
+
+# Universal damage system - routes through centralized calculation for upgrade bonuses
+func apply_damage(target: Node, base_damage: int) -> Dictionary:
+	if not target or not "status_effects" in target:
+		print("⚠️ Target has no status_effects, using fallback damage")
+		if target and target.has_method("take_damage"):
+			target.take_damage(base_damage)
+		return {"final_damage": base_damage, "absorbed": 0, "effects_triggered": []}
+
+	# Use centralized damage calculation system for upgrade bonuses
+	var damage_result = target.status_effects.calculate_final_damage(self, target, base_damage)
+	var final_damage = damage_result.final_damage
+
+	# Apply damage directly (bypassing target.take_damage to avoid double-processing)
+	target.hp = max(target.hp - final_damage, 0)
+
+	# Update UI and effects
+	CombatUI.update_hp_bar(target.name, target.hp, target.hp_max)
+	CombatUI.show_damage_popup(target, final_damage)
+
+	# Check for defeat
+	if target.hp <= 0:
+		target.is_defeated = true
+		print(target.name + " has been defeated!")
+
+	print("🎯 [" + self.name + "] Applied " + str(final_damage) + " damage to " + target.name + " (base: " + str(base_damage) + ")")
+
+	return damage_result
 
 func show_block_animation(duration: float = 1.0):
 	# No longer uses breathing animation system
@@ -178,7 +234,7 @@ func attack(target):
 	
 	# TurnManager now handles sound effects and hit effects for basic attacks
 	print("🔫 Gun Girl basic attack (effects handled by TurnManager)")
-	target.take_damage(damage)
+	apply_damage(target, damage)
 	
 	# Hide windup pose after attack
 	hide_attack_windup()
@@ -198,7 +254,7 @@ func attack_critical(target):
 	await get_tree().create_timer(0.3).timeout
 	
 	VFXManager.play_hit_effects(target)
-	target.take_damage(damage)
+	apply_damage(target, damage)
 	
 	# Hide windup pose after attack
 	hide_attack_windup()
@@ -262,10 +318,14 @@ func take_damage(amount):
 
 func reset_for_new_combat():
 	# Called by TurnManager when combat resets
+
+	# Apply upgrade effects first (before setting hp = hp_max)
+	_apply_upgrade_effects()
+
 	hp = hp_max
 	is_defeated = false
 	hide_death_sprite()
-	
+
 	# Ensure breathing is active after reset
 	resume_breathing_animation()
 	print("RESET→ " + name + " fully restored")
@@ -367,7 +427,7 @@ func on_qte_result(result: String, target):
 					print("🎯 " + name + " executes a PERFECT Big Shot! Sniper's dream!")
 					print("  → Precision shot devastates for " + str(damage) + " damage!")
 					trigger_muzzle_flash("crit")
-					target.take_damage(damage)
+					apply_damage(target, damage)
 					sfx_player.stream = preload("res://assets/sfx/gun2.wav")
 					sfx_player.play()
 				"normal":
@@ -378,7 +438,7 @@ func on_qte_result(result: String, target):
 					print("🔫 " + name + " lands a solid Big Shot!")
 					print("  → Heavy shot hits for " + str(damage) + " damage!")
 					trigger_muzzle_flash("normal")
-					target.take_damage(damage)
+					apply_damage(target, damage)
 					sfx_player.stream = preload("res://assets/sfx/gun2.wav")
 					sfx_player.play()
 				"fail":
@@ -388,7 +448,7 @@ func on_qte_result(result: String, target):
 					damage = int(damage * multiplier)
 					print("💨 " + name + " rushes the Big Shot...")
 					print("  → Hasty shot grazes for " + str(damage) + " damage.")
-					target.take_damage(damage)
+					apply_damage(target, damage)
 					sfx_player.stream = preload("res://assets/sfx/miss.wav")
 					sfx_player.play()
 		
@@ -402,7 +462,7 @@ func on_qte_result(result: String, target):
 					print("💥 " + name + " completes the Scatter Shot sequence! All targets hit!")
 					print("  → Devastating spread attack deals " + str(damage) + " damage!")
 					trigger_muzzle_flash("normal")  # Use normal for both crit and normal scatter shot
-					target.take_damage(damage)
+					apply_damage(target, damage)
 					sfx_player.stream = preload("res://assets/sfx/gun1.wav")
 					sfx_player.play()
 				"fail":
@@ -412,7 +472,7 @@ func on_qte_result(result: String, target):
 					damage = int(damage * multiplier)
 					print("💨 " + name + " fails to complete the Scatter Shot sequence...")
 					print("  → Incomplete spread reduces damage to " + str(damage) + ".")
-					target.take_damage(damage)
+					apply_damage(target, damage)
 					sfx_player.stream = preload("res://assets/sfx/miss.wav")
 					sfx_player.play()
 		
@@ -739,7 +799,7 @@ func execute_animated_ability(ability_name: String, target):
 			var damage = config.damage
 			if qte_result == "crit":
 				damage *= 2
-			target.take_damage(damage)
+			apply_damage(target, damage)
 			print("💥 [Player2] Applied ", damage, " damage")
 		
 		# Step 5: Play result animation and wait for completion
@@ -848,7 +908,7 @@ func _apply_freezing_shot_immediate(target, qte_result: String) -> int:
 	var total_damage = 0
 	if qte_result in ["crit", "normal"]:
 		total_damage = 12 if qte_result == "crit" else 8
-		target.take_damage(total_damage)
+		apply_damage(target, total_damage)
 		VFXManager.play_enhanced_hit_effects(target, total_damage, VFXManager.EffectType.ICE)
 		
 		# Apply frozen effect to target
@@ -867,7 +927,7 @@ func _apply_freezing_shot_immediate(target, qte_result: String) -> int:
 		VFXManager.play_status_effect_vfx(target, "frozen", 2)  # Tier 2 with mini-zoom
 	else:
 		total_damage = 2
-		target.take_damage(total_damage)
+		apply_damage(target, total_damage)
 		VFXManager.play_hit_effects(target)
 		print("🧊 IMMEDIATE: Freezing shot failed - weak hit for ", total_damage, " damage")
 	
@@ -877,7 +937,7 @@ func _apply_armor_piercing_immediate(target, qte_result: String) -> int:
 	var total_damage = 0
 	if qte_result in ["crit", "normal"]:
 		total_damage = 23 if qte_result == "crit" else 15
-		target.take_damage(total_damage)
+		apply_damage(target, total_damage)
 		VFXManager.play_enhanced_hit_effects(target, total_damage, VFXManager.EffectType.CRITICAL)
 		
 		# Apply armor down effect to target
@@ -896,7 +956,7 @@ func _apply_armor_piercing_immediate(target, qte_result: String) -> int:
 		VFXManager.play_status_effect_vfx(target, "armor_down", 1)  # Tier 1 - just color flash
 	else:
 		total_damage = 5
-		target.take_damage(total_damage)
+		apply_damage(target, total_damage)
 		VFXManager.play_hit_effects(target)
 		print("🛡️ IMMEDIATE: Armor piercing failed - weak hit for ", total_damage, " damage")
 	
@@ -906,7 +966,7 @@ func _apply_bleeding_shot_immediate(target, qte_result: String) -> int:
 	var total_damage = 0
 	if qte_result in ["crit", "normal"]:
 		total_damage = 15 if qte_result == "crit" else 10
-		target.take_damage(total_damage)
+		apply_damage(target, total_damage)
 		VFXManager.play_enhanced_hit_effects(target, total_damage, VFXManager.EffectType.POISON)  # Use poison type for red/green
 		
 		# Apply bleed effect to target
@@ -926,7 +986,7 @@ func _apply_bleeding_shot_immediate(target, qte_result: String) -> int:
 		VFXManager.play_status_effect_vfx(target, "bleed", 1)  # Tier 1 - just color flash
 	else:
 		total_damage = 3
-		target.take_damage(total_damage)
+		apply_damage(target, total_damage)
 		VFXManager.play_hit_effects(target)
 		print("🩸 IMMEDIATE: Bleeding shot failed - weak hit for ", total_damage, " damage")
 	
@@ -1198,7 +1258,7 @@ func _apply_curse_strike_immediate(target, qte_result: String) -> int:
 	if qte_result in ["crit", "normal"]:
 		# Minor damage
 		total_damage = 8 if qte_result == "crit" else 5
-		target.take_damage(total_damage)
+		apply_damage(target, total_damage)
 
 		# Apply weakness effect
 		var weakness_effect = {
@@ -1216,7 +1276,7 @@ func _apply_curse_strike_immediate(target, qte_result: String) -> int:
 		VFXManager.play_status_effect_vfx(target, "weakness", 1)
 	else:
 		total_damage = 2
-		target.take_damage(total_damage)
+		apply_damage(target, total_damage)
 		print("💀 IMMEDIATE: Curse strike failed - weak hit for ", total_damage, " damage")
 
 	return total_damage

@@ -68,9 +68,6 @@ text = "Combat Training (2 coins) - Permanent +10% damage to all attacks"
 layout_mode = 2
 text = "Thick Skin (2 coins) - Permanent -10% damage taken"
 
-[node name="QuickRecoveryButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Quick Recovery (2 coins) - Heal +5 HP at start of each battle"
 
 [node name="BerserkerMightButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
 layout_mode = 2
@@ -84,9 +81,6 @@ text = "Guardian's Blessing (4 coins) - Permanent +50 max HP"
 layout_mode = 2
 text = "Battle Veteran (4 coins) - Permanent +20% damage, +10% defense"
 
-[node name="AdrenalineRushButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Adrenaline Rush (3 coins) - Gain +1 resolve when below 25% HP"
 
 [node name="LegendaryResilienceButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
 layout_mode = 2
@@ -104,13 +98,7 @@ text = "Unbreakable Will (5 coins) - Start each battle with maximum resolve"
 layout_mode = 2
 text = "Death Defiance (6 coins) - Survive fatal damage once per battle (permanent)"
 
-[node name="SwordMasteryButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Sword Mastery (3 coins) - Player1 abilities deal +25% damage"
 
-[node name="GunExpertiseButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Gun Expertise (3 coins) - Player2 abilities deal +25% damage"
 
 [node name="DualWieldingButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
 layout_mode = 2
@@ -120,9 +108,6 @@ text = "Dual Wielding (4 coins) - Both players gain +15% damage"
 layout_mode = 2
 text = "Team Synergy (5 coins) - Using abilities with both players in same turn gives +50% damage"
 
-[node name="CoinMagnetButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Coin Magnet (2 coins) - Gain +1 coin after each battle victory"
 
 [node name="TreasureHunterButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
 layout_mode = 2
@@ -132,21 +117,11 @@ text = "Treasure Hunter (3 coins) - 25% chance to find extra coin after battle"
 layout_mode = 2
 text = "Battle Economist (4 coins) - All shop items cost 1 less coin (minimum 1)"
 
-[node name="CounterFighterButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Counter Fighter (3 coins) - Deal 15 damage to enemies when they hit you"
 
 [node name="BloodlustButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
 layout_mode = 2
 text = "Bloodlust (4 coins) - Heal 10 HP whenever you deal 50+ damage in one attack"
 
-[node name="PrecisionStrikeButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Precision Strike (3 coins) - Critical hits heal you for 25 HP"
-
-[node name="MomentumFighterButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
-layout_mode = 2
-text = "Momentum Fighter (4 coins) - Each consecutive successful attack gains +10% damage"
 
 [node name="DamageShieldButton" type="Button" parent="Panel/VBoxContainer/ScrollContainer/ItemsContainer"]
 layout_mode = 2

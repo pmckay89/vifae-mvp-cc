@@ -30,9 +30,24 @@ var party_inventory = {
 # Temporary battle buffs from shop
 var active_buffs = {
 	"power_boost": false,     # 2x damage next battle
-	"quick_reflexes": false,  # Slower QTE windows next battle  
-	"iron_will": false        # +2 resolve start next battle
+	"quick_reflexes": false   # Slower QTE windows next battle
 }
+
+# Permanent player upgrades (assigned to specific players)
+var player_upgrades = {
+	"Player1": {
+		# Example: "iron_will": true, "combat_training": true
+	},
+	"Player2": {
+		# Example: "thick_skin": true, "strong_body": true
+	}
+}
+
+# Track purchased upgrades to prevent duplicates (once per campaign)
+var purchased_upgrades = []
+
+# Battle flags for tracking per-battle effects (reset each battle)
+var battle_flags = {}
 
 # Map structure: array of fork choices (what comes after each battle)
 var map_structure = [
@@ -49,13 +64,25 @@ func _ready():
 	print("PROGRESS→ ProgressManager initialized")
 	print("PROGRESS→ Starting coins: ", player_coins)
 
+	# DEBUG: Add test upgrades for demonstration
+	# player_upgrades["Player1"]["iron_will"] = true
+	# player_upgrades["Player1"]["combat_training"] = true
+	# player_upgrades["Player2"]["thick_skin"] = true
+	# print("PROGRESS→ DEBUG: Added test upgrades for demonstration")
+
 # Called after battle victory
 func complete_battle():
 	var coins_earned = get_battle_coin_reward()  # Progressive scaling based on battle
+
+	# Apply Treasure Hunter bonus (+1 coin per battle)
+	if has_player_upgrade("Player1", "treasure_hunter") or has_player_upgrade("Player2", "treasure_hunter"):
+		coins_earned += 1
+		print("PROGRESS→ Treasure Hunter bonus: +1 coin")
+
 	player_coins += coins_earned
 	coins_changed.emit(player_coins)  # Emit signal for UI update
 	print("PROGRESS→ Battle completed! Earned ", coins_earned, " coins (total: ", player_coins, ")")
-	
+
 	# Check if there are more battles/choices ahead
 	if current_position < map_structure.size() - 1:
 		print("PROGRESS→ Fork available - player can choose next path")
@@ -119,11 +146,17 @@ func has_choices_available() -> bool:
 # Shop functions (consumables and temporary buffs only)
 func buy_item(item_name: String) -> bool:
 	var cost = 1  # All items cost 1 coin
-	
+
+	# Apply Battle Economist discount (-1 cost, minimum 0)
+	if has_player_upgrade("Player1", "battle_economist") or has_player_upgrade("Player2", "battle_economist"):
+		cost = max(0, cost - 1)
+		if cost == 0:
+			print("SHOP→ Battle Economist: ", item_name, " is FREE!")
+
 	if player_coins < cost:
 		print("SHOP→ Not enough coins for ", item_name)
 		return false
-	
+
 	player_coins -= cost
 	coins_changed.emit(player_coins)  # Emit signal for UI update
 	
@@ -149,25 +182,88 @@ func buy_item(item_name: String) -> bool:
 
 # Upgrade functions (permanent improvements only)
 func buy_upgrade(upgrade_name: String) -> bool:
-	var cost = 1  # All upgrades cost 1 coin
-	
+	var cost = _get_upgrade_cost(upgrade_name)
+
 	if player_coins < cost:
 		print("UPGRADE→ Not enough coins for ", upgrade_name)
 		return false
-	
+
 	player_coins -= cost
 	coins_changed.emit(player_coins)  # Emit signal for UI update
-	
+
 	match upgrade_name:
-		"iron_will":
-			active_buffs.iron_will = true
-			print("UPGRADE→ Bought Iron Will (permanent +2 starting resolve)")
+		"iron_will", "berserker_might", "guardian_blessing", "battle_veteran", "legendary_resilience", "master_combatant", "unbreakable_will", "dual_wielding", "vampire_fang", "finishing_blow", "first_strike", "last_stand", "treasure_hunter", "battle_economist", "bloodlust", "weapon_master":
+			# NOTE: This is the old single-purchase system for UpgradeOverlay compatibility
+			# Upgrades now managed through new player_upgrades system
+			print("UPGRADE→ Bought ", upgrade_name, " (legacy system - needs player assignment)")
 		_:
 			print("ERROR→ Unknown upgrade: ", upgrade_name)
 			player_coins += cost  # Refund
 			return false
-	
+
 	return true
+
+func _get_upgrade_cost(upgrade_name: String) -> int:
+	match upgrade_name:
+		"iron_will": return 1
+		"berserker_might": return 3
+		"guardian_blessing": return 4
+		"battle_veteran": return 4
+		"legendary_resilience": return 5
+		"master_combatant": return 6
+		"unbreakable_will": return 5
+		"dual_wielding": return 4
+		"vampire_fang": return 6
+		"finishing_blow": return 4
+		"first_strike": return 3
+		"last_stand": return 4
+		"treasure_hunter": return 3
+		"battle_economist": return 4
+		"bloodlust": return 4
+		"weapon_master": return 5
+		_: return 1  # Default cost
+
+# Player upgrade management functions
+func assign_upgrade_to_player(upgrade_name: String, player_name: String):
+	if player_name in player_upgrades:
+		player_upgrades[player_name][upgrade_name] = true
+		purchased_upgrades.append(upgrade_name)
+		print("PROGRESS→ Assigned ", upgrade_name, " to ", player_name)
+	else:
+		print("ERROR→ Invalid player name: ", player_name)
+
+func get_player_upgrades(player_name: String) -> Dictionary:
+	if player_name in player_upgrades:
+		return player_upgrades[player_name]
+	return {}
+
+func has_player_upgrade(player_name: String, upgrade_name: String) -> bool:
+	if player_name in player_upgrades:
+		return player_upgrades[player_name].get(upgrade_name, false)
+	return false
+
+func is_upgrade_purchased(upgrade_name: String) -> bool:
+	return upgrade_name in purchased_upgrades
+
+func get_player_upgrade_list(player_name: String) -> Array:
+	var upgrades = get_player_upgrades(player_name)
+	var upgrade_names = []
+	for upgrade_name in upgrades:
+		if upgrades[upgrade_name]:
+			upgrade_names.append(upgrade_name.replace("_", " ").capitalize())
+	return upgrade_names
+
+# Battle flag functions for per-battle tracking
+func set_battle_flag(flag_name: String, value: bool):
+	battle_flags[flag_name] = value
+
+func get_battle_flag(flag_name: String) -> bool:
+	return battle_flags.get(flag_name, false)
+
+func clear_battle_flags():
+	print("PROGRESS→ Clearing battle flags: ", battle_flags)
+	battle_flags.clear()
+	print("PROGRESS→ Battle flags cleared for new battle")
 
 func get_party_item_count(item_name: String) -> int:
 	if item_name in party_inventory:
@@ -184,17 +280,30 @@ func use_party_item(item_name: String) -> bool:
 # Apply and clear battle buffs
 func apply_battle_buffs():
 	print("PROGRESS→ Applying battle buffs...")
+
+	# Clear battle flags for new battle (for First Strike, etc.)
+	clear_battle_flags()
 	
-	# Apply Iron Will: +2 starting resolve for both players
-	if active_buffs.iron_will:
+	# Apply Iron Will: +2 starting resolve (now per-player upgrade)
+	if has_player_upgrade("Player1", "iron_will"):
 		var player1_resolve = ResolveManager.get_resolve("Player1")
-		var player2_resolve = ResolveManager.get_resolve("Player2")
-		
 		ResolveManager.set_resolve("Player1", player1_resolve + 2)
+		print("PROGRESS→ Iron Will applied to Player1: +2 resolve")
+
+	if has_player_upgrade("Player2", "iron_will"):
+		var player2_resolve = ResolveManager.get_resolve("Player2")
 		ResolveManager.set_resolve("Player2", player2_resolve + 2)
-		
-		print("PROGRESS→ Iron Will applied: +2 resolve to both players")
-	
+		print("PROGRESS→ Iron Will applied to Player2: +2 resolve")
+
+	# Apply Unbreakable Will: Start with maximum resolve (6)
+	if has_player_upgrade("Player1", "unbreakable_will"):
+		ResolveManager.set_resolve("Player1", 6)
+		print("PROGRESS→ Unbreakable Will applied to Player1: set to max resolve (6)")
+
+	if has_player_upgrade("Player2", "unbreakable_will"):
+		ResolveManager.set_resolve("Player2", 6)
+		print("PROGRESS→ Unbreakable Will applied to Player2: set to max resolve (6)")
+
 	# Future buffs can be added here:
 	# if active_buffs.power_boost:
 	#     print("PROGRESS→ Power Boost applied: 2x damage this battle")
@@ -205,7 +314,7 @@ func clear_battle_buffs():
 	print("PROGRESS→ Clearing used battle buffs...")
 	active_buffs.power_boost = false
 	active_buffs.quick_reflexes = false
-	active_buffs.iron_will = false
+	# Note: iron_will is now a permanent upgrade, not cleared
 
 # Enemy scaling based on battle progression
 func get_enemy_hp_multiplier() -> float:
@@ -228,11 +337,11 @@ func get_current_battle_number() -> int:
 # Progressive coin rewards based on battle difficulty
 func get_battle_coin_reward() -> int:
 	match current_position:
-		0: return 5    # Battle 1: Tutorial Boss
-		1: return 10   # Battle 2: Shadow Beast
-		2: return 15   # Battle 3: Elite Guardian
-		3: return 20   # Battle 4: Ancient Warden
-		_: return 20   # Battle 5+: Final Boss (though game ends)
+		0: return 10   # Battle 1: Tutorial Boss (was 5)
+		1: return 20   # Battle 2: Shadow Beast (was 10)
+		2: return 30   # Battle 3: Elite Guardian (was 15)
+		3: return 40   # Battle 4: Ancient Warden (was 20)
+		_: return 40   # Battle 5+: Final Boss (though game ends)
 
 # Reset for new game
 func reset_progress():
@@ -240,6 +349,6 @@ func reset_progress():
 	player_coins = 0
 	selected_path = ""
 	party_inventory = {"hp_potion": 2, "resolve_potion": 2}
-	active_buffs = {"power_boost": false, "quick_reflexes": false, "iron_will": false}
+	active_buffs = {"power_boost": false, "quick_reflexes": false}
 	coins_changed.emit(player_coins)  # Emit signal for UI update
 	print("PROGRESS→ Progress reset to start")

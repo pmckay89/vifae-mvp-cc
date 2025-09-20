@@ -466,6 +466,50 @@ func calculate_final_damage(attacker: Node, target: Node, base_damage: int) -> D
 	var attacker_name = "unknown" if attacker == null else attacker.name
 	var target_name = "unknown" if target == null else target.name
 	print("🧮 [StatusEffectManager] Calculating damage: ", base_damage, " from ", attacker_name, " to ", target_name)
+
+	# Apply attacker upgrade bonuses (multiplicative)
+	if attacker and attacker_name in ["Player1", "Player2"]:
+		if ProgressManager.has_player_upgrade(attacker_name, "combat_training"):
+			working_damage *= 1.1
+			print("🔼 [Upgrade] Combat Training: ", working_damage / 1.1, " → ", working_damage)
+
+		if ProgressManager.has_player_upgrade(attacker_name, "battle_veteran"):
+			working_damage *= 1.2
+			print("🔼 [Upgrade] Battle Veteran: damage bonus applied")
+
+		if ProgressManager.has_player_upgrade(attacker_name, "master_combatant"):
+			working_damage *= 1.5
+			print("🔼 [Upgrade] Master Combatant: ", working_damage / 1.5, " → ", working_damage)
+
+		if ProgressManager.has_player_upgrade(attacker_name, "berserker_might"):
+			working_damage *= 1.25
+			print("🔼 [Upgrade] Berserker Might: ", working_damage / 1.25, " → ", working_damage)
+
+		# Check for Dual Wielding (party-wide upgrade, check if ANY player has it)
+		if ProgressManager.has_player_upgrade("Player1", "dual_wielding") or ProgressManager.has_player_upgrade("Player2", "dual_wielding"):
+			working_damage *= 1.15
+			print("🔼 [Upgrade] Dual Wielding: ", working_damage / 1.15, " → ", working_damage)
+
+		# Check for First Strike (double damage on first attack each battle)
+		if ProgressManager.has_player_upgrade(attacker_name, "first_strike"):
+			# Check if this is the first attack this battle for this player
+			var first_attack_key = attacker_name + "_first_attack_used"
+			var flag_value = ProgressManager.get_battle_flag(first_attack_key)
+			print("🔍 [First Strike] Checking ", attacker_name, " flag: ", first_attack_key, " = ", flag_value)
+			if not flag_value:
+				working_damage *= 2.0
+				ProgressManager.set_battle_flag(first_attack_key, true)
+				print("🔼 [Upgrade] First Strike: ", working_damage / 2.0, " → ", working_damage)
+			else:
+				print("🔍 [First Strike] Already used for ", attacker_name, " this battle")
+
+		# Check for Finishing Blow (+200% damage to enemies below 25% HP)
+		if ProgressManager.has_player_upgrade(attacker_name, "finishing_blow"):
+			if target and "hp" in target and "hp_max" in target:
+				var target_hp_percent = float(target.hp) / float(target.hp_max)
+				if target_hp_percent < 0.25:
+					working_damage *= 3.0  # +200% = 3x total damage
+					print("🔼 [Upgrade] Finishing Blow: ", working_damage / 3.0, " → ", working_damage)
 	
 	# Apply defensive multiplicative effects on target (mark, vulnerable)
 	for i in range(active_effects.size() - 1, -1, -1):
@@ -514,10 +558,71 @@ func calculate_final_damage(attacker: Node, target: Node, base_damage: int) -> D
 				print("🛡️ [StatusEffectManager] Shield absorbed ", absorbed, " damage (", effect["shield_hp"], " HP remaining)")
 				result.effects_triggered.append("shield")
 			break  # Only one shield effect per target
-	
-	result.final_damage = int(working_damage)
+
+	# Apply target defense upgrade bonuses (multiplicative)
+	if target and target_name in ["Player1", "Player2"]:
+		# Check for Last Stand (50% less damage when below 30% HP)
+		if ProgressManager.has_player_upgrade(target_name, "last_stand"):
+			if target and "hp" in target and "hp_max" in target:
+				var target_hp_percent = float(target.hp) / float(target.hp_max)
+				if target_hp_percent < 0.30:
+					working_damage *= 0.5  # 50% less damage
+					print("🔽 [Upgrade] Last Stand: 50% damage reduction applied")
+
+	if target and target_name in ["Player1", "Player2"]:
+		if ProgressManager.has_player_upgrade(target_name, "thick_skin"):
+			working_damage *= 0.9  # -10% damage taken
+			print("🔽 [Upgrade] Thick Skin: ", working_damage / 0.9, " → ", working_damage)
+
+		if ProgressManager.has_player_upgrade(target_name, "battle_veteran"):
+			working_damage *= 0.9  # +10% defense (battle veteran gives both offense and defense)
+			print("🔽 [Upgrade] Battle Veteran: defense bonus applied")
+
+		if ProgressManager.has_player_upgrade(target_name, "berserker_might"):
+			working_damage *= 1.1  # -10% defense penalty
+			print("🔽 [Upgrade] Berserker Might: defense penalty applied")
+
+	# Apply flat damage reduction upgrades (after multiplicative)
+	if target and target_name in ["Player1", "Player2"]:
+		if ProgressManager.has_player_upgrade(target_name, "armor_plating"):
+			var reduction = min(working_damage, 5)  # Reduce by 5, but not below 0
+			working_damage -= reduction
+			print("🔽 [Upgrade] Armor Plating: reduced by ", reduction, " points")
+
+	result.final_damage = int(round(working_damage))
 	print("🧮 [StatusEffectManager] Final damage: ", result.final_damage, " (absorbed: ", result.absorbed, ")")
-	
+
+	# Apply Vampire Fang lifesteal after damage is calculated
+	if attacker and attacker_name in ["Player1", "Player2"] and result.final_damage > 0:
+		if ProgressManager.has_player_upgrade(attacker_name, "vampire_fang"):
+			var lifesteal_amount = int(result.final_damage * 0.25)  # 25% lifesteal
+			if lifesteal_amount > 0:
+				attacker.hp = min(attacker.hp + lifesteal_amount, attacker.hp_max)
+				print("🩸 [Upgrade] Vampire Fang: healed ", attacker_name, " for ", lifesteal_amount, " HP")
+				# Update UI to show new HP
+				CombatUI.update_hp_bar(attacker_name, attacker.hp, attacker.hp_max)
+				result.effects_triggered.append("vampire_fang")
+
+		# Apply Bloodlust lifesteal after damage is calculated (only on 50+ damage)
+		if ProgressManager.has_player_upgrade(attacker_name, "bloodlust") and result.final_damage >= 50:
+			var bloodlust_amount = int(result.final_damage * 0.25)  # 25% lifesteal like Vampire Fang
+			if bloodlust_amount > 0:
+				attacker.hp = min(attacker.hp + bloodlust_amount, attacker.hp_max)
+				print("🩸 [Upgrade] Bloodlust: healed ", attacker_name, " for ", bloodlust_amount, " HP (50+ damage trigger)")
+				# Update UI to show new HP
+				CombatUI.update_hp_bar(attacker_name, attacker.hp, attacker.hp_max)
+				result.effects_triggered.append("bloodlust")
+
+		# Apply Weapon Master random double damage
+		if ProgressManager.has_player_upgrade(attacker_name, "weapon_master"):
+			if randf() < 0.20:  # 20% chance
+				# This applies AFTER all other calculations, so we need to recalculate
+				# But since this is post-calculation, we'll just double the final result
+				var bonus_damage = result.final_damage  # Double means +100% of current damage
+				result.final_damage += bonus_damage
+				print("⚔️ [Upgrade] Weapon Master: DOUBLE DAMAGE! ", result.final_damage - bonus_damage, " → ", result.final_damage)
+				result.effects_triggered.append("weapon_master")
+
 	return result
 
 # Process new status effects

@@ -9,6 +9,9 @@ const POPUP_DELAY: float = 0.4  # Delay between sequential popups
 var status_icon_labels: Dictionary = {}  # effect_type -> Label node
 var status_icon_container: Control = null
 
+# Player upgrade display
+var upgrade_labels: Dictionary = {}  # player_name -> Label node
+
 func update_hp_bar(actor_name: String, hp: int, max_hp: int):
 	match actor_name:
 		"Player1":
@@ -428,3 +431,83 @@ func update_turn_indicator(current_player: String):
 		print("🎯 [CombatUI] Showing turn indicator for Player2")
 	else:
 		print("🎯 [CombatUI] Turn indicator hidden (enemy turn or unknown player)")
+
+# Update player upgrade display
+func update_player_upgrades_display(player_name: String):
+	# Try to find existing upgrade row first
+	var upgrade_row_path = "/root/BattleScene/UILayer/PlayerUIContainer/PlayersVBox/" + player_name + "UpgradeRow"
+	var upgrade_row = get_node_or_null(upgrade_row_path)
+
+	# If upgrade row doesn't exist, create it
+	if not upgrade_row:
+		var players_vbox = get_node_or_null("/root/BattleScene/UILayer/PlayerUIContainer/PlayersVBox")
+		var player_row = get_node_or_null("/root/BattleScene/UILayer/PlayerUIContainer/PlayersVBox/" + player_name + "Row")
+
+		if players_vbox and player_row:
+			# Create upgrade row container
+			upgrade_row = HBoxContainer.new()
+			upgrade_row.name = player_name + "UpgradeRow"
+			upgrade_row.custom_minimum_size = Vector2(0, 20)  # Minimum height for spacing
+
+			# Add padding to align with player info
+			var spacer = Control.new()
+			spacer.custom_minimum_size = Vector2(20, 0)  # Match player info indentation
+			upgrade_row.add_child(spacer)
+
+			# Create upgrade label
+			var upgrade_label = Label.new()
+			upgrade_label.name = player_name + "UpgradeLabel"
+			upgrade_label.add_theme_font_size_override("font_size", 10)
+			upgrade_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))  # Slightly dimmed
+			upgrade_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+			upgrade_row.add_child(upgrade_label)
+
+			# Insert upgrade row right after the player row
+			var player_row_index = player_row.get_index()
+			players_vbox.add_child(upgrade_row)
+			players_vbox.move_child(upgrade_row, player_row_index + 1)
+
+			# Add small spacer after upgrade row for better separation
+			var bottom_spacer = Control.new()
+			bottom_spacer.name = player_name + "UpgradeSpacer"
+			bottom_spacer.custom_minimum_size = Vector2(0, 5)
+			players_vbox.add_child(bottom_spacer)
+			players_vbox.move_child(bottom_spacer, player_row_index + 2)
+
+			print("🎯 [CombatUI] Created upgrade row for " + player_name)
+
+			# Update description positioning after adding upgrade row
+			_update_description_positioning()
+		else:
+			print("⚠️ Could not find players container or player row for " + player_name)
+			return
+
+	# Find the upgrade label within the row
+	var upgrade_label = upgrade_row.get_node_or_null(player_name + "UpgradeLabel")
+	if not upgrade_label:
+		print("⚠️ Could not find upgrade label for " + player_name)
+		return
+
+	# Get upgrade list from ProgressManager
+	var upgrade_list = ProgressManager.get_player_upgrade_list(player_name)
+
+	# Update label text
+	if upgrade_list.size() > 0:
+		upgrade_label.text = "    Upgrades: " + ", ".join(upgrade_list)
+	else:
+		upgrade_label.text = "    Upgrades: None"
+
+	print("🎯 [CombatUI] Updated " + player_name + " upgrades: " + upgrade_label.text)
+
+# Initialize upgrade displays for both players
+func initialize_upgrade_displays():
+	update_player_upgrades_display("Player1")
+	update_player_upgrades_display("Player2")
+
+# Update description positioning after UI changes
+func _update_description_positioning():
+	var description_label = get_node_or_null("/root/BattleScene/UILayer/QTEContainer/SelectionDescriptionLabel")
+	if description_label and description_label.has_method("_position_below_player_ui"):
+		# Use call_deferred to ensure layout updates are processed first
+		description_label.call_deferred("_position_below_player_ui")
+		print("🎯 [CombatUI] Triggered description repositioning")
