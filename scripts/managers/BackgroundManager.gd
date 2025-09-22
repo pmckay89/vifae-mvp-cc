@@ -1,7 +1,7 @@
 extends Node
 
 # All available arena backgrounds
-var valid_arenas = ["arena", "arena2", "arena3", "arena4", "arena5", "arena6", "arena7", "arena8", "arena9", "arena10"]
+var valid_arenas = ["arena2", "arena3", "arena4", "arena5", "arena6", "arena7", "arena8", "arena9", "arena10"]
 var current_arena: String = ""
 
 func _ready():

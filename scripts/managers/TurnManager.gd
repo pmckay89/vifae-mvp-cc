@@ -969,8 +969,9 @@ func actor_ready():
 	# Update turn indicator in FF-style UI
 	CombatUI.update_turn_indicator(current_actor.name)
 	
+	# Hide turn label since FF-style UI shows turn indicator
 	if turn_label:
-		turn_label.text = current_actor.name + "'s Turn"
+		turn_label.visible = false
 	
 	if is_player(current_actor):
 		change_state(State.SHOW_MENU)
@@ -1432,7 +1433,13 @@ func resolve_action():
 		# Hide enemy attack animation after damage
 		if current_actor.has_method("end_attack_animation"):
 			current_actor.end_attack_animation()
-		
+
+		# Extra sprite cleanup before zoom out (especially for mirror_strike)
+		if selected_action == "mirror_strike" and current_actor.has_method("_update_idle_animation"):
+			await get_tree().process_frame  # Wait one frame for any pending changes
+			current_actor._update_idle_animation()  # Force clean idle state
+			print("🔧 Extra sprite cleanup before zoom out for mirror_strike")
+
 		# Zoom out after attack/VFX ends (only for enemy attacks)
 		var battle_camera = get_node_or_null("/root/BattleScene/BattleCamera")
 		if battle_camera and battle_camera.has_method("zoom_to_original"):
@@ -1492,7 +1499,7 @@ func check_end():
 func victory():
 	print("STATE→ VICTORY")
 	if turn_label:
-		turn_label.text = "VICTORY!"
+		turn_label.visible = false  # Keep hidden
 		
 	# Hide menus
 	if action_menu:
@@ -1507,9 +1514,9 @@ func victory():
 	show_victory_overlay()
 
 func game_over():
-	print("STATE→ GAME_OVER") 
+	print("STATE→ GAME_OVER")
 	if turn_label:
-		turn_label.text = "DEFEAT..."
+		turn_label.visible = false  # Keep hidden
 		
 	# Hide menus
 	if action_menu:
@@ -1602,7 +1609,7 @@ func reset_combat():
 	
 	# Reset UI
 	if turn_label:
-		turn_label.text = ""
+		turn_label.visible = false  # Keep hidden
 	if action_menu:
 		action_menu.visible = false
 	if skills_menu:

@@ -1231,7 +1231,8 @@ func _apply_berserker_rage_immediate(caster, qte_result: String) -> int:
 			"target": caster,
 			"caster": caster,
 			"duration": 2,
-			"damage_multiplier": 2.0
+			"damage_modifier": 2.0,
+			"incoming_modifier": 1.25
 		}
 		caster.status_effects.apply_effect(rage_effect)
 		print("😡 IMMEDIATE: Applied rage effect to ", caster.name)
@@ -1413,7 +1414,9 @@ func use_rage_potion():
 		"type": "rage",
 		"target": self,
 		"caster": self,
-		"duration": 3  # 3 turns
+		"duration": 3,  # 3 turns
+		"damage_modifier": 2.0,
+		"incoming_modifier": 1.25
 	}
 	status_effects.apply_effect(rage_effect)
 	print("😡 [Player2] Used Rage Potion - rage status applied")

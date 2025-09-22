@@ -1564,7 +1564,9 @@ func use_rage_potion():
 		"type": "rage",
 		"target": self,
 		"caster": self,
-		"duration": 3  # 3 turns
+		"duration": 3,  # 3 turns
+		"damage_modifier": 2.0,
+		"incoming_modifier": 1.25
 	}
 	status_effects.apply_effect(rage_effect)
 	print("😡 [Player1] Used Rage Potion - rage status applied")

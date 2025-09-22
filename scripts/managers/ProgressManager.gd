@@ -436,3 +436,43 @@ func reset_progress():
 
 	coins_changed.emit(player_coins)  # Emit signal for UI update
 	print("PROGRESS→ Progress reset to start")
+
+# Save system integration
+func get_save_data() -> Dictionary:
+	"""Export all ProgressManager data for saving"""
+	return {
+		"current_position": current_position,
+		"player_coins": player_coins,
+		"selected_path": selected_path,
+		"party_inventory": party_inventory.duplicate(),
+		"active_buffs": active_buffs.duplicate(),
+		"player_upgrades": player_upgrades.duplicate(true),
+		"player_abilities": player_abilities.duplicate(true),
+		"purchased_upgrades": purchased_upgrades.duplicate(),
+		"purchased_abilities": purchased_abilities.duplicate(),
+		"battle_flags": battle_flags.duplicate()
+	}
+
+func load_save_data(save_data: Dictionary):
+	"""Import ProgressManager data from save file"""
+	current_position = save_data.get("current_position", 0)
+	player_coins = save_data.get("player_coins", 0)
+	selected_path = save_data.get("selected_path", "")
+	party_inventory = save_data.get("party_inventory", {
+		"hp_potion": 0, "resolve_potion": 0, "bandages": 0,
+		"phoenix_feather": 0, "rage_potion": 0, "speed_boost": 0, "pain_killer": 0
+	})
+	active_buffs = save_data.get("active_buffs", {"power_boost": false, "quick_reflexes": false})
+	player_upgrades = save_data.get("player_upgrades", {"Player1": {}, "Player2": {}})
+	player_abilities = save_data.get("player_abilities", player_abilities.duplicate(true))  # Use current defaults if missing
+	purchased_upgrades = save_data.get("purchased_upgrades", [])
+	purchased_abilities = save_data.get("purchased_abilities", [])
+	battle_flags = save_data.get("battle_flags", {})
+
+	# Emit signals for UI updates
+	coins_changed.emit(player_coins)
+
+	print("PROGRESS→ Loaded save data: Position ", current_position, ", Coins ", player_coins)
+	print("PROGRESS→ Inventory: ", party_inventory)
+	print("PROGRESS→ Player1 upgrades: ", player_upgrades.Player1.keys())
+	print("PROGRESS→ Player2 upgrades: ", player_upgrades.Player2.keys())

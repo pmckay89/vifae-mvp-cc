@@ -1475,6 +1475,24 @@ func play_laser_animation_twice(enemy: Node) -> void:
 		print("❌ Could not find enemy AnimatedSprite2D for laser animation")
 		return
 
+	# Ensure only main sprite is visible before laser animation
+	animated_sprite.visible = true
+
+	# Hide any other sprites to prevent overlap
+	var e_block1 = enemy.get_node_or_null("e-block")
+	var e_block2 = enemy.get_node_or_null("e-block2")
+	var flinch_sprite = enemy.get_node_or_null("flinch")
+	var flinch2_sprite = enemy.get_node_or_null("flinch2")
+
+	if e_block1:
+		e_block1.visible = false
+	if e_block2:
+		e_block2.visible = false
+	if flinch_sprite:
+		flinch_sprite.visible = false
+	if flinch2_sprite:
+		flinch2_sprite.visible = false
+
 	# Play laser animation once
 	print("🔫 Playing laser animation")
 	animated_sprite.play("laser")
@@ -1490,9 +1508,15 @@ func play_laser_animation_twice(enemy: Node) -> void:
 	# Wait for remaining animation time (1.1 seconds total - 0.5 already waited = 0.6 seconds)
 	await get_tree().create_timer(0.6).timeout
 
+	# Wait one more frame to ensure laser animation fully completes before switching
+	await get_tree().process_frame
+
 	# Return to appropriate idle animation based on HP
 	if enemy.has_method("_update_idle_animation"):
 		enemy._update_idle_animation()
+
+	# Wait another frame after switching to ensure clean transition
+	await get_tree().process_frame
 
 	print("🔫 Laser animation complete")
 

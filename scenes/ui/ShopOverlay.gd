@@ -549,12 +549,12 @@ func _show_ability_assignment_dialog():
 	content_vbox.add_child(button_container)
 
 	var player1_button = Button.new()
-	player1_button.text = "Player1"
+	player1_button.text = "Sword Spirit"
 	player1_button.pressed.connect(_assign_ability_to_player.bind("Player1"))
 	button_container.add_child(player1_button)
 
 	var player2_button = Button.new()
-	player2_button.text = "Player2"
+	player2_button.text = "Gun Girl"
 	player2_button.pressed.connect(_assign_ability_to_player.bind("Player2"))
 	button_container.add_child(player2_button)
 
@@ -645,12 +645,12 @@ func _show_assignment_dialog():
 	content_vbox.add_child(button_container)
 
 	var player1_button = Button.new()
-	player1_button.text = "Player1"
+	player1_button.text = "Sword Spirit"
 	player1_button.pressed.connect(_assign_to_player.bind("Player1"))
 	button_container.add_child(player1_button)
 
 	var player2_button = Button.new()
-	player2_button.text = "Player2"
+	player2_button.text = "Gun Girl"
 	player2_button.pressed.connect(_assign_to_player.bind("Player2"))
 	button_container.add_child(player2_button)
 

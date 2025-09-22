@@ -510,7 +510,25 @@ func calculate_final_damage(attacker: Node, target: Node, base_damage: int) -> D
 				if target_hp_percent < 0.25:
 					working_damage *= 3.0  # +200% = 3x total damage
 					print("🔼 [Upgrade] Finishing Blow: ", working_damage / 3.0, " → ", working_damage)
-	
+
+	# Apply attacker status effect bonuses (multiplicative)
+	if attacker and attacker_name in ["Player1", "Player2"]:
+		print("🔍 [DEBUG] Checking attacker status effects for ", attacker_name)
+		if attacker.has_method("get_node") and attacker.get_node_or_null("StatusEffects"):
+			var attacker_status_effects = attacker.get_node("StatusEffects")
+			print("🔍 [DEBUG] Found attacker status effects, checking ", attacker_status_effects.active_effects.size(), " effects")
+			for effect in attacker_status_effects.active_effects:
+				print("🔍 [DEBUG] Effect: ", effect)
+				if effect.get("target") == attacker:
+					match effect.get("type"):
+						"rage":
+							var damage_modifier = effect.get("damage_modifier", 2.0)
+							working_damage *= damage_modifier
+							result.effects_triggered.append("rage")
+							print("😡 [StatusEffect] Rage triggered! Damage: ", working_damage / damage_modifier, " → ", working_damage)
+		else:
+			print("🔍 [DEBUG] No StatusEffects node found on attacker")
+
 	# Apply defensive multiplicative effects on target (mark, vulnerable)
 	for i in range(active_effects.size() - 1, -1, -1):
 		var effect = active_effects[i]
@@ -527,6 +545,11 @@ func calculate_final_damage(attacker: Node, target: Node, base_damage: int) -> D
 					working_damage *= 1.5
 					result.effects_triggered.append("vulnerable")
 					print("🎯 [StatusEffectManager] Vulnerable triggered! +50% damage")
+				"rage":
+					var incoming_modifier = effect.get("incoming_modifier", 1.25)
+					working_damage *= incoming_modifier
+					result.effects_triggered.append("rage_incoming")
+					print("😡 [StatusEffect] Rage incoming damage! +25% damage taken")
 	
 	# Apply flat damage reductions on target (armor_up)
 	for effect in active_effects:
@@ -663,3 +686,70 @@ func _debug_print_effects():
 			print("  ", i, ": ", effect)
 	else:
 		print("🧪 [StatusEffectManager] No active effects")
+
+# Save system integration
+func get_save_data() -> Array:
+	"""Export active effects for saving (with node references converted to names)"""
+	var save_effects = []
+	for effect in active_effects:
+		var save_effect = effect.duplicate()
+
+		# Convert node references to string names for serialization
+		if save_effect.has("target") and save_effect.target != null:
+			save_effect["target_name"] = save_effect.target.name
+			save_effect.erase("target")
+
+		if save_effect.has("caster") and save_effect.caster != null:
+			save_effect["caster_name"] = save_effect.caster.name
+			save_effect.erase("caster")
+
+		save_effects.append(save_effect)
+
+	print("🧪 [StatusEffectManager] Exported ", save_effects.size(), " effects for saving")
+	return save_effects
+
+func load_save_data(save_effects: Array):
+	"""Import active effects from save file (with node name references restored)"""
+	clear_effects()  # Clear existing effects first
+
+	for save_effect in save_effects:
+		var effect = save_effect.duplicate()
+
+		# Restore node references from string names
+		if effect.has("target_name"):
+			var target_node = _find_node_by_name(effect.target_name)
+			if target_node:
+				effect["target"] = target_node
+			effect.erase("target_name")
+
+		if effect.has("caster_name"):
+			var caster_node = _find_node_by_name(effect.caster_name)
+			if caster_node:
+				effect["caster"] = caster_node
+			effect.erase("caster_name")
+
+		# Only restore if we found valid node references
+		if effect.has("target") and effect.target != null:
+			active_effects.append(effect)
+			# Restore status icon
+			var effect_type = effect.get("type")
+			var target = effect.get("target")
+			if target and (target.name == "Player1" or target.name == "Player2"):
+				CombatUI.show_player_status_icon(target.name, effect_type)
+			else:
+				CombatUI.show_status_icon(effect_type)
+
+	print("🧪 [StatusEffectManager] Loaded ", active_effects.size(), " effects from save")
+
+func _find_node_by_name(node_name: String) -> Node:
+	"""Helper to find nodes by name in the battle scene"""
+	match node_name:
+		"Player1":
+			return get_node_or_null("/root/BattleScene/Player1")
+		"Player2":
+			return get_node_or_null("/root/BattleScene/Player2")
+		"Enemy":
+			return get_node_or_null("/root/BattleScene/Enemy")
+		_:
+			print("🧪 [StatusEffectManager] Warning: Unknown node name for restore: ", node_name)
+			return null

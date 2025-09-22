@@ -219,8 +219,6 @@ scale = Vector2(4, 4)
 sprite_frames = SubResource("SpriteFrames_enemy_idle")
 animation = &"idle"
 autoplay = "idle"
-frame = 4
-frame_progress = 0.227694
 
 [node name="e-block" type="Sprite2D" parent="."]
 visible = false

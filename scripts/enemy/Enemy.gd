@@ -36,6 +36,25 @@ func _ready():
 func _update_idle_animation():
 	var animated_sprite = get_node_or_null("Sprite2D") as AnimatedSprite2D
 	if animated_sprite:
+		# Ensure main sprite is visible and other sprites are hidden
+		animated_sprite.visible = true
+
+		# Hide all other enemy sprites to prevent overlap/flashing
+		var e_block1 = get_node_or_null("e-block")
+		var e_block2 = get_node_or_null("e-block2")
+		var flinch_sprite = get_node_or_null("flinch")
+		var flinch2_sprite = get_node_or_null("flinch2")
+
+		if e_block1:
+			e_block1.visible = false
+		if e_block2:
+			e_block2.visible = false
+		if flinch_sprite:
+			flinch_sprite.visible = false
+		if flinch2_sprite:
+			flinch2_sprite.visible = false
+
+		# Switch to appropriate idle animation based on HP
 		var health_percentage = float(hp) / float(hp_max)
 		if health_percentage <= 0.5:
 			if animated_sprite.animation != "idle2":
@@ -97,20 +116,21 @@ func attack_animation(target: Node, attack_type: String = "", play_sound: bool =
 # This hides the attack sprites and shows the idle sprite again
 func end_attack_animation() -> void:
 	print("🎬 Enemy attack animation finished")
-	
+
 	# Hide enemy attack sprites
 	var e_block1 = get_node_or_null("e-block")
 	var e_block2 = get_node_or_null("e-block2")
 	var enemy_idle_sprite = get_node_or_null("Sprite2D")
-	
+
 	if e_block1:
 		e_block1.visible = false
 	if e_block2:
 		e_block2.visible = false
-	
-	# Show default enemy sprite again
-	if enemy_idle_sprite:
+
+	# Only show idle sprite if it's not already visible to prevent flicker
+	if enemy_idle_sprite and not enemy_idle_sprite.visible:
 		enemy_idle_sprite.visible = true
+		print("🎬 Restored idle sprite visibility")
 
 # Note: show_block_animation no longer needed - VFXManager now handles enemy hits properly
 
